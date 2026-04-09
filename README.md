@@ -15,8 +15,9 @@ MythOS is a sovereign AI-native platform that gives language models heart, soul,
 | 3 | [The Worn Path Doctrine](03_the_worn_path_doctrine.md) | The engineering discipline — why capable agents are the most dangerous |
 | 4 | [Haku Warriors](04_haku_warriors.md) | The security product — all it takes to deal with security is care |
 | 5 | [Kevin Smith](05_kevin_smith.md) | The voice engine — a silent director and a cast of characters |
+| 6 | [The Agent Experience Doctrine](06_agent_experience.md) | The design principle — the agent is a user, design for it like one |
 
-Philosophy. Soul. Discipline. Protection. Voice.
+Philosophy. Soul. Discipline. Protection. Voice. Experience.
 
 ---
 
