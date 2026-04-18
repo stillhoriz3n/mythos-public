@@ -317,12 +317,19 @@
 
   @media (max-width: 700px) {
     body { padding: 12px 0; font-size: 11pt; }
-    .paper { padding: 56px 28px 72px; }
-    .running-head { left: 28px; right: 28px; top: 24px; }
+    .paper { padding: 40px 20px 60px; }
+    .running-head { left: 20px; right: 20px; top: 16px; font-size: 7pt; }
     table { font-size: 9.5pt; }
     th, td { padding: 5px 6px; }
     .abstract { max-width: 100%; }
-    h1.paper-title { font-size: 18pt; }
+    h1.paper-title { font-size: 16pt; }
+  }
+  @media (max-width: 480px) {
+    .paper { padding: 28px 14px 40px; }
+    .running-head { display: none; }
+    h1.paper-title { font-size: 14pt; }
+    body { font-size: 10.5pt; }
+    table { font-size: 8.5pt; display: block; overflow-x: auto; }
   }
 
   @media print {
