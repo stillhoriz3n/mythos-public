@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prime Radiant — The Living Mark</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#020204;cursor:crosshair}
+canvas{display:block;position:fixed;inset:0}
+.ui{
+  position:fixed;bottom:24px;left:0;right:0;
+  text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(232,184,88,.45);
+  z-index:10;pointer-events:none;
+  transition:opacity 2s;
+}
+.ui .bright{color:rgba(232,184,88,.75)}
+.ui .glyph{color:#ffe6a0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="ui">
+  <span class="glyph">✦</span>
+  <span class="bright">The Living Mark</span>
+  <span style="color:rgba(232,184,88,.25)">·</span>
+  <span>Five Ms · Nine Letters · One Singularity</span>
+</div>
+<script>
+(function(){
+'use strict';
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var W, H, cx, cy, dpr, scale;
+var t = 0;
+var mouseX = 0.5, mouseY = 0.5;
+
+function resize() {
+  dpr = devicePixelRatio;
+  W = canvas.width = window.innerWidth * dpr;
+  H = canvas.height = window.innerHeight * dpr;
+  cx = W / 2;
+  cy = H / 2;
+  scale = Math.min(W, H) * 0.0032;
+  initStars();
+  initRain();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Mouse parallax
+document.addEventListener('mousemove', function(e) {
+  mouseX = e.clientX / window.innerWidth;
+  mouseY = e.clientY / window.innerHeight;
+});
+
+// ── STARS ──
+var stars = [];
+function initStars() {
+  stars = [];
+  for (var i = 0; i < 120; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 0.3 + Math.random() * 1.8,
+      alpha: 0.1 + Math.random() * 0.6,
+      speed: 0.3 + Math.random() * 1.5,
+      offset: Math.random() * Math.PI * 2,
+      cyan: Math.random() < 0.12
+    });
+  }
+}
+
+// ── MATRIX RAIN ──
+var CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンMYTHOS01'.split('');
+var drops = [];
+function initRain() {
+  drops = [];
+  var colW = 20 * dpr;
+  var cols = Math.ceil(W / colW);
+  for (var i = 0; i < cols; i++) {
+    drops.push({
+      x: i * colW + colW / 2,
+      y: Math.random() * -H * 2,
+      speed: (0.3 + Math.random() * 0.8) * dpr,
+      len: 6 + Math.floor(Math.random() * 18),
+      chars: [],
+      lastSwap: 0
+    });
+    for (var j = 0; j < drops[i].len; j++) {
+      drops[i].chars.push(CHARS[Math.floor(Math.random() * CHARS.length)]);
+    }
+  }
+}
+
+// ── EMBLEM GEOMETRY ──
+// Outer cuboctahedron vertices (viewBox 0 0 70 60, centered at 35,30)
+var OUTER = [[35,2],[60,16],[60,44],[35,58],[10,44],[10,16]];
+var INNER = [[35,16],[47,23],[47,37],[35,44],[23,37],[23,23]];
+var HUB_TOP = [35,22];
+var HUB_BOT = [35,38];
+var CORE = [35,30];
+
+// All lattice lines (for background)
+var LATTICE = [
+  // outer edges
+  [OUTER[0],OUTER[1]],[OUTER[1],OUTER[2]],[OUTER[2],OUTER[3]],
+  [OUTER[3],OUTER[4]],[OUTER[4],OUTER[5]],[OUTER[5],OUTER[0]],
+  // upper hub
+  [OUTER[0],HUB_TOP],[OUTER[5],HUB_TOP],[OUTER[1],HUB_TOP],
+  // lower hub
+  [OUTER[3],HUB_BOT],[OUTER[4],HUB_BOT],[OUTER[2],HUB_BOT],
+  // spine
+  [HUB_TOP,HUB_BOT],
+  // inner hex
+  [INNER[0],INNER[1]],[INNER[1],INNER[2]],[INNER[2],INNER[3]],
+  [INNER[3],INNER[4]],[INNER[4],INNER[5]],[INNER[5],INNER[0]],
+  // inner diagonals
+  [INNER[0],INNER[3]],[INNER[1],INNER[4]],[INNER[2],INNER[5]],
+  // connecting lattice
+  [OUTER[0],INNER[0]],[OUTER[1],INNER[1]],[OUTER[2],INNER[2]],
+  [OUTER[3],INNER[3]],[OUTER[4],INNER[4]],[OUTER[5],INNER[5]]
+];
+
+// ── THE FIVE MS ──
+var MS = [
+  {
+    name: 'The Deep M',
+    lines: [
+      [OUTER[5], OUTER[4]],  // left leg
+      [OUTER[1], OUTER[2]],  // right leg
+      [OUTER[5], HUB_BOT],   // left diagonal
+      [HUB_BOT, OUTER[1]]    // right diagonal
+    ],
+    vertices: [OUTER[5], OUTER[1], OUTER[4], OUTER[2], HUB_BOT],
+    color: '#ffe6a0'
+  },
+  {
+    name: 'The Shallow M',
+    lines: [
+      [OUTER[5], OUTER[4]],
+      [OUTER[1], OUTER[2]],
+      [OUTER[5], HUB_TOP],
+      [HUB_TOP, OUTER[1]]
+    ],
+    vertices: [OUTER[5], OUTER[1], OUTER[4], OUTER[2], HUB_TOP],
+    color: '#f5c970'
+  },
+  {
+    name: 'The Centered M',
+    lines: [
+      [OUTER[5], OUTER[4]],
+      [OUTER[1], OUTER[2]],
+      [OUTER[5], CORE],
+      [CORE, OUTER[1]]
+    ],
+    vertices: [OUTER[5], OUTER[1], OUTER[4], OUTER[2]],
+    color: '#ffffff'
+  },
+  {
+    name: 'The Abyssal M',
+    lines: [
+      [OUTER[5], OUTER[4]],
+      [OUTER[1], OUTER[2]],
+      [OUTER[5], INNER[3]],
+      [INNER[3], OUTER[1]]
+    ],
+    vertices: [OUTER[5], OUTER[1], OUTER[4], OUTER[2], INNER[3]],
+    color: '#4ec9d4'
+  },
+  {
+    name: 'The Nested M',
+    lines: [
+      [INNER[5], INNER[4]],
+      [INNER[1], INNER[2]],
+      [INNER[5], HUB_BOT],
+      [HUB_BOT, INNER[1]]
+    ],
+    vertices: [INNER[5], INNER[1], INNER[4], INNER[2], HUB_BOT],
+    color: '#e8b858'
+  }
+];
+
+// ── NINE LETTERS ──
+var LETTERS = ['M','W','V','Λ','A','X','Y','K','Z'];
+
+// ── PARTICLES ──
+var PARTICLE_COLORS = {
+  '#ffe6a0': '255,230,160',
+  '#f5c970': '245,201,112',
+  '#ffffff': '255,255,255',
+  '#4ec9d4': '78,201,212',
+  '#e8b858': '232,184,88'
+};
+var particles = [];
+function spawnParticle(x, y, color) {
+  var angle = Math.random() * Math.PI * 2;
+  var speed = 0.3 + Math.random() * 1.5;
+  particles.push({
+    x: x, y: y,
+    vx: Math.cos(angle) * speed * dpr,
+    vy: Math.sin(angle) * speed * dpr,
+    life: 1,
+    decay: 0.003 + Math.random() * 0.008,
+    r: (0.5 + Math.random() * 2) * dpr,
+    color: color
+  });
+}
+
+// ── ORBIT PARTICLES ──
+var orbiters = [];
+for (var i = 0; i < 60; i++) {
+  orbiters.push({
+    angle: Math.random() * Math.PI * 2,
+    radius: 32 + Math.random() * 8,
+    speed: (0.2 + Math.random() * 0.5) * (Math.random() < 0.5 ? 1 : -1),
+    size: 0.4 + Math.random() * 1.2,
+    alpha: 0.2 + Math.random() * 0.5,
+    cyan: Math.random() < 0.25
+  });
+}
+
+// ── TRANSFORM ──
+function tx(pt) {
+  var px = (pt[0] - 35) * scale + cx + (mouseX - 0.5) * 20 * dpr;
+  var py = (pt[1] - 30) * scale + cy + (mouseY - 0.5) * 14 * dpr;
+  return [px, py];
+}
+
+// ── M CYCLING STATE ──
+var currentM = 0;
+var mPhase = 0;    // 0→1 per M
+var M_DURATION = 3.5; // seconds per M
+var mAlpha = 0;
+var mTargetAlpha = 1;
+var lastMSwitch = 0;
+
+// ── DRAW ──
+function draw(now) {
+  requestAnimationFrame(draw);
+  var dt = 1/60;
+  t += dt;
+
+  var c = ctx;
+  c.clearRect(0, 0, W, H);
+
+  // ── Cosmic ground ──
+  var grad = c.createRadialGradient(cx, cy * 0.9, 0, cx, cy * 0.9, Math.max(W, H) * 0.7);
+  grad.addColorStop(0, '#1f1a2a');
+  grad.addColorStop(0.22, '#14121c');
+  grad.addColorStop(0.52, '#08070d');
+  grad.addColorStop(1, '#020204');
+  c.fillStyle = grad;
+  c.fillRect(0, 0, W, H);
+
+  // ── Stars ──
+  for (var i = 0; i < stars.length; i++) {
+    var s = stars[i];
+    var twinkle = Math.sin(t * s.speed + s.offset);
+    var alpha = s.alpha * (0.5 + twinkle * 0.5);
+    c.beginPath();
+    c.arc(s.x, s.y, s.r * dpr, 0, Math.PI * 2);
+    c.fillStyle = s.cyan
+      ? 'rgba(78,201,212,' + alpha + ')'
+      : 'rgba(245,238,221,' + alpha + ')';
+    c.fill();
+  }
+
+  // ── Rain (very subtle, behind everything) ──
+  var fontSize = 13 * dpr;
+  c.font = fontSize + 'px "JetBrains Mono", monospace';
+  c.textAlign = 'center';
+  for (var i = 0; i < drops.length; i++) {
+    var d = drops[i];
+    d.y += d.speed;
+    if (now - d.lastSwap > 120) {
+      d.chars[Math.floor(Math.random() * d.chars.length)] = CHARS[Math.floor(Math.random() * CHARS.length)];
+      d.lastSwap = now;
+    }
+    for (var j = 0; j < d.len; j++) {
+      var charY = d.y - j * fontSize;
+      if (charY < -fontSize || charY > H + fontSize) continue;
+      var age = j / d.len;
+      var a = j === 0 ? 0.12 : Math.max(0, (1 - age) * 0.06);
+      c.fillStyle = 'rgba(0,255,65,' + a + ')';
+      c.fillText(d.chars[j], d.x, charY);
+    }
+    if (d.y - d.len * fontSize > H) {
+      d.y = Math.random() * -400 * dpr;
+      d.speed = (0.3 + Math.random() * 0.8) * dpr;
+    }
+  }
+
+  // ── Outer glow / halo ──
+  var pulse = 0.5 + Math.sin(t * 0.8) * 0.15;
+  var haloR = 38 * scale;
+  var halo = c.createRadialGradient(cx, cy, 0, cx, cy, haloR);
+  halo.addColorStop(0, 'rgba(232,184,88,' + (0.06 * pulse) + ')');
+  halo.addColorStop(0.4, 'rgba(217,164,65,' + (0.02 * pulse) + ')');
+  halo.addColorStop(1, 'rgba(139,90,30,0)');
+  c.fillStyle = halo;
+  c.fillRect(0, 0, W, H);
+
+  // ── LATTICE (dim background) ──
+  c.strokeStyle = 'rgba(232,184,88,0.12)';
+  c.lineWidth = 0.8 * dpr;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  for (var i = 0; i < LATTICE.length; i++) {
+    var a = tx(LATTICE[i][0]);
+    var b = tx(LATTICE[i][1]);
+    c.beginPath();
+    c.moveTo(a[0], a[1]);
+    c.lineTo(b[0], b[1]);
+    c.stroke();
+  }
+
+  // Inner hex fill
+  c.beginPath();
+  for (var i = 0; i < INNER.length; i++) {
+    var p = tx(INNER[i]);
+    if (i === 0) c.moveTo(p[0], p[1]);
+    else c.lineTo(p[0], p[1]);
+  }
+  c.closePath();
+  c.fillStyle = 'rgba(232,184,88,0.03)';
+  c.fill();
+
+  // ── Outer hex (brighter) ──
+  c.strokeStyle = 'rgba(232,184,88,0.35)';
+  c.lineWidth = 1.4 * dpr;
+  c.beginPath();
+  for (var i = 0; i < OUTER.length; i++) {
+    var p = tx(OUTER[i]);
+    if (i === 0) c.moveTo(p[0], p[1]);
+    else c.lineTo(p[0], p[1]);
+  }
+  c.closePath();
+  c.stroke();
+
+  // Inner hex (medium)
+  c.strokeStyle = 'rgba(232,184,88,0.22)';
+  c.lineWidth = 0.9 * dpr;
+  c.beginPath();
+  for (var i = 0; i < INNER.length; i++) {
+    var p = tx(INNER[i]);
+    if (i === 0) c.moveTo(p[0], p[1]);
+    else c.lineTo(p[0], p[1]);
+  }
+  c.closePath();
+  c.stroke();
+
+  // ── M CYCLING ──
+  mPhase += dt / M_DURATION;
+  if (mPhase >= 1) {
+    mPhase = 0;
+    currentM = (currentM + 1) % MS.length;
+    lastMSwitch = t;
+    // Spawn particles along the new M
+    var m = MS[currentM];
+    for (var li = 0; li < m.lines.length; li++) {
+      var la = tx(m.lines[li][0]);
+      var lb = tx(m.lines[li][1]);
+      for (var pi = 0; pi < 8; pi++) {
+        var pct = Math.random();
+        spawnParticle(
+          la[0] + (lb[0] - la[0]) * pct,
+          la[1] + (lb[1] - la[1]) * pct,
+          m.color
+        );
+      }
+    }
+  }
+
+  // M alpha: fade in over 0.3s, hold, fade out over 0.3s
+  var fadeIn = 0.08;  // fraction of M_DURATION
+  var fadeOut = 0.08;
+  if (mPhase < fadeIn) mAlpha = mPhase / fadeIn;
+  else if (mPhase > 1 - fadeOut) mAlpha = (1 - mPhase) / fadeOut;
+  else mAlpha = 1;
+
+  // Draw the current M
+  var m = MS[currentM];
+  c.save();
+  c.shadowColor = m.color;
+  c.shadowBlur = 12 * dpr;
+  c.strokeStyle = m.color;
+  c.lineWidth = 2.2 * dpr;
+  c.globalAlpha = mAlpha * 0.9;
+  for (var i = 0; i < m.lines.length; i++) {
+    var a = tx(m.lines[i][0]);
+    var b = tx(m.lines[i][1]);
+    c.beginPath();
+    c.moveTo(a[0], a[1]);
+    c.lineTo(b[0], b[1]);
+    c.stroke();
+  }
+
+  // M vertices
+  c.shadowBlur = 8 * dpr;
+  for (var i = 0; i < m.vertices.length; i++) {
+    var p = tx(m.vertices[i]);
+    c.beginPath();
+    c.arc(p[0], p[1], 2.5 * dpr, 0, Math.PI * 2);
+    c.fillStyle = m.color;
+    c.fill();
+  }
+  c.restore();
+
+  // ── ORBIT PARTICLES ──
+  for (var i = 0; i < orbiters.length; i++) {
+    var o = orbiters[i];
+    o.angle += o.speed * dt;
+    var or = o.radius * scale;
+    var ox = cx + Math.cos(o.angle) * or + (mouseX - 0.5) * 20 * dpr;
+    var oy = cy + Math.sin(o.angle) * or * 0.65 + (mouseY - 0.5) * 14 * dpr;
+    var oa = o.alpha * (0.5 + Math.sin(t * 2 + o.angle) * 0.3);
+    c.beginPath();
+    c.arc(ox, oy, o.size * dpr, 0, Math.PI * 2);
+    c.fillStyle = o.cyan
+      ? 'rgba(78,201,212,' + oa + ')'
+      : 'rgba(232,184,88,' + oa + ')';
+    c.fill();
+  }
+
+  // ── FREE PARTICLES ──
+  for (var i = particles.length - 1; i >= 0; i--) {
+    var p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.995;
+    p.vy *= 0.995;
+    p.life -= p.decay;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    c.beginPath();
+    c.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+    var pc = PARTICLE_COLORS[p.color] || '232,184,88';
+    c.fillStyle = 'rgba(' + pc + ',' + (p.life * 0.7) + ')';
+    c.fill();
+  }
+
+  // ── CORE ──
+  var cp = tx(CORE);
+  var coreR = (3 + Math.sin(t * 1.2) * 0.8) * scale;
+
+  // Core bloom
+  var coreGlow = c.createRadialGradient(cp[0], cp[1], 0, cp[0], cp[1], coreR * 6);
+  coreGlow.addColorStop(0, 'rgba(255,242,200,' + (0.15 + pulse * 0.05) + ')');
+  coreGlow.addColorStop(0.3, 'rgba(232,184,88,' + (0.05 + pulse * 0.02) + ')');
+  coreGlow.addColorStop(1, 'rgba(232,184,88,0)');
+  c.fillStyle = coreGlow;
+  c.beginPath();
+  c.arc(cp[0], cp[1], coreR * 6, 0, Math.PI * 2);
+  c.fill();
+
+  // Core point
+  c.beginPath();
+  c.arc(cp[0], cp[1], coreR * 0.6, 0, Math.PI * 2);
+  c.fillStyle = '#ffffff';
+  c.fill();
+  c.beginPath();
+  c.arc(cp[0], cp[1], coreR, 0, Math.PI * 2);
+  c.fillStyle = 'rgba(255,230,160,0.6)';
+  c.fill();
+
+  // Orbit ring
+  c.beginPath();
+  c.arc(cp[0], cp[1], 5 * scale, 0, Math.PI * 2);
+  c.strokeStyle = 'rgba(255,230,160,0.2)';
+  c.lineWidth = 0.5 * dpr;
+  c.stroke();
+
+  // ── NINE LETTERS ORBITING ──
+  var letterR = 42 * scale;
+  c.font = (11 * scale) + 'px "JetBrains Mono", monospace';
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  for (var i = 0; i < LETTERS.length; i++) {
+    var la = (i / LETTERS.length) * Math.PI * 2 - Math.PI / 2 + t * 0.08;
+    var lx = cx + Math.cos(la) * letterR + (mouseX - 0.5) * 20 * dpr;
+    var ly = cy + Math.sin(la) * letterR * 0.65 + (mouseY - 0.5) * 14 * dpr;
+
+    // Highlight the letter that matches current M
+    var isM = (LETTERS[i] === 'M' && currentM < 5);
+    var letterAlpha = 0.18 + Math.sin(t * 0.5 + i) * 0.06;
+    if (isM) letterAlpha = 0.7 * mAlpha;
+
+    c.fillStyle = isM
+      ? 'rgba(255,230,160,' + letterAlpha + ')'
+      : 'rgba(232,184,88,' + letterAlpha + ')';
+    c.fillText(LETTERS[i], lx, ly);
+  }
+
+  // ── M NAME (fades with mAlpha) ──
+  c.globalAlpha = mAlpha * 0.65;
+  c.font = (9 * dpr) + 'px "JetBrains Mono", monospace';
+  c.fillStyle = m.color;
+  c.textAlign = 'center';
+  c.textBaseline = 'top';
+  var nameY = cy + 36 * scale;
+  c.fillText(m.name.toUpperCase(), cx + (mouseX - 0.5) * 20 * dpr, nameY + (mouseY - 0.5) * 14 * dpr);
+
+  // M index
+  c.font = (7.5 * dpr) + 'px "JetBrains Mono", monospace';
+  c.fillStyle = 'rgba(232,184,88,' + (mAlpha * 0.35) + ')';
+  c.fillText('M ' + String(currentM + 1).padStart(2, '0') + ' OF 05', cx + (mouseX - 0.5) * 20 * dpr, nameY + 16 * dpr + (mouseY - 0.5) * 14 * dpr);
+  c.globalAlpha = 1;
+
+  // ── Diffraction spikes (subtle) ──
+  var spikeLen = (15 + Math.sin(t * 0.6) * 5) * scale;
+  c.strokeStyle = 'rgba(255,230,176,' + (0.08 + pulse * 0.04) + ')';
+  c.lineWidth = 0.5 * dpr;
+  for (var a = 0; a < 4; a++) {
+    var ang = a * Math.PI / 2 + t * 0.03;
+    c.beginPath();
+    c.moveTo(cp[0] - Math.cos(ang) * spikeLen, cp[1] - Math.sin(ang) * spikeLen);
+    c.lineTo(cp[0] + Math.cos(ang) * spikeLen, cp[1] + Math.sin(ang) * spikeLen);
+    c.stroke();
+  }
+
+  // ── Grain overlay ──
+  c.globalAlpha = 0.015;
+  for (var i = 0; i < 3000; i++) {
+    var gx = Math.random() * W;
+    var gy = Math.random() * H;
+    c.fillStyle = Math.random() < 0.5 ? '#fff' : '#000';
+    c.fillRect(gx, gy, 1, 1);
+  }
+  c.globalAlpha = 1;
+}
+
+requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
