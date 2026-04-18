@@ -25,7 +25,18 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; background: var(--stage-void); overflow: hidden; font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--ink-bright); }
   .shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
-  iframe.content { flex: 1; border: none; width: 100%; background: var(--stage-void); }
+  .content-wrap { flex: 1; position: relative; overflow: hidden; min-height: 0; }
+  iframe.content { width: 100%; height: 100%; border: none; background: var(--stage-void); display: block; }
+  /* Fade the bottom of the iframe into nothing so player floats over content */
+  .content-wrap::after {
+    content: "";
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 120px;
+    background: linear-gradient(to bottom, transparent, #020204);
+    pointer-events: none;
+    z-index: 2;
+  }
 
   /* ── NAV ──────────────────────────────────────────── */
   .nav-strip {
@@ -278,7 +289,9 @@
   </div>
 
   <!-- CONTENT -->
-  <iframe class="content" id="content" src="landing.html"></iframe>
+  <div class="content-wrap">
+    <iframe class="content" id="content" src="landing.html"></iframe>
+  </div>
 
   <!-- PLAYER -->
   <div class="player">
