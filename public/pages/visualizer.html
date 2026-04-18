@@ -15,14 +15,25 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;background:transparent;overflow:hidden;font-family:'JetBrains Mono',monospace;color:var(--ink-bright);-webkit-font-smoothing:antialiased}
 
-  /* The shell canvas provides the visualization behind this transparent page */
-
-  .ui{position:fixed;inset:0;z-index:10;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:28px 36px}
+  .ui{
+    position:absolute;inset:0;
+    bottom:90px; /* clear the shell player */
+    z-index:10;pointer-events:none;
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:28px 36px;
+  }
   .ui-top{display:flex;justify-content:space-between;align-items:flex-start}
   .ui-bottom{display:flex;justify-content:space-between;align-items:flex-end}
-  .title-block h1{font-family:'Archivo',sans-serif;font-weight:800;font-size:clamp(36px,6vw,72px);line-height:1.0;letter-spacing:-.02em;color:var(--signal-synth);pointer-events:auto}
+  .title-block h1{
+    font-family:'Archivo',sans-serif;font-weight:800;
+    font-size:clamp(28px,6vw,72px);line-height:1.0;letter-spacing:-.02em;
+    color:var(--signal-synth);pointer-events:auto;
+  }
   .title-block h1 .machine{color:var(--signal-machine)}
-  .title-block h1 .amp{font-family:'Fraunces',serif;font-variation-settings:"opsz" 144;font-weight:300;font-style:italic;font-size:1.3em;color:var(--signal-synth)}
+  .title-block h1 .amp{
+    font-family:'Fraunces',serif;font-variation-settings:"opsz" 144;
+    font-weight:300;font-style:italic;font-size:1.3em;color:var(--signal-synth);
+  }
   .credit{text-align:right}
   .credit .primary{font-size:16px;font-weight:600;letter-spacing:.18em;color:var(--signal-synth)}
   .credit .secondary{font-size:10px;letter-spacing:.12em;color:var(--ink-dim);margin-top:4px}
@@ -31,7 +42,25 @@
   .track-info .track-name{font-family:'Archivo',sans-serif;font-size:22px;font-weight:700;color:var(--ink-bright);letter-spacing:.01em}
   .track-info .album-name{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:var(--ink-dim);margin-top:4px}
   .emblem{opacity:.6}
-  @media(max-width:600px){.ui{padding:16px 20px}.title-block h1{font-size:32px}.track-info .track-name{font-size:16px}}
+
+  @media(max-width:880px){
+    .ui{padding:20px 24px;bottom:96px}
+    .title-block h1{font-size:clamp(24px,5vw,48px)}
+    .track-info .track-name{font-size:18px}
+    .credit .primary{font-size:13px;letter-spacing:.14em}
+    .credit .secondary{font-size:9px}
+  }
+  @media(max-width:480px){
+    .ui{padding:14px 16px;bottom:78px}
+    .ui-bottom{flex-direction:column-reverse;align-items:flex-start;gap:16px}
+    .title-block h1{font-size:24px}
+    .track-info .now-playing{font-size:8px;margin-bottom:4px}
+    .track-info .track-name{font-size:14px}
+    .track-info .album-name{font-size:12px}
+    .credit .primary{font-size:11px}
+    .credit .secondary{font-size:8px}
+    .emblem{width:24px;height:20px}
+  }
 </style>
 </head>
 <body>
@@ -53,8 +82,8 @@
   <div class="ui-bottom">
     <div class="track-info">
       <div class="now-playing">&#10022; now playing</div>
-      <div class="track-name" id="viz-track">—</div>
-      <div class="album-name" id="viz-album">—</div>
+      <div class="track-name" id="viz-track">&mdash;</div>
+      <div class="album-name" id="viz-album">&mdash;</div>
     </div>
     <div class="title-block">
       <h1><span class="machine">ROBOTS</span><br><span class="amp">&amp;</span> REMIXES</h1>
@@ -63,16 +92,14 @@
 </div>
 
 <script>
-  // Listen for audio state from shell
   window.addEventListener('message', function(e) {
     var d = e.data;
     if (!d || d.type !== 'mythos:audio') return;
     if (d.track) {
-      document.getElementById('viz-track').textContent = d.track.title || '—';
-      document.getElementById('viz-album').textContent = d.track.album || '—';
+      document.getElementById('viz-track').textContent = d.track.title || '\u2014';
+      document.getElementById('viz-album').textContent = d.track.album || '\u2014';
     }
   });
-  // Subscribe to updates from shell
   if (window.parent && window.parent !== window) {
     window.parent.postMessage({ type: 'mythos:audio:subscribe' }, '*');
   }
