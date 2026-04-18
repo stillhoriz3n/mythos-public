@@ -418,18 +418,9 @@ function toggleMute() {
 audio.volume = 0.5;
 document.getElementById('vol-fill').style.width = '50%';
 
-// Autoplay Fender Bender on load
-window.addEventListener('load', () => {
-  const fenderIdx = TRACKS.findIndex(t => t.title === 'Fender Bender');
-  if (fenderIdx >= 0) {
-    loadTrack(fenderIdx);
-    audio.play().then(() => { playing = true; updatePlayIcon(); }).catch(() => {
-      // Browser blocked autoplay — wait for first interaction
-      const unlock = () => { audio.play().then(() => { playing = true; updatePlayIcon(); }); document.removeEventListener('click', unlock); };
-      document.addEventListener('click', unlock);
-    });
-  }
-});
+// Load Fender Bender on arrival — ready to play on first press
+const fenderIdx = TRACKS.findIndex(t => t.title === 'Fender Bender');
+if (fenderIdx >= 0) loadTrack(fenderIdx);
 
 function nav(page) {
   document.getElementById('content').src = page;
