@@ -25,11 +25,10 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
 .app{
   display:grid;
   grid-template-columns:1fr;
-  grid-template-rows:var(--shell-nav-h) 1fr auto;
+  grid-template-rows:var(--shell-nav-h) 1fr;
   grid-template-areas:
     "nav"
-    "main"
-    "player";
+    "main";
   height:100vh;
   width:100vw;
   position:relative;
@@ -230,9 +229,11 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
 }
 @keyframes pulseFast{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 
-/* ── PLAYER (floating, no background) ──────── */
+/* ── PLAYER (floating overlay) ─────────────── */
 .player{
-  grid-area:player;
+  position:fixed;
+  bottom:0;left:0;right:0;
+  height:var(--shell-player-h);
   background:none;
   border-top:none;
   display:grid;
@@ -241,7 +242,6 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
   padding:0 20px;
   gap:20px;
   z-index:100;
-  position:relative;
   pointer-events:none;
 }
 .player > *{pointer-events:auto}

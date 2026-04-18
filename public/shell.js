@@ -595,7 +595,7 @@
     // ── Signal waveforms (fade with expand) ──
     if (expand > 0.05) {
       var waveY = h * 0.48;
-      var wsx = w * 0.02, wex2 = w * 0.98;
+      var wsx = 0, wex2 = w;
       var ww = wex2 - wsx;
       var pts = 300;
       var step = Math.floor(dataArray.length / pts);
@@ -644,7 +644,7 @@
     if (presence > 0.1 && expand > 0.2) {
       c.globalAlpha = presence * 0.15 * expand;
       for (var i = 0; i < 40; i++) {
-        var px = w * 0.02 + Math.random() * (w * 0.96);
+        var px = Math.random() * w;
         var spread = (20 + presence * 40) * dpr;
         var py = h * 0.48 + (Math.random() - 0.5) * spread;
         var pr = (0.3 + Math.random() * 0.8) * dpr;
