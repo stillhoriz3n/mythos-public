@@ -85,19 +85,25 @@
       <div class="track-name" id="viz-track">&mdash;</div>
       <div class="album-name" id="viz-album">&mdash;</div>
     </div>
-    <div class="title-block">
-      <h1><span class="machine">ROBOTS</span><br><span class="amp">&amp;</span> REMIXES</h1>
+    <div class="title-block" id="viz-title-block">
+      <h1 id="viz-title"><span class="machine">ROBOTS</span><br><span class="amp">&amp;</span> REMIXES</h1>
     </div>
   </div>
 </div>
 
 <script>
+  var ALBUM_TITLES = {
+    'sh': '<span class="machine">still</span><br>HORIZ<span class="amp">3</span>N',
+    'rr': '<span class="machine">ROBOTS</span><br><span class="amp">&amp;</span> REMIXES'
+  };
   window.addEventListener('message', function(e) {
     var d = e.data;
     if (!d || d.type !== 'mythos:audio') return;
     if (d.track) {
       document.getElementById('viz-track').textContent = d.track.title || '\u2014';
       document.getElementById('viz-album').textContent = d.track.album || '\u2014';
+      var titleHtml = ALBUM_TITLES[d.track.cover];
+      if (titleHtml) document.getElementById('viz-title').innerHTML = titleHtml;
     }
   });
   if (window.parent && window.parent !== window) {
