@@ -43,10 +43,14 @@
     border-radius: 3px;
     background: #15251F;
     border: 1px solid #1C2E28;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
-    color: #7BE0A6;
     flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .player-art img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
   }
 
   .player-info { min-width: 0; }
@@ -231,7 +235,7 @@
   <!-- PLAYER BAR -->
   <div class="player">
     <div class="player-track">
-      <div class="player-art" id="art">&#9834;</div>
+      <div class="player-art" id="art"><img id="art-img" src="music/cover-sh.jpg" alt="album art"></div>
       <div class="player-info">
         <div class="player-title" id="track-title">select a track</div>
         <div class="player-album" id="track-album">HORIZ3N</div>
@@ -304,7 +308,7 @@ function loadTrack(i) {
   audio.src = t.file;
   document.getElementById('track-title').textContent = t.title;
   document.getElementById('track-album').textContent = t.album;
-  document.getElementById('art').textContent = t.album === 'stillHORIZ3N' ? 'SH' : 'RR';
+  document.getElementById('art-img').src = t.album === 'stillHORIZ3N' ? 'music/cover-sh.jpg' : 'music/cover-rr.png';
 }
 
 function togglePlay() {
