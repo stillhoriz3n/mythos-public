@@ -68,36 +68,34 @@
   .player {
     min-height: 96px;
     height: 96px;
-    background: transparent;
+    background: none;
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 0;
     flex-shrink: 0;
-    z-index: 100;
     position: relative;
+    isolation: isolate;
   }
 
   /* Gradient vignette — invisible center, materializes at edges + bottom */
-  .player::before {
-    content: "";
+  .player-bg {
     position: absolute;
-    inset: -60px 0 0;
+    inset: -80px 0 0 0;
     background:
-      linear-gradient(to top, rgba(2,2,4,.95) 0%, rgba(2,2,4,.7) 30%, rgba(2,2,4,.15) 60%, transparent 100%),
-      linear-gradient(to right, rgba(2,2,4,.6) 0%, transparent 15%, transparent 85%, rgba(2,2,4,.6) 100%);
+      linear-gradient(to top, rgba(2,2,4,.92) 0%, rgba(2,2,4,.65) 35%, rgba(2,2,4,.1) 65%, transparent 100%),
+      linear-gradient(to right, rgba(2,2,4,.5) 0%, transparent 18%, transparent 82%, rgba(2,2,4,.5) 100%);
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
   }
 
   /* Warm ambient glow near album art */
-  .player::after {
-    content: "";
+  .player-glow {
     position: absolute;
-    inset: -40px 0 0;
-    background: radial-gradient(ellipse at 48px 70%, rgba(232,184,88,.06) 0%, transparent 40%);
+    inset: -60px 0 0 0;
+    background: radial-gradient(ellipse at 48px 75%, rgba(232,184,88,.07) 0%, transparent 35%);
     pointer-events: none;
-    z-index: -1;
+    z-index: 0;
   }
 
   /* Album art — prominent */
@@ -304,6 +302,8 @@
 
   <!-- PLAYER -->
   <div class="player">
+    <div class="player-bg"></div>
+    <div class="player-glow"></div>
     <div class="player-art" id="art">
       <img id="art-img" src="music/cover-sh.jpg" alt="album art">
     </div>
