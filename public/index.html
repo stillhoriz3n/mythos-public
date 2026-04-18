@@ -24,7 +24,7 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; background: var(--stage-void); overflow: hidden; font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--ink-bright); }
-  .shell { display: flex; flex-direction: column; height: 100vh; }
+  .shell { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
   iframe.content { flex: 1; border: none; width: 100%; background: var(--stage-void); }
 
   /* ── NAV ──────────────────────────────────────────── */
@@ -66,9 +66,10 @@
 
   /* ── PLAYER BAR ────────────────────────────────────── */
   .player {
-    height: 88px;
+    min-height: 96px;
+    height: 96px;
     background: var(--panel);
-    border-top: 1px solid var(--rule);
+    border-top: 2px solid var(--rule);
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
@@ -89,8 +90,8 @@
 
   /* Album art — prominent */
   .player-art {
-    width: 88px;
-    height: 88px;
+    width: 96px;
+    height: 96px;
     flex-shrink: 0;
     overflow: hidden;
     position: relative;
