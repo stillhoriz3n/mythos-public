@@ -658,7 +658,6 @@
     // Update breadcrumb
     var meta = PAGE_META[page];
     document.getElementById('crumb-current').textContent = meta.title;
-    document.querySelector('.breadcrumb span:first-child').textContent = meta.group;
     document.title = 'MythOS \u00B7 ' + meta.title;
 
     // ── Page type transition ──
@@ -685,9 +684,11 @@
   function toggleSide(force) {
     var sb = document.getElementById('sidebar');
     var sc = document.getElementById('scrim');
+    var mb = document.querySelector('.menu-btn');
     var on = typeof force === 'boolean' ? force : !sb.classList.contains('on');
     sb.classList.toggle('on', on);
     sc.classList.toggle('on', on);
+    if (mb) mb.classList.toggle('on', on);
   }
 
   // ── CROSS-FRAME MESSAGING ────────────────────────────
