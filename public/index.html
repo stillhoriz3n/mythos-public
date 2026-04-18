@@ -87,8 +87,20 @@
     gap: 20px;
     z-index: 200;
     pointer-events: none;
+    isolation: isolate;
   }
-  .player > * { pointer-events: auto; }
+  .player > * { pointer-events: auto; position: relative; z-index: 1; }
+
+  /* Subtle dark scrim behind player for legibility on light pages */
+  .player::before {
+    content: "";
+    position: absolute;
+    inset: -40px -20px -10px -20px;
+    background: radial-gradient(ellipse at 80px bottom, rgba(2,2,4,.85) 0%, rgba(2,2,4,.6) 40%, transparent 75%);
+    pointer-events: none;
+    z-index: -1;
+    border-radius: 12px;
+  }
 
   .player-art {
     width: 120px; height: 120px;
@@ -445,10 +457,15 @@ async function nav(page) {
     const body = doc.body.innerHTML;
 
     const container = document.getElementById('content');
-    // Inject styles + body
     container.innerHTML = '';
     styles.forEach(s => container.appendChild(s.cloneNode(true)));
     container.innerHTML += body;
+
+    // Strip duplicate navs and footers from injected pages
+    container.querySelectorAll('nav, footer, .masthead-bar, .running-head').forEach(el => el.remove());
+
+    // Add bottom padding so content doesn't hide behind player
+    container.style.paddingBottom = '140px';
 
     // Execute any scripts in the fetched page (e.g., KaTeX)
     doc.querySelectorAll('script').forEach(s => {
