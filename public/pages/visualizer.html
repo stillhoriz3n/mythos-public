@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HORIZ3N — Signal Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800&family=Fraunces:ital,opsz,wght@1,9..144,300&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --signal-machine:#4ec9d4;--signal-synth:#e8b858;
+    --ink-bright:#e8e3d4;--ink-dim:#8a8574;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:transparent;overflow:hidden;font-family:'JetBrains Mono',monospace;color:var(--ink-bright);-webkit-font-smoothing:antialiased}
+
+  /* The shell canvas provides the visualization behind this transparent page */
+
+  .ui{position:fixed;inset:0;z-index:10;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:28px 36px}
+  .ui-top{display:flex;justify-content:space-between;align-items:flex-start}
+  .ui-bottom{display:flex;justify-content:space-between;align-items:flex-end}
+  .title-block h1{font-family:'Archivo',sans-serif;font-weight:800;font-size:clamp(36px,6vw,72px);line-height:1.0;letter-spacing:-.02em;color:var(--signal-synth);pointer-events:auto}
+  .title-block h1 .machine{color:var(--signal-machine)}
+  .title-block h1 .amp{font-family:'Fraunces',serif;font-variation-settings:"opsz" 144;font-weight:300;font-style:italic;font-size:1.3em;color:var(--signal-synth)}
+  .credit{text-align:right}
+  .credit .primary{font-size:16px;font-weight:600;letter-spacing:.18em;color:var(--signal-synth)}
+  .credit .secondary{font-size:10px;letter-spacing:.12em;color:var(--ink-dim);margin-top:4px}
+  .track-info{pointer-events:auto}
+  .track-info .now-playing{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--signal-synth);margin-bottom:8px;opacity:.7}
+  .track-info .track-name{font-family:'Archivo',sans-serif;font-size:22px;font-weight:700;color:var(--ink-bright);letter-spacing:.01em}
+  .track-info .album-name{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:var(--ink-dim);margin-top:4px}
+  .emblem{opacity:.6}
+  @media(max-width:600px){.ui{padding:16px 20px}.title-block h1{font-size:32px}.track-info .track-name{font-size:16px}}
+</style>
+</head>
+<body>
+
+<div class="ui">
+  <div class="ui-top">
+    <svg class="emblem" viewBox="0 0 70 60" width="32" height="28" xmlns="http://www.w3.org/2000/svg">
+      <g fill="none" stroke="#e8b858" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.4" opacity=".9"/>
+        <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".9" opacity=".8" fill="#e8b858" fill-opacity=".1"/>
+        <circle cx="35" cy="30" r="1.8" fill="#ffe6a0" opacity=".95"/>
+      </g>
+    </svg>
+    <div class="credit">
+      <div class="primary">HORIZ3N</div>
+      <div class="secondary">Prime Radiant &middot; 2026</div>
+    </div>
+  </div>
+  <div class="ui-bottom">
+    <div class="track-info">
+      <div class="now-playing">&#10022; now playing</div>
+      <div class="track-name" id="viz-track">—</div>
+      <div class="album-name" id="viz-album">—</div>
+    </div>
+    <div class="title-block">
+      <h1><span class="machine">ROBOTS</span><br><span class="amp">&amp;</span> REMIXES</h1>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Listen for audio state from shell
+  window.addEventListener('message', function(e) {
+    var d = e.data;
+    if (!d || d.type !== 'mythos:audio') return;
+    if (d.track) {
+      document.getElementById('viz-track').textContent = d.track.title || '—';
+      document.getElementById('viz-album').textContent = d.track.album || '—';
+    }
+  });
+  // Subscribe to updates from shell
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'mythos:audio:subscribe' }, '*');
+  }
+</script>
+</body>
+</html>
