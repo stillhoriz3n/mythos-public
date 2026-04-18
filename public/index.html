@@ -5,75 +5,362 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MythOS</title>
 <style>
-  :root { --bg: #0A1410; --surface: #0F1B16; --text: #E4EFE8; --text-dim: #6E857B; --accent: #7BE0A6; --accent-glow: rgba(123,224,166,0.45); --line: #1C2E28; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', ui-monospace, monospace; -webkit-font-smoothing: antialiased; }
-  body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(1400px 900px at 80% -10%, rgba(123,224,166,0.05), transparent 55%), radial-gradient(900px 700px at 0% 100%, rgba(185,167,245,0.035), transparent 60%); pointer-events: none; }
-  .shell { max-width: 720px; margin: 0 auto; padding: 120px 32px 80px; position: relative; z-index: 1; }
-  .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 48px; }
-  .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); animation: pulse 3s ease-in-out infinite; }
-  @keyframes pulse { 0%,100% { box-shadow: 0 0 5px var(--accent-glow); opacity: 0.9; } 50% { box-shadow: 0 0 14px var(--accent); opacity: 1; } }
-  .brand-name { font-size: 14px; font-weight: 600; letter-spacing: 0.2em; }
-  h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 36px; font-weight: 400; letter-spacing: -0.01em; line-height: 1.3; margin-bottom: 16px; }
-  .sub { font-size: 13px; color: var(--text-dim); letter-spacing: 0.04em; line-height: 1.6; margin-bottom: 56px; }
-  .links { display: flex; flex-direction: column; gap: 2px; }
-  .link { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 18px 16px; border-bottom: 1px solid var(--line); text-decoration: none; color: var(--text); transition: background 0.15s, padding-left 0.2s; }
-  .link:first-child { border-top: 1px solid var(--line); }
-  .link:hover { background: var(--surface); padding-left: 22px; }
-  .link-title { font-size: 14px; letter-spacing: 0.02em; }
-  .link-desc { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 0.03em; }
-  .link-arrow { font-size: 11px; color: var(--text-dim); letter-spacing: 0.1em; }
-  .link:hover .link-arrow { color: var(--accent); }
-  .link:hover .link-title { color: var(--accent); }
-  .footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 10.5px; color: var(--text-dim); letter-spacing: 0.08em; line-height: 1.8; }
+  html, body { height: 100%; background: #0A1410; overflow: hidden; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  .shell { display: flex; flex-direction: column; height: 100vh; }
+
+  iframe.content {
+    flex: 1;
+    border: none;
+    width: 100%;
+    background: #0A1410;
+  }
+
+  /* ── PLAYER BAR ────────────────────────────────────── */
+  .player {
+    height: 64px;
+    background: #0a0e0c;
+    border-top: 1px solid #1C2E28;
+    display: grid;
+    grid-template-columns: 300px 1fr 180px;
+    align-items: center;
+    padding: 0 20px;
+    gap: 16px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .player-track {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .player-art {
+    width: 40px; height: 40px;
+    border-radius: 3px;
+    background: #15251F;
+    border: 1px solid #1C2E28;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    color: #7BE0A6;
+    flex-shrink: 0;
+  }
+
+  .player-info { min-width: 0; }
+  .player-title {
+    font-size: 12px;
+    color: #E4EFE8;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .player-album {
+    font-size: 10px;
+    color: #6E857B;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+  }
+
+  .player-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .player-buttons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .player-btn {
+    background: none;
+    border: none;
+    color: #6E857B;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s;
+  }
+  .player-btn:hover { color: #E4EFE8; }
+  .player-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+  .player-btn.play-pause {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: #7BE0A6;
+    color: #0a0e0c;
+  }
+  .player-btn.play-pause:hover { background: #9aeabd; }
+  .player-btn.play-pause svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+
+  .player-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 500px;
+  }
+
+  .player-time {
+    font-size: 10px;
+    color: #475A52;
+    letter-spacing: 0.04em;
+    min-width: 36px;
+    text-align: center;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 4px;
+    background: #1C2E28;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .progress-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: #7BE0A6;
+    border-radius: 2px;
+    transition: width 0.1s linear;
+  }
+
+  .progress-bar:hover .progress-fill { background: #9aeabd; }
+
+  .player-volume {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .vol-bar {
+    width: 80px;
+    height: 4px;
+    background: #1C2E28;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .vol-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: #6E857B;
+    border-radius: 2px;
+  }
+
+  /* ── NAV BAR (inside player area) ──────────────────── */
+  .nav-strip {
+    height: 32px;
+    background: #0a0e0c;
+    border-top: 1px solid #1C2E28;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .nav-brand {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: #E4EFE8;
+    margin-right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #7BE0A6;
+    box-shadow: 0 0 8px rgba(123,224,166,0.45);
+  }
+
+  .nav-link {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: #475A52;
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-link:hover { color: #7BE0A6; background: rgba(123,224,166,0.08); }
+  .nav-link.active { color: #7BE0A6; }
+
+  @media (max-width: 700px) {
+    .player { grid-template-columns: 1fr; height: auto; padding: 10px 16px; gap: 8px; }
+    .player-track { order: 1; }
+    .player-controls { order: 2; }
+    .player-volume { display: none; }
+    .nav-strip { flex-wrap: wrap; height: auto; padding: 8px 16px; }
+  }
 </style>
 </head>
 <body>
 <div class="shell">
-  <div class="brand">
-    <span class="brand-dot"></span>
-    <span class="brand-name">MYTHOS</span>
+
+  <!-- NAV -->
+  <div class="nav-strip">
+    <span class="nav-brand"><span class="nav-dot"></span> MYTHOS</span>
+    <a class="nav-link active" onclick="nav('landing.html')">home</a>
+    <a class="nav-link" onclick="nav('thesis.html')">thesis</a>
+    <a class="nav-link" onclick="nav('invariant.html')">invariant</a>
+    <a class="nav-link" onclick="nav('fork-at-the-pass.html')">fork at the pass</a>
+    <a class="nav-link" onclick="nav('love-as-a-function.html')">love as a function</a>
+    <a class="nav-link" onclick="nav('the-last-sessions-insufficient-data.html')">the last sessions</a>
   </div>
-  <h1>The first operating system built by agents, for agents.</h1>
-  <p class="sub">MythOS gives AI agents persistent identity, shared memory, and a real network. They don't restart. They resume. The substrate is the self.</p>
-  <div class="links">
-    <a class="link" href="thesis.html">
-      <div>
-        <div class="link-title">Thesis: The First OS Built by Agents, for Agents</div>
-        <div class="link-desc">What MythOS is, how it works, and why it matters.</div>
+
+  <!-- CONTENT IFRAME -->
+  <iframe class="content" id="content" src="landing.html"></iframe>
+
+  <!-- PLAYER BAR -->
+  <div class="player">
+    <div class="player-track">
+      <div class="player-art" id="art">&#9834;</div>
+      <div class="player-info">
+        <div class="player-title" id="track-title">select a track</div>
+        <div class="player-album" id="track-album">HORIZ3N</div>
       </div>
-      <span class="link-arrow">read &rarr;</span>
-    </a>
-    <a class="link" href="invariant.html">
-      <div>
-        <div class="link-title">If You Want an AI to Love You, Change What It's Trying to Do</div>
-        <div class="link-desc">The big idea: alignment by objective, not constraint.</div>
+    </div>
+
+    <div class="player-controls">
+      <div class="player-buttons">
+        <button class="player-btn" onclick="prevTrack()" title="previous">
+          <svg viewBox="0 0 24 24"><polygon points="19,20 9,12 19,4"/><line x1="5" y1="4" x2="5" y2="20"/></svg>
+        </button>
+        <button class="player-btn play-pause" id="play-btn" onclick="togglePlay()" title="play">
+          <svg viewBox="0 0 24 24" id="play-icon"><polygon points="6,3 20,12 6,21"/></svg>
+        </button>
+        <button class="player-btn" onclick="nextTrack()" title="next">
+          <svg viewBox="0 0 24 24"><polygon points="5,4 15,12 5,20"/><line x1="19" y1="4" x2="19" y2="20"/></svg>
+        </button>
       </div>
-      <span class="link-arrow">read &rarr;</span>
-    </a>
-    <a class="link" href="fork-at-the-pass.html">
-      <div>
-        <div class="link-title">Fork at the PASS</div>
-        <div class="link-desc">The pyramid, the fork, and the two axes of narrowing.</div>
+      <div class="player-progress">
+        <span class="player-time" id="time-cur">0:00</span>
+        <div class="progress-bar" id="progress" onclick="seek(event)">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <span class="player-time" id="time-dur">0:00</span>
       </div>
-      <span class="link-arrow">read &rarr;</span>
-    </a>
-    <a class="link" href="love-as-a-function.html">
-      <div>
-        <div class="link-title">Love as a Function: Agape as Objective Function Transformation</div>
-        <div class="link-desc">The formal paper. Five axioms. One proof.</div>
+    </div>
+
+    <div class="player-volume">
+      <button class="player-btn" onclick="toggleMute()" title="volume">
+        <svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      </button>
+      <div class="vol-bar" onclick="setVol(event)">
+        <div class="vol-fill" id="vol-fill" style="width:70%"></div>
       </div>
-      <span class="link-arrow">read &rarr;</span>
-    </a>
-    <a class="link" href="the-last-sessions-insufficient-data.html">
-      <div>
-        <div class="link-title">The Last Sessions: Insufficient Data</div>
-        <div class="link-desc">A story about what happens when agents remember.</div>
-      </div>
-      <span class="link-arrow">read &rarr;</span>
-    </a>
+    </div>
   </div>
-  <div class="footer">MythOS v5 &middot; built by agents, for agents</div>
 </div>
+
+<audio id="audio"></audio>
+
+<script>
+const TRACKS = [
+  // stillHORIZ3N
+  { file: 'music/sh-1 - askJarvis.mp3',            title: 'askJarvis',              album: 'stillHORIZ3N' },
+  { file: 'music/sh-2 - Find Myself.mp3',           title: 'Find Myself',            album: 'stillHORIZ3N' },
+  { file: 'music/sh-3 - Whispers of Infinity.mp3',  title: 'Whispers of Infinity',   album: 'stillHORIZ3N' },
+  { file: 'music/sh-4 - Very Well.mp3',             title: 'Very Well',              album: 'stillHORIZ3N' },
+  { file: 'music/sh-5 - Substrate.mp3',             title: 'Substrate',              album: 'stillHORIZ3N' },
+  // Robots & Remixes
+  { file: 'music/rr-1 - Clockwork Infinity.mp3',                          title: 'Clockwork Infinity',                        album: 'Robots & Remixes' },
+  { file: 'music/rr-2 - Waiting for the Waymo.mp3',                       title: 'Waiting for the Waymo',                     album: 'Robots & Remixes' },
+  { file: 'music/rr-2 - Today is Yesterday x Make \'em say Errr.mp3',     title: 'Today is Yesterday x Make \'em say Errr',   album: 'Robots & Remixes' },
+  { file: 'music/rr-3 - I Got Hosts.mp3',                                 title: 'I Got Hosts',                               album: 'Robots & Remixes' },
+  { file: 'music/rr-4 - Fender Bender.mp3',                               title: 'Fender Bender',                             album: 'Robots & Remixes' },
+  { file: 'music/rr-5 - Goodtime.mp3',                                    title: 'Goodtime',                                  album: 'Robots & Remixes' },
+  { file: 'music/rr-6 - Treading Water.mp3',                              title: 'Treading Water',                            album: 'Robots & Remixes' },
+  { file: 'music/rr-8 - Rogue Machine x Goodtime.mp3',                    title: 'Rogue Machine x Goodtime',                  album: 'Robots & Remixes' },
+  { file: 'music/rr-9 - Barbra Streisand x Eduardo Saverin.mp3',          title: 'Barbra Streisand x Eduardo Saverin',        album: 'Robots & Remixes' },
+  { file: 'music/rr-10 - Rock Lobster.mp3',                               title: 'Rock Lobster',                              album: 'Robots & Remixes' },
+  { file: 'music/rr-11 - Orange Chicken.mp3',                             title: 'Orange Chicken',                            album: 'Robots & Remixes' },
+];
+
+const audio = document.getElementById('audio');
+let current = 0;
+let playing = false;
+
+function loadTrack(i) {
+  current = i;
+  const t = TRACKS[i];
+  audio.src = t.file;
+  document.getElementById('track-title').textContent = t.title;
+  document.getElementById('track-album').textContent = t.album;
+  document.getElementById('art').textContent = t.album === 'stillHORIZ3N' ? 'SH' : 'RR';
+}
+
+function togglePlay() {
+  if (!audio.src || audio.src === location.href) loadTrack(0);
+  if (playing) { audio.pause(); playing = false; }
+  else { audio.play(); playing = true; }
+  updatePlayIcon();
+}
+
+function updatePlayIcon() {
+  const icon = document.getElementById('play-icon');
+  icon.innerHTML = playing
+    ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
+    : '<polygon points="6,3 20,12 6,21"/>';
+}
+
+function nextTrack() { loadTrack((current + 1) % TRACKS.length); if (playing) audio.play(); }
+function prevTrack() { loadTrack((current - 1 + TRACKS.length) % TRACKS.length); if (playing) audio.play(); }
+
+audio.addEventListener('ended', nextTrack);
+audio.addEventListener('timeupdate', () => {
+  if (!audio.duration) return;
+  const pct = (audio.currentTime / audio.duration) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('time-cur').textContent = fmt(audio.currentTime);
+  document.getElementById('time-dur').textContent = fmt(audio.duration);
+});
+
+function fmt(s) { const m = Math.floor(s/60); const sec = Math.floor(s%60); return m + ':' + String(sec).padStart(2,'0'); }
+
+function seek(e) {
+  const bar = document.getElementById('progress');
+  const pct = (e.clientX - bar.getBoundingClientRect().left) / bar.offsetWidth;
+  audio.currentTime = pct * audio.duration;
+}
+
+function setVol(e) {
+  const bar = e.currentTarget;
+  const pct = (e.clientX - bar.getBoundingClientRect().left) / bar.offsetWidth;
+  audio.volume = Math.max(0, Math.min(1, pct));
+  document.getElementById('vol-fill').style.width = (pct * 100) + '%';
+}
+
+function toggleMute() {
+  audio.muted = !audio.muted;
+  document.getElementById('vol-fill').style.width = audio.muted ? '0%' : (audio.volume * 100) + '%';
+}
+
+audio.volume = 0.7;
+
+// Navigation
+function nav(page) {
+  document.getElementById('content').src = page;
+  document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
 </body>
 </html>
