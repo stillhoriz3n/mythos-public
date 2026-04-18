@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MythOS</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 70 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23e8b858' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='35,2 60,16 60,44 35,58 10,44 10,16' stroke-width='2.2'/%3E%3Cpolygon points='35,16 47,23 47,37 35,44 23,37 23,23' stroke-width='1.6' opacity='.92' fill='%23e8b858' fill-opacity='.18'/%3E%3Ccircle cx='35' cy='30' r='3' fill='%23ffe6a0' stroke='none'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -55,7 +56,7 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
   min-width:220px;
 }
 .brand:hover .brand-mark{opacity:1}
-.brand-mark{width:22px;height:20px;opacity:.9;transition:opacity .15s}
+.brand-mark{width:22px;height:20px;opacity:.9;transition:opacity .15s;color:var(--signal-synth)}
 .brand-word{
   font-family:'Archivo',sans-serif;font-weight:800;
   font-size:13px;letter-spacing:.22em;color:var(--ink-bright);
@@ -548,7 +549,7 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
 }
 
 /* Matrix mode transition */
-.topnav,.sidebar,.player,.player-art,.player-meta *,.nav-link,.queue-panel,.queue-item,.album-card,.brand-word,.brand-sub,.breadcrumb,.topnav-right,.waitlist-cta,.bar .fill,.bar .thumb,.pb.pp,.pb.shuffle.on,.pb.loop.on,.queue-btn.on{
+.topnav,.sidebar,.player,.player-art,.player-meta *,.nav-link,.queue-panel,.queue-item,.album-card,.brand-word,.brand-sub,.brand-mark,.breadcrumb,.topnav-right,.waitlist-cta,.bar .fill,.bar .thumb,.pb.pp,.pb.shuffle.on,.pb.loop.on,.queue-btn.on{
   transition:color .8s ease, background .8s ease, background-color .8s ease, border-color .8s ease, box-shadow .8s ease;
 }
 ::selection{background:var(--signal-synth);color:var(--stage-void)}
@@ -569,16 +570,27 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
     <a class="brand" onclick="nav('landing.html');return false" href="landing.html">
       <span class="brand-mark">
         <svg viewBox="0 0 70 60" xmlns="http://www.w3.org/2000/svg">
-          <g fill="none" stroke="#e8b858" stroke-linecap="round" stroke-linejoin="round">
+          <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.4" opacity=".95"/>
-            <line x1="35" y1="2" x2="35" y2="22" stroke-width=".9" opacity=".7"/>
-            <line x1="10" y1="16" x2="35" y2="22" stroke-width=".9" opacity=".7"/>
-            <line x1="60" y1="16" x2="35" y2="22" stroke-width=".9" opacity=".7"/>
-            <line x1="35" y1="58" x2="35" y2="38" stroke-width=".9" opacity=".6"/>
-            <line x1="10" y1="44" x2="35" y2="38" stroke-width=".9" opacity=".6"/>
-            <line x1="60" y1="44" x2="35" y2="38" stroke-width=".9" opacity=".6"/>
-            <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".9" opacity=".85" fill="#e8b858" fill-opacity=".1"/>
-            <circle cx="35" cy="30" r="1.8" fill="#ffe6a0"/>
+            <line x1="35" y1="2" x2="35" y2="22" stroke-width=".9" opacity=".75"/>
+            <line x1="10" y1="16" x2="35" y2="22" stroke-width=".9" opacity=".75"/>
+            <line x1="60" y1="16" x2="35" y2="22" stroke-width=".9" opacity=".75"/>
+            <line x1="35" y1="58" x2="35" y2="38" stroke-width=".9" opacity=".65"/>
+            <line x1="10" y1="44" x2="35" y2="38" stroke-width=".9" opacity=".65"/>
+            <line x1="60" y1="44" x2="35" y2="38" stroke-width=".9" opacity=".65"/>
+            <line x1="35" y1="22" x2="35" y2="38" stroke-width=".7" opacity=".5"/>
+            <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".9" opacity=".85" fill="currentColor" fill-opacity=".1"/>
+            <line x1="35" y1="16" x2="35" y2="44" stroke-width=".55" opacity=".55"/>
+            <line x1="23" y1="23" x2="47" y2="37" stroke-width=".55" opacity=".45"/>
+            <line x1="47" y1="23" x2="23" y2="37" stroke-width=".55" opacity=".45"/>
+            <line x1="35" y1="2" x2="35" y2="16" stroke-width=".55" opacity=".55"/>
+            <line x1="60" y1="16" x2="47" y2="23" stroke-width=".55" opacity=".55"/>
+            <line x1="60" y1="44" x2="47" y2="37" stroke-width=".55" opacity=".55"/>
+            <line x1="35" y1="58" x2="35" y2="44" stroke-width=".55" opacity=".55"/>
+            <line x1="10" y1="44" x2="23" y2="37" stroke-width=".55" opacity=".55"/>
+            <line x1="10" y1="16" x2="23" y2="23" stroke-width=".55" opacity=".55"/>
+            <circle cx="35" cy="30" r="1.8" fill="#ffe6a0" opacity=".98" stroke="none"/>
+            <circle cx="35" cy="30" r="4.5" fill="none" stroke="#ffe6a0" stroke-width=".45" opacity=".5"/>
           </g>
         </svg>
       </span>
@@ -628,6 +640,19 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
       </a>
       <a class="nav-link" data-page="the-last-sessions-insufficient-data.html" onclick="nav('the-last-sessions-insufficient-data.html');return false">
         <span class="n">06</span><span class="txt">The Last Sessions</span><span class="kind">Fiction</span>
+      </a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-label">Artifacts</div>
+      <a class="nav-link" data-page="the-living-mark.html" onclick="nav('the-living-mark.html');return false">
+        <span class="n">07</span><span class="txt">The Living Mark</span><span class="kind">Interactive</span>
+      </a>
+      <a class="nav-link" data-page="every-m.html" onclick="nav('every-m.html');return false">
+        <span class="n">08</span><span class="txt">Every M</span><span class="kind">Interactive</span>
+      </a>
+      <a class="nav-link" data-page="rotation-scan.html" onclick="nav('rotation-scan.html');return false">
+        <span class="n">09</span><span class="txt">The Alphabet</span><span class="kind">Interactive</span>
       </a>
     </div>
 
