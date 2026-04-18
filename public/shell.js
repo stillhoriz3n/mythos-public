@@ -859,7 +859,7 @@
       matrixDrops.push({
         x: i * colW,
         y: Math.random() * -vizCanvas.height,
-        speed: (2 + Math.random() * 6) * devicePixelRatio,
+        speed: (0.5 + Math.random() * 1.5) * devicePixelRatio,
         chars: [],
         len: 8 + Math.floor(Math.random() * 24),
         lastSwap: 0,
@@ -889,7 +889,7 @@
       var drop = matrixDrops[i];
 
       // Audio-reactive speed boost
-      drop.y += drop.speed * (1 + bass * 2);
+      drop.y += drop.speed * (1 + bass * 0.5);
 
       // Randomly swap characters for the flicker effect
       if (now - drop.lastSwap > 80) {
@@ -924,7 +924,7 @@
       // Reset when fully off screen
       if (drop.y - drop.len * fontSize > h) {
         drop.y = Math.random() * -300 * dpr;
-        drop.speed = (2 + Math.random() * 6) * dpr;
+        drop.speed = (0.5 + Math.random() * 1.5) * dpr;
         drop.len = 8 + Math.floor(Math.random() * 24);
         drop.chars = [];
         for (var j = 0; j < drop.len; j++) {
