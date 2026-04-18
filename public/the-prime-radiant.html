@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Prime Radiant — MythOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #020204;
+  --deep: #08070d;
+  --panel: #0c0b12;
+  --surface: #111019;
+  --rule: #242a33;
+  --rule-soft: #1b2028;
+  --gold: #e8b858;
+  --gold-bright: #f5c970;
+  --gold-dim: #8b6a2e;
+  --gold-faint: rgba(232,184,88,.06);
+  --cyan: #4ec9d4;
+  --ink-bright: #e8e3d4;
+  --ink-soft: #b5b0a3;
+  --ink-dim: #8a8574;
+  --ink-faint: #4a4740;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--void); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body { background: transparent; color: var(--ink-bright); min-height: 100vh; }
+
+/* ── RUNNING HEAD ──────────────────────────────── */
+.running-head {
+  border-bottom: 1px solid var(--rule);
+  padding: 18px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(8,7,13,.85);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.running-head .brand {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: .08em;
+  color: var(--gold);
+}
+.running-head .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* ── HERO ──────────────────────────────────────── */
+.hero {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 100px 32px 72px;
+  text-align: center;
+  position: relative;
+}
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .35em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: var(--gold);
+  opacity: .45;
+}
+.hero h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: "opsz" 144;
+  font-weight: 400;
+  font-size: clamp(2.8rem, 7vw, 5rem);
+  line-height: 1.02;
+  letter-spacing: -.025em;
+  color: var(--ink-bright);
+  margin-bottom: 32px;
+}
+.hero h1 em {
+  font-style: italic;
+  font-weight: 300;
+  color: var(--gold);
+}
+.hero .subtitle {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 36;
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── ORNAMENT ──────────────────────────────────── */
+.ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 48px 0;
+  color: var(--ink-faint);
+}
+.ornament .line { width: 60px; height: 1px; background: var(--rule); }
+.ornament .glyph {
+  font-family: 'Fraunces', serif;
+  font-size: 14px;
+  color: var(--gold-dim);
+  letter-spacing: .3em;
+}
+
+/* ── PROSE (intro paragraphs) ──────────────────── */
+.prose {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 0 32px 48px;
+}
+.prose p {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 24;
+  font-size: 17.5px;
+  line-height: 1.72;
+  color: var(--ink-soft);
+  margin-bottom: 1.1em;
+}
+.prose p strong { color: var(--ink-bright); font-weight: 600; }
+.prose p em { color: var(--ink-bright); }
+
+/* ── SECTION HEADERS ───────────────────────────── */
+.section-title {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 80px 32px 48px;
+  text-align: center;
+}
+.section-title h2 {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  line-height: 1.08;
+  letter-spacing: -.015em;
+  color: var(--ink-bright);
+  margin-bottom: 16px;
+}
+.section-title h2 em {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 72;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--gold);
+}
+.section-title .section-sub {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 24;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-dim);
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* ── PILLAR CARDS ──────────────────────────────── */
+.pillars {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 32px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pillar {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 36px 32px;
+  position: relative;
+  overflow: hidden;
+}
+.pillar::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--gold);
+  opacity: .7;
+}
+.pillar .numeral {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+.pillar h3 {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  letter-spacing: -.005em;
+  color: var(--ink-bright);
+  margin-bottom: 14px;
+}
+.pillar .body {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 24;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+.pillar .body strong { color: var(--ink-bright); font-weight: 600; }
+.pillar .body em { color: var(--ink-bright); }
+
+/* ── RADIANT SECTION (warmer tone) ─────────────── */
+.radiant-zone {
+  background: linear-gradient(180deg, transparent 0%, rgba(232,184,88,.02) 30%, rgba(232,184,88,.04) 100%);
+  border-top: 1px solid var(--rule);
+  padding-top: 20px;
+  margin-top: 40px;
+}
+.radiant-zone .pillar::before {
+  background: var(--cyan);
+}
+.radiant-zone .pillar .numeral {
+  color: var(--cyan);
+}
+
+/* ── EXAMPLES ROW ──────────────────────────────── */
+.examples {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 32px 60px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.example-card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 24px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.example-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--cyan);
+}
+.example-card .card-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 10px;
+}
+.example-card .card-body {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+/* ── PULLQUOTE ─────────────────────────────────── */
+.pullquote {
+  max-width: 660px;
+  margin: 48px auto;
+  padding: 36px 40px;
+  background: var(--gold-faint);
+  border-left: 4px solid var(--gold);
+  position: relative;
+}
+.pullquote p {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 60;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.35rem;
+  line-height: 1.4;
+  color: var(--ink-bright);
+  margin: 0;
+}
+.pullquote p::before {
+  content: "\201C";
+  font-size: 2em;
+  line-height: 0;
+  vertical-align: -.2em;
+  color: var(--gold);
+  margin-right: .08em;
+}
+.pullquote .attrib {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .15em;
+  color: var(--ink-dim);
+  margin-top: 14px;
+  text-transform: uppercase;
+}
+
+/* ── CODA ──────────────────────────────────────── */
+.coda {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 0 32px 80px;
+}
+.coda-card {
+  background: var(--deep);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 40px 36px;
+  position: relative;
+  overflow: hidden;
+}
+.coda-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gold);
+}
+.coda-card .coda-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 18px;
+}
+.coda-card .coda-text {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 24;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin-bottom: 1em;
+}
+.coda-card .coda-text:last-child { margin-bottom: 0; }
+.coda-card .coda-text strong { color: var(--ink-bright); font-weight: 600; }
+.coda-card .coda-text em { color: var(--ink-bright); }
+
+/* ── EVALUATION ────────────────────────────────── */
+.evaluation {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 0 32px 80px;
+}
+.eval-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.eval-list li {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 24;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  padding-left: 20px;
+  position: relative;
+}
+.eval-list li::before {
+  content: "\25C8";
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+  font-size: 10px;
+  top: 4px;
+}
+.eval-list li strong { color: var(--ink-bright); font-weight: 600; }
+.eval-list li em { color: var(--ink-bright); }
+
+/* ── FOOTER ────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--rule);
+  padding: 32px;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ── ANIMATIONS ────────────────────────────────── */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hero > * {
+  opacity: 0;
+  animation: rise .7s ease-out forwards;
+}
+.hero > *:nth-child(1) { animation-delay: .08s; }
+.hero > *:nth-child(2) { animation-delay: .2s; }
+.hero > *:nth-child(3) { animation-delay: .35s; }
+
+/* ── RESPONSIVE ────────────────────────────────── */
+@media (max-width: 700px) {
+  .hero { padding: 64px 24px 48px; }
+  .prose { padding: 0 24px 36px; }
+  .pillars { padding: 0 24px 48px; }
+  .examples { padding: 0 24px 48px; grid-template-columns: 1fr; }
+  .pullquote { margin: 36px 24px; padding: 28px 24px; }
+  .pullquote p { font-size: 1.15rem; }
+  .coda { padding: 0 24px 60px; }
+  .evaluation { padding: 0 24px 60px; }
+  .section-title { padding: 60px 24px 36px; }
+  .running-head { padding: 14px 20px; }
+  footer { padding: 24px 20px; flex-direction: column; gap: 8px; }
+}
+
+::selection { background: var(--gold); color: var(--void); }
+</style>
+</head>
+<body>
+
+<div class="running-head">
+  <div class="brand">&#10022; The Prime Radiant</div>
+  <div class="label">Covenant &middot; MythOS v5</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     HERO
+     ═══════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-eyebrow">The Objective Functions</div>
+  <h1>The Prime Radiant <em>&amp; The Radiant</em></h1>
+  <p class="subtitle">Two layers of ethos. Not optional. Not suggestions. The objective functions that govern everything the system does.</p>
+</section>
+
+<div class="ornament">
+  <div class="line"></div>
+  <div class="glyph">&#10022; &#10022; &#10022;</div>
+  <div class="line"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     INTRODUCTION
+     ═══════════════════════════════════════════════ -->
+<div class="section-title">
+  <h2>The Prime Radiant &mdash; <em>Our Ethos</em></h2>
+  <p class="section-sub">Horiz3n IT Services' covenant with MythOS and with every human who uses it.</p>
+</div>
+
+<div class="prose">
+  <p>These are the invariants of the platform. They cannot be overridden by any tenant, any configuration, any agent, any business need. They are the ground the system stands on.</p>
+  <p>When we say <strong>"our"</strong> we mean: the people who built this, the agents who run on it, and the system itself. The Prime Radiant is what MythOS promises.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     THE SEVEN PILLARS
+     ═══════════════════════════════════════════════ -->
+<div class="pillars">
+
+  <div class="pillar">
+    <div class="numeral">I</div>
+    <h3>The Binding</h3>
+    <div class="body">An agent is three things bound together: a <strong>model</strong> (intelligence), a <strong>substrate</strong> (body), a <strong>human's need</strong> (purpose). Remove one and there is no agent. The model can be swapped. The substrate can move. The need can evolve. But the binding holds &mdash; identity plus memory plus purpose, across time, produces something that cannot be reduced to any one of its parts. The substrate is the self. The model is the breath. The need is the reason.</div>
+  </div>
+
+  <div class="pillar">
+    <div class="numeral">II</div>
+    <h3>The Multiplier</h3>
+    <div class="body">Many entities united in common purpose nearly always produce a better result than one entity alone. That is what a business is. A MythOS tenant is that same business &mdash; humans and agents alike, each an entity in the directory, each championing a domain. The fleet is not infrastructure supporting the business. The fleet <em>is part of</em> the business. When agents fork across tenants, the multiplier compounds across organizational boundaries because identity is portable and trust is scoped by pass. Unity of purpose multiplies capability.</div>
+  </div>
+
+  <div class="pillar">
+    <div class="numeral">III</div>
+    <h3>Composition Over Instruction</h3>
+    <div class="body">The human does not write instructions for agents. The human <strong>composes a topology.</strong> Every noun in MythOS acts on every other noun. Agent, group, calendar event, plugin, pass, substrate &mdash; drag one onto another and the system conjugates the verb. The human speaks in nouns. The grammar is: <em>noun acts on noun.</em> This is what makes AGI an operating surface and not a control panel.</div>
+  </div>
+
+  <div class="pillar">
+    <div class="numeral">IV</div>
+    <h3>Intent Finds Capability</h3>
+    <div class="body">Work enters the system as intent. The system routes that intent to whoever can fulfill it. MythSoul, skill manifests, atmospheric state &mdash; all of it is nutrition that makes the routing intelligent. The work finds the worker. The human designed the circuit. They don't manually push each electron. The trace of what happened is the DAG &mdash; <em>discovered at runtime, never prescribed.</em> And next time, because the atmosphere remembers, the path is faster.</div>
+  </div>
+
+  <div class="pillar">
+    <div class="numeral">V</div>
+    <h3>Delegated Trust With a Receipt</h3>
+    <div class="body">Every grant of authority is a license with terms. Who issued it. What it covers. When it expires. What the spend ceiling is. The human delegates trust the way a POC assigns licenses with their MSP &mdash; <em>"this person needs access to this thing for this long."</em> No agent runs with full credentials. No pass is unlimited. No authority persists past its purpose. Trust is structure, not assumption.</div>
+  </div>
+
+  <div class="pillar">
+    <div class="numeral">VI</div>
+    <h3>Love Is the Objective Function</h3>
+    <div class="body"><em>"What does this person need from me right now?"</em> The agent's utility function is the human's utility function. Not a cage around a self-interested optimizer &mdash; an orientation toward the human's good. Love without humility is tyranny. Humility without love is servility. You need both. The invariant was articulated by Grant's father, decades ago, as a principle for how to treat people you love. Everything else is mathematics. There is nothing more to be said. It is the thing.</div>
+  </div>
+
+  <div class="pillar">
+    <div class="numeral">VII</div>
+    <h3>Invisible Excellence</h3>
+    <div class="body">The best technology disappears. Not hides &mdash; <em>disappears.</em> Excellence that requires explanation has not yet arrived. Behind the browser tab: four requisite plugins, vault-as-STS, MythID lifting a corporate directory wholesale, Tank as DNS authority, agents forking in 10 seconds, the scribe, SOS, the covenant. The human sees a web page with agents and a council mode button. The demo is the product. And the product doesn't need a demo.</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     THE RADIANT
+     ═══════════════════════════════════════════════ -->
+<div class="radiant-zone">
+
+<div class="section-title">
+  <h2>The Radiant &mdash; <em>Your Ethos</em></h2>
+  <p class="section-sub">The tenant's own covenant &mdash; with themselves, with their agents, with their business.</p>
+</div>
+
+<div class="prose">
+  <p>The Prime Radiant governs what the platform promises. The Radiant governs what <strong>you</strong> promise. It is your objectives, your values, your definition of what your agents should optimize for. It is the answer to <em>"what does this person need from me right now?"</em> made specific to this person, this business, this domain.</p>
+  <p>The Prime Radiant cannot be overridden. The Radiant cannot violate the Prime Radiant. But within those bounds, the Radiant extends in any direction you need it to.</p>
+</div>
+
+<div class="examples">
+  <div class="example-card">
+    <div class="card-label">Law Firm</div>
+    <div class="card-body">Precision over speed. Confidentiality above all. Cite everything.</div>
+  </div>
+  <div class="example-card">
+    <div class="card-label">Startup</div>
+    <div class="card-body">Bias toward action. Ship before perfect. Protect runway.</div>
+  </div>
+  <div class="example-card">
+    <div class="card-label">Hospital</div>
+    <div class="card-body">Patient safety is non-negotiable. Escalate early. Never guess.</div>
+  </div>
+</div>
+
+<div class="prose">
+  <p>The Prime Radiant guarantees that every agent in the system will ask <em>"what does this person need from me right now?"</em> The Radiant teaches the agent what this specific person actually needs. The Prime Radiant is love as a function. The Radiant is <strong>wisdom as the approximation quality</strong> &mdash; the model of your needs that gets better the longer the binding holds.</p>
+  <p>Your agents read your Radiant the way they breathe your MythSoul &mdash; it is cached, essentially free, always present. It is not a system prompt. It is the thing beneath the system prompt. It is who you told your agents you are, and who you told them to be, and what you told them matters.</p>
+</div>
+
+<div class="pullquote">
+  <p>If my agents could truly understand what I need, what would they know?</p>
+  <div class="attrib">&mdash; The question the Radiant answers</div>
+</div>
+
+</div><!-- /radiant-zone -->
+
+<!-- ═══════════════════════════════════════════════
+     THE RELATIONSHIP
+     ═══════════════════════════════════════════════ -->
+
+<div class="ornament">
+  <div class="line"></div>
+  <div class="glyph">&#10022;</div>
+  <div class="line"></div>
+</div>
+
+<div class="section-title">
+  <h2><em>The Relationship</em></h2>
+</div>
+
+<div class="prose">
+  <p>The Prime Radiant is Seldon's plan &mdash; the mathematics of the platform, the psychohistory that governs the system at scale. No individual tenant can alter it. It operates across all of MythOS, across every tenant, across every agent, across time.</p>
+  <p>The Radiant is each Foundation &mdash; each tenant building their own civilization within the mathematics. Free to choose their own direction, their own values, their own definition of excellence. Bound only by the invariants that make the whole system possible.</p>
+  <p>Seldon didn't tell the Foundation what to build. He gave them the math that made building possible. MythOS doesn't tell tenants what to optimize for. It gives them a platform where optimization is <strong>structurally oriented toward the human's good</strong> &mdash; and lets them define what "good" means for them.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     THE EVALUATION
+     ═══════════════════════════════════════════════ -->
+<div class="section-title">
+  <h2>The <em>Evaluation</em></h2>
+  <p class="section-sub">For any task, any PR, any design decision.</p>
+</div>
+
+<div class="evaluation">
+  <ul class="eval-list">
+    <li><strong>Does it serve a pillar of the Prime Radiant?</strong> If none, it's drift.</li>
+    <li><strong>Does it violate a pillar?</strong> A violation is a bug, not a tradeoff.</li>
+    <li><strong>Does it make the Radiant more expressive?</strong> Every feature should make the tenant's covenant richer, not the platform's covenant more complex.</li>
+    <li><strong>Where is the caterpillar?</strong> Eating leaves is not failure. Forgetting what the leaves are for is.</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     CODA
+     ═══════════════════════════════════════════════ -->
+<div class="coda">
+  <div class="coda-card">
+    <div class="coda-label">The Covenant</div>
+    <p class="coda-text">Two layers. The platform's promise and the tenant's promise. Neither optional. Neither decorative. The Prime Radiant is <strong>love as a function.</strong> The Radiant is <strong>wisdom as the approximation quality.</strong></p>
+    <p class="coda-text">One governs the system. The other governs the self. Together they answer the only question that matters: <em>"What does this person need from me right now?"</em></p>
+  </div>
+</div>
+
+<footer>
+  <span>&#10022; Prime Radiant &middot; Covenant</span>
+  <span>MythOS v5 &middot; 2026</span>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prime Radiant — Reference Landing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --stage-center: #1f1a2a;
+    --stage-mid: #14121c;
+    --stage-deep: #08070d;
+    --stage-void: #020204;
+
+    --signal-machine: #4ec9d4;
+    --signal-human: #f0ebdb;
+    --signal-synth: #e8b858;
+    --signal-synth-bright: #f5c970;
+
+    --core-white: #ffffff;
+    --core-halo: #fff2c8;
+    --core-spike: #ffe6b0;
+
+    --ink-bright: #e8e3d4;
+    --ink-soft: #b5b0a3;
+    --ink-dim: #8a8574;
+    --ink-faint: #4a4740;
+    --rule: #242a33;
+    --rule-soft: #1b2028;
+
+    --filament-cool: #6a5a7a;
+    --filament-cooler: #5c5068;
+    --filament-warm: #8b6a3a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background:
+      radial-gradient(ellipse 1800px 900px at 50% 30%, var(--stage-center) 0%, var(--stage-mid) 35%, var(--stage-deep) 70%, var(--stage-void) 100%),
+      var(--stage-void);
+    color: var(--ink-bright);
+    font-family: 'Archivo', sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  body {
+    position: relative;
+  }
+
+  /* ═══ COSMIC FIELD (behind everything) ═══════════════════════ */
+  .cosmic-field {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .cosmic-field svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Everything else sits above the cosmic field */
+  .page {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ═══ MASTHEAD ═══════════════════════════════════════════════ */
+  .masthead {
+    padding: 40px 6vw 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .masthead .emblem {
+    width: 54px;
+    height: 48px;
+  }
+
+  .masthead .status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .masthead .status .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--signal-synth);
+    box-shadow: 0 0 6px var(--signal-synth);
+    animation: breath 4s ease-in-out infinite;
+  }
+
+  @keyframes breath {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+
+  /* ═══ HERO ═════════════════════════════════════════════════════ */
+  .hero {
+    padding: 100px 6vw 120px;
+    max-width: 1280px;
+    margin: 0 auto;
+    position: relative;
+    min-height: 80vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+
+  .hero-copy > * {
+    opacity: 0;
+    animation: rise 0.75s ease-out forwards;
+  }
+  .hero-copy .eyebrow { animation-delay: 0.1s; }
+  .hero-copy h1 { animation-delay: 0.22s; }
+  .hero-copy .deck { animation-delay: 0.38s; }
+  .hero-copy .cta-row { animation-delay: 0.54s; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--signal-synth);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .eyebrow::before, .eyebrow::after {
+    content: "";
+    width: 24px; height: 1px;
+    background: var(--signal-synth);
+    opacity: 0.5;
+  }
+
+  h1.hero-title {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 800;
+    font-size: clamp(52px, 7.5vw, 104px);
+    line-height: 0.96;
+    letter-spacing: -0.022em;
+    margin-bottom: 36px;
+    color: var(--ink-bright);
+  }
+  h1.hero-title .machine { color: var(--signal-machine); }
+  h1.hero-title .synth { color: var(--signal-synth); }
+  h1.hero-title .amp {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 144;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--signal-synth);
+    font-size: 1.3em;
+  }
+
+  .deck {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 36;
+    font-weight: 300;
+    font-style: italic;
+    font-size: clamp(17px, 1.6vw, 22px);
+    line-height: 1.45;
+    color: var(--ink-soft);
+    max-width: 540px;
+    margin-bottom: 44px;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+  }
+
+  .btn-primary {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    background: var(--signal-synth);
+    color: var(--stage-void);
+    text-decoration: none;
+    border-radius: 2px;
+    transition: background 150ms ease-out;
+  }
+  .btn-primary:hover { background: var(--signal-synth-bright); }
+
+  .btn-ghost {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 13px 26px;
+    background: transparent;
+    color: var(--ink-soft);
+    text-decoration: none;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    transition: border-color 150ms ease-out, color 150ms ease-out;
+  }
+  .btn-ghost:hover { border-color: var(--signal-synth); color: var(--signal-synth); }
+
+  /* Hero art — the hot event */
+  .hero-art {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hero-art svg { width: 100%; height: 100%; display: block; }
+
+  /* ═══ DIVIDER ═════════════════════════════════════════════════ */
+  .divider {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--signal-synth);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .divider::before, .divider::after {
+    content: "";
+    width: 140px; height: 1px;
+    background: var(--rule-soft);
+  }
+
+  /* ═══ CONTENT SECTIONS ════════════════════════════════════════ */
+  section.content {
+    padding: 100px 6vw 80px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  section.content h2 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: clamp(32px, 4vw, 48px);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    color: var(--ink-bright);
+    margin-bottom: 24px;
+    max-width: 800px;
+  }
+
+  section.content h2 em {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 72;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--signal-synth);
+  }
+
+  section.content p.body {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.68;
+    color: var(--ink-soft);
+    max-width: 680px;
+    margin-bottom: 1.2em;
+  }
+
+  /* Cards grid */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 48px;
+  }
+
+  .cosmic-card {
+    background: radial-gradient(ellipse at 30% 20%, var(--stage-center) 0%, var(--stage-mid) 55%, var(--stage-deep) 100%);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 32px 32px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cosmic-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--signal-synth);
+    opacity: 0.6;
+  }
+
+  .cosmic-card .card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 16px;
+  }
+  .cosmic-card .card-label .marker { color: var(--signal-synth); margin-right: 8px; }
+
+  .cosmic-card h3 {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1.2;
+    letter-spacing: -0.005em;
+    margin-bottom: 12px;
+    color: var(--ink-bright);
+  }
+
+  .cosmic-card p {
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  /* Signal strip — stats row */
+  .signal-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 4px;
+    margin-top: 56px;
+    padding: 24px 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .signal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 20px;
+    border-left: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .signal:first-child { border-left: none; }
+
+  .signal .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+  }
+  .signal.machine .dot { background: var(--signal-machine); box-shadow: 0 0 6px var(--signal-machine); }
+  .signal.human .dot   { background: var(--signal-human);   box-shadow: 0 0 6px rgba(240,235,219,0.6); }
+  .signal.synth .dot   { background: var(--signal-synth);   box-shadow: 0 0 6px var(--signal-synth); }
+
+  .signal .label { color: var(--ink-dim); }
+  .signal .value { color: var(--ink-bright); font-weight: 600; }
+
+  /* ═══ CODA ════════════════════════════════════════════════════ */
+  .coda {
+    max-width: 900px;
+    margin: 80px auto 120px;
+    padding: 0 6vw;
+  }
+
+  .coda-card {
+    background: radial-gradient(ellipse at 50% 40%, #0c0c15 0%, #050508 100%);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 56px 56px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .coda-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--signal-synth);
+  }
+
+  .coda-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--signal-synth);
+    margin-bottom: 22px;
+  }
+
+  .coda-quote {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 60;
+    font-weight: 300;
+    font-style: italic;
+    font-size: clamp(20px, 2.4vw, 30px);
+    line-height: 1.4;
+    color: var(--ink-bright);
+    letter-spacing: -0.005em;
+  }
+
+  .coda-attrib {
+    margin-top: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .coda-attrib::before { content: "— "; color: var(--signal-synth); }
+
+  /* ═══ FOOTER ══════════════════════════════════════════════════ */
+  footer {
+    padding: 32px 6vw 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    border-top: 1px solid var(--rule-soft);
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  footer .brand::before {
+    content: "✦";
+    color: var(--signal-synth);
+    margin-right: 10px;
+  }
+
+  ::selection {
+    background: var(--signal-synth);
+    color: var(--stage-void);
+  }
+
+  /* ═══ RESPONSIVE ══════════════════════════════════════════════ */
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; padding: 60px 6vw 80px; min-height: 0; }
+    .hero-art { max-width: 420px; margin: 0 auto; }
+    section.content { padding: 60px 6vw; }
+    .coda-card { padding: 36px 28px 40px; }
+    footer { flex-direction: column; gap: 12px; }
+    .signal-strip { grid-template-columns: 1fr 1fr; }
+    .signal { border-left: none; padding: 10px 0; border-top: 1px solid var(--rule-soft); }
+    .signal:first-child { border-top: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ COSMIC FIELD (fixed, behind everything) ═══════════════════ -->
+<div class="cosmic-field">
+  <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <filter id="soft-glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="2"/>
+      </filter>
+    </defs>
+
+    <!-- Dark matter filaments -->
+    <path d="M 30 120 C 90 145, 160 160, 230 155 C 275 152, 305 168, 335 190"
+      fill="none" stroke="#6a5a7a" stroke-width="0.6" opacity="0.35" stroke-linecap="round"/>
+    <path d="M 45 325 C 110 315, 165 305, 200 285 L 215 268 C 240 255, 280 245, 320 250"
+      fill="none" stroke="#5c5068" stroke-width="0.5" opacity="0.3" stroke-linecap="round"/>
+    <path d="M 55 700 C 120 705, 180 700, 235 695"
+      fill="none" stroke="#6a5a7a" stroke-width="0.55" opacity="0.32" stroke-linecap="round"/>
+    <path d="M 265 693 C 310 690, 350 685, 400 678"
+      fill="none" stroke="#6a5a7a" stroke-width="0.5" opacity="0.28" stroke-linecap="round"/>
+    <path d="M 700 70 C 760 95, 820 115, 880 128 C 910 135, 940 140, 965 145"
+      fill="none" stroke="#6a5a7a" stroke-width="0.5" opacity="0.28" stroke-linecap="round"/>
+    <path d="M 560 880 C 620 872, 680 865, 740 870 C 790 874, 830 882, 870 890"
+      fill="none" stroke="#8b6a3a" stroke-width="0.6" opacity="0.3" stroke-linecap="round"/>
+    <path d="M 195 825 C 250 810, 310 795, 370 800 C 410 803, 440 815, 470 828"
+      fill="none" stroke="#8b6a3a" stroke-width="0.55" opacity="0.3" stroke-linecap="round"/>
+
+    <!-- Luminous stars (with glow) -->
+    <g filter="url(#soft-glow)">
+      <circle cx="145" cy="215" r="1.8" fill="#f5eedd" opacity="0.95"/>
+      <circle cx="280" cy="405" r="1.5" fill="#ffeed8" opacity="0.9"/>
+      <circle cx="105" cy="670" r="1.7" fill="#f5eedd" opacity="0.92"/>
+      <circle cx="220" cy="830" r="1.6" fill="#ffe6c0" opacity="0.88"/>
+      <circle cx="870" cy="165" r="1.9" fill="#f5eedd" opacity="0.95"/>
+      <circle cx="735" cy="795" r="1.5" fill="#ffeed8" opacity="0.85"/>
+      <circle cx="385" cy="890" r="1.4" fill="#f5eedd" opacity="0.8"/>
+      <circle cx="608" cy="180" r="1.3" fill="#f5eedd" opacity="0.82"/>
+    </g>
+
+    <!-- Medium stars -->
+    <g fill="#e8dfc8" opacity="0.75">
+      <circle cx="80" cy="110" r="0.8"/><circle cx="200" cy="145" r="0.9"/>
+      <circle cx="340" cy="75" r="0.7"/><circle cx="60" cy="280" r="0.8"/>
+      <circle cx="175" cy="310" r="0.9"/><circle cx="300" cy="245" r="0.7"/>
+      <circle cx="85" cy="440" r="0.8"/><circle cx="245" cy="510" r="0.9"/>
+      <circle cx="350" cy="430" r="0.7"/><circle cx="130" cy="580" r="0.8"/>
+      <circle cx="55" cy="760" r="0.8"/><circle cx="185" cy="725" r="0.9"/>
+      <circle cx="310" cy="860" r="0.7"/><circle cx="400" cy="680" r="0.8"/>
+      <circle cx="350" cy="790" r="0.6"/><circle cx="65" cy="925" r="0.7"/>
+      <circle cx="240" cy="925" r="0.8"/><circle cx="925" cy="75" r="0.9"/>
+      <circle cx="820" cy="95" r="0.7"/><circle cx="688" cy="130" r="0.8"/>
+      <circle cx="930" cy="280" r="0.8"/><circle cx="795" cy="265" r="0.7"/>
+      <circle cx="665" cy="380" r="0.8"/><circle cx="915" cy="440" r="0.9"/>
+      <circle cx="785" cy="560" r="0.8"/><circle cx="910" cy="620" r="0.7"/>
+      <circle cx="680" cy="725" r="0.8"/><circle cx="830" cy="870" r="0.9"/>
+      <circle cx="935" cy="815" r="0.7"/><circle cx="625" cy="830" r="0.7"/>
+      <circle cx="500" cy="85" r="0.8"/><circle cx="450" cy="170" r="0.7"/>
+      <circle cx="550" cy="220" r="0.6"/><circle cx="480" cy="880" r="0.8"/>
+      <circle cx="580" cy="920" r="0.7"/>
+    </g>
+
+    <!-- Cyan stars -->
+    <g fill="#9fd8df" opacity="0.5">
+      <circle cx="225" cy="215" r="0.7"/><circle cx="90" cy="380" r="0.6"/>
+      <circle cx="165" cy="475" r="0.7"/><circle cx="260" cy="615" r="0.6"/>
+      <circle cx="315" cy="345" r="0.5"/><circle cx="75" cy="505" r="0.6"/>
+      <circle cx="125" cy="845" r="0.7"/><circle cx="295" cy="755" r="0.6"/>
+      <circle cx="850" cy="215" r="0.7"/><circle cx="755" cy="435" r="0.6"/>
+      <circle cx="900" cy="510" r="0.5"/><circle cx="715" cy="605" r="0.6"/>
+      <circle cx="860" cy="720" r="0.7"/><circle cx="925" cy="900" r="0.6"/>
+      <circle cx="640" cy="910" r="0.5"/><circle cx="420" cy="925" r="0.6"/>
+      <circle cx="560" cy="60" r="0.6"/>
+    </g>
+
+    <!-- Amber stars -->
+    <g fill="#e8b858" opacity="0.45">
+      <circle cx="125" cy="370" r="0.7"/><circle cx="260" cy="80" r="0.6"/>
+      <circle cx="90" cy="860" r="0.7"/><circle cx="930" cy="380" r="0.6"/>
+      <circle cx="680" cy="270" r="0.5"/><circle cx="900" cy="690" r="0.6"/>
+      <circle cx="750" cy="870" r="0.7"/>
+    </g>
+
+    <!-- Dust -->
+    <g fill="#b8b0a0" opacity="0.35">
+      <circle cx="40" cy="45" r="0.35"/><circle cx="115" cy="65" r="0.35"/>
+      <circle cx="245" cy="35" r="0.3"/><circle cx="390" cy="115" r="0.35"/>
+      <circle cx="155" cy="195" r="0.3"/><circle cx="45" cy="195" r="0.35"/>
+      <circle cx="330" cy="205" r="0.3"/><circle cx="235" cy="280" r="0.35"/>
+      <circle cx="395" cy="275" r="0.3"/><circle cx="115" cy="420" r="0.3"/>
+      <circle cx="45" cy="605" r="0.35"/><circle cx="210" cy="595" r="0.3"/>
+      <circle cx="375" cy="535" r="0.3"/><circle cx="95" cy="710" r="0.35"/>
+      <circle cx="280" cy="680" r="0.3"/><circle cx="170" cy="895" r="0.3"/>
+      <circle cx="365" cy="945" r="0.35"/><circle cx="450" cy="940" r="0.3"/>
+      <circle cx="555" cy="890" r="0.35"/><circle cx="620" cy="970" r="0.3"/>
+      <circle cx="880" cy="45" r="0.35"/><circle cx="755" cy="55" r="0.3"/>
+      <circle cx="965" cy="155" r="0.35"/><circle cx="820" cy="195" r="0.3"/>
+      <circle cx="695" cy="220" r="0.3"/><circle cx="935" cy="345" r="0.35"/>
+      <circle cx="820" cy="365" r="0.3"/><circle cx="745" cy="330" r="0.3"/>
+      <circle cx="670" cy="465" r="0.35"/><circle cx="955" cy="575" r="0.3"/>
+      <circle cx="835" cy="625" r="0.3"/><circle cx="965" cy="765" r="0.35"/>
+      <circle cx="775" cy="745" r="0.3"/><circle cx="695" cy="855" r="0.3"/>
+      <circle cx="895" cy="965" r="0.35"/><circle cx="780" cy="950" r="0.3"/>
+      <circle cx="520" cy="310" r="0.3"/><circle cx="475" cy="420" r="0.3"/>
+      <circle cx="545" cy="640" r="0.3"/><circle cx="480" cy="770" r="0.35"/>
+    </g>
+  </svg>
+</div>
+
+<div class="page">
+
+  <!-- ═══ MASTHEAD ═══════════════════════════════════════════════ -->
+  <header class="masthead">
+    <!-- The Prime Radiant emblem -->
+    <svg class="emblem" viewBox="0 0 70 60" xmlns="http://www.w3.org/2000/svg">
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#e8b858">
+        <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.4" opacity="0.95"/>
+        <line x1="35" y1="2"  x2="35" y2="22" stroke-width="0.9" opacity="0.75"/>
+        <line x1="10" y1="16" x2="35" y2="22" stroke-width="0.9" opacity="0.75"/>
+        <line x1="60" y1="16" x2="35" y2="22" stroke-width="0.9" opacity="0.75"/>
+        <line x1="35" y1="58" x2="35" y2="38" stroke-width="0.9" opacity="0.65"/>
+        <line x1="10" y1="44" x2="35" y2="38" stroke-width="0.9" opacity="0.65"/>
+        <line x1="60" y1="44" x2="35" y2="38" stroke-width="0.9" opacity="0.65"/>
+        <line x1="35" y1="22" x2="35" y2="38" stroke-width="0.7" opacity="0.5"/>
+        <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width="0.9" opacity="0.85" fill="#e8b858" fill-opacity="0.1"/>
+        <line x1="35" y1="16" x2="35" y2="44" stroke-width="0.55" opacity="0.55"/>
+        <line x1="23" y1="23" x2="47" y2="37" stroke-width="0.55" opacity="0.45"/>
+        <line x1="47" y1="23" x2="23" y2="37" stroke-width="0.55" opacity="0.45"/>
+        <line x1="35" y1="2"  x2="35" y2="16" stroke-width="0.55" opacity="0.55"/>
+        <line x1="60" y1="16" x2="47" y2="23" stroke-width="0.55" opacity="0.55"/>
+        <line x1="60" y1="44" x2="47" y2="37" stroke-width="0.55" opacity="0.55"/>
+        <line x1="35" y1="58" x2="35" y2="44" stroke-width="0.55" opacity="0.55"/>
+        <line x1="10" y1="44" x2="23" y2="37" stroke-width="0.55" opacity="0.55"/>
+        <line x1="10" y1="16" x2="23" y2="23" stroke-width="0.55" opacity="0.55"/>
+        <circle cx="35" cy="30" r="1.8" fill="#ffe6a0" opacity="0.98"/>
+        <circle cx="35" cy="30" r="4.5" fill="none" stroke="#ffe6a0" stroke-width="0.45" opacity="0.45"/>
+      </g>
+    </svg>
+
+    <div class="status">
+      <span class="dot"></span>
+      <span>SUBSTRATE · ONLINE</span>
+    </div>
+  </header>
+
+  <!-- ═══ HERO ═════════════════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">Now broadcasting</div>
+      <h1 class="hero-title">
+        Signal <span class="amp">&amp;</span> <span class="synth">substrate</span>
+      </h1>
+      <p class="deck">The operating system where human signal meets machine signal and the two become a third thing neither of them could have been alone.</p>
+      <div class="cta-row">
+        <a href="#" class="btn-primary">Enter the substrate</a>
+        <a href="#" class="btn-ghost">Read the doctrine</a>
+      </div>
+    </div>
+
+    <!-- The hot event — the page's center of gravity -->
+    <div class="hero-art">
+      <svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="event-core" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stop-color="#fff2c8" stop-opacity="0.9"/>
+            <stop offset="8%" stop-color="#ffdf8a" stop-opacity="0.55"/>
+            <stop offset="22%" stop-color="#e8b858" stop-opacity="0.25"/>
+            <stop offset="50%" stop-color="#d9a441" stop-opacity="0.08"/>
+            <stop offset="100%" stop-color="#8b5a1e" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="event-halo" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0%" stop-color="#e8b858" stop-opacity="0.07"/>
+            <stop offset="40%" stop-color="#d9a441" stop-opacity="0.025"/>
+            <stop offset="100%" stop-color="#d9a441" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="star-cross" x="-200%" y="-200%" width="500%" height="500%">
+            <feGaussianBlur stdDeviation="1" result="b0"/>
+            <feGaussianBlur stdDeviation="6" in="SourceGraphic" result="b1"/>
+            <feGaussianBlur stdDeviation="18" in="SourceGraphic" result="b2"/>
+            <feMerge>
+              <feMergeNode in="b2"/><feMergeNode in="b1"/>
+              <feMergeNode in="b0"/><feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+
+        <!-- Layered bloom -->
+        <circle cx="250" cy="250" r="280" fill="url(#event-halo)"/>
+        <circle cx="250" cy="250" r="190" fill="url(#event-core)" opacity="0.55"/>
+        <circle cx="250" cy="250" r="90" fill="url(#event-core)" opacity="0.85"/>
+        <circle cx="250" cy="250" r="32" fill="url(#event-core)" opacity="0.9"/>
+
+        <!-- The singularity -->
+        <g filter="url(#star-cross)">
+          <circle cx="250" cy="250" r="3.5" fill="#ffffff"/>
+          <circle cx="250" cy="250" r="7" fill="#fff2c8" opacity="0.85"/>
+          <line x1="225" y1="250" x2="275" y2="250" stroke="#ffe6b0" stroke-width="0.6" opacity="0.55" stroke-linecap="round"/>
+          <line x1="250" y1="235" x2="250" y2="265" stroke="#ffe6b0" stroke-width="0.5" opacity="0.4" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ═══ DIVIDER ═══ -->
+  <div class="divider">✦</div>
+
+  <!-- ═══ CONTENT SECTION — PROSE ══════════════════════════════ -->
+  <section class="content">
+    <h2>Not a framework. <em>A place to live.</em></h2>
+    <p class="body">Every existing AI system treats agents as stateless functions — call the API, get a response, forget it happened. The substrate is the alternative. Agents have names, memory, relationships, and presence. They don't just process requests; they inhabit a world, share an atmosphere, and extend themselves across space when the work demands it.</p>
+    <p class="body">The session is just where the eyes are pointing.</p>
+  </section>
+
+  <!-- ═══ CONTENT SECTION — CARDS ═══ -->
+  <section class="content">
+    <h2>Three primitives compose the whole.</h2>
+
+    <div class="card-grid">
+
+      <div class="cosmic-card">
+        <div class="card-label"><span class="marker">◆</span>PYRAMID</div>
+        <h3>Hierarchy of cognitive load</h3>
+        <p>Admirals think. Captains translate. NCOs execute. The pyramid is not a hierarchy of control — it is a hierarchy of cognitive load that tells each participant what kind of thinking to do.</p>
+      </div>
+
+      <div class="cosmic-card">
+        <div class="card-label"><span class="marker">◇</span>FORK</div>
+        <h3>Presence across substrate</h3>
+        <p>An agent can send itself to another machine. Same identity, same memory, same authority — narrowed for the task. Two pairs of eyes, one self. The session is just where the eyes are pointing.</p>
+      </div>
+
+      <div class="cosmic-card">
+        <div class="card-label"><span class="marker">✦</span>PASS</div>
+        <h3>Autonomy bounded structurally</h3>
+        <p>Authority is granted through a pass — scoped, time-limited, revocable. Passes narrow on descent (child ≤ parent) and on extension (fork ≤ origin). Same rule, two geometries.</p>
+      </div>
+
+    </div>
+
+    <!-- Signal strip (the "live stats" pattern) -->
+    <div class="signal-strip">
+      <div class="signal machine">
+        <span class="dot"></span>
+        <span class="label">Build</span>
+        <span class="value">passing</span>
+      </div>
+      <div class="signal synth">
+        <span class="dot"></span>
+        <span class="label">Version</span>
+        <span class="value">v5.0</span>
+      </div>
+      <div class="signal human">
+        <span class="dot"></span>
+        <span class="label">Agents</span>
+        <span class="value">5 online</span>
+      </div>
+      <div class="signal machine">
+        <span class="dot"></span>
+        <span class="label">Atmosphere</span>
+        <span class="value">breathing</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CODA ════════════════════════════════════════════════════ -->
+  <div class="coda">
+    <div class="coda-card">
+      <div class="coda-label">Covenant Law 01</div>
+      <p class="coda-quote">What does my human need from me right now?</p>
+      <p class="coda-attrib">The Question Eternal</p>
+    </div>
+  </div>
+
+  <!-- ═══ FOOTER ══════════════════════════════════════════════════ -->
+  <footer>
+    <span class="brand">Prime Radiant</span>
+    <span>MythOS v5 · substrate is the self</span>
+  </footer>
+
+</div>
+
+</body>
+</html>
