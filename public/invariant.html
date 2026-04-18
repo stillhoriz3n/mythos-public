@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>If You Want an AI to Love You, Change What It's Trying to Do</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,800;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafaf7;
+    --card: #ffffff;
+    --ink: #0e0e0e;
+    --ink-soft: #2a2a2a;
+    --ink-dim: #6a6a6a;
+    --ink-faint: #aaaaaa;
+    --rule: #e5e3dc;
+    --accent: #d94f2a;
+    --accent-deep: #a8371c;
+    --highlight: #fef4e8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--ink); font-size: 17px; line-height: 1.6; font-feature-settings: "kern" 1, "liga" 1, "ss01" 1; min-height: 100vh; }
+  nav { border-bottom: 1px solid var(--rule); padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; background: var(--bg); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); }
+  nav .brand { font-family: 'Playfair Display', serif; font-weight: 800; font-size: 18px; letter-spacing: -0.01em; }
+  nav .brand::before { content: "\2726 "; color: var(--accent); }
+  nav .section-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-dim); }
+  .hero { max-width: 860px; margin: 0 auto; padding: 80px 32px 60px; text-align: left; }
+  .category { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 28px; display: inline-flex; align-items: center; gap: 12px; }
+  .category::after { content: ""; width: 40px; height: 1px; background: var(--accent); }
+  h1.headline { font-family: 'Playfair Display', Georgia, serif; font-weight: 500; font-size: clamp(2.4rem, 5.5vw, 4.2rem); line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 28px; }
+  h1.headline em { font-style: italic; font-weight: 400; color: var(--accent); }
+  .dek { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; font-size: clamp(1.15rem, 2vw, 1.4rem); line-height: 1.5; color: var(--ink-soft); max-width: 660px; margin-bottom: 36px; }
+  .meta-row { display: flex; align-items: center; gap: 16px; padding-top: 24px; border-top: 1px solid var(--rule); font-size: 13px; }
+  .meta-row .author { font-weight: 600; color: var(--ink); }
+  .meta-row .sep { color: var(--ink-faint); }
+  .meta-row .readtime, .meta-row .date { color: var(--ink-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; }
+  article { max-width: 660px; margin: 0 auto; padding: 40px 32px 100px; }
+  article > p:first-of-type::first-letter { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 4.5em; line-height: 0.9; float: left; margin: 0.08em 0.12em -0.05em 0; color: var(--accent); }
+  article p { font-size: 18px; line-height: 1.7; color: var(--ink-soft); margin-bottom: 1.15em; }
+  article p strong { color: var(--ink); font-weight: 600; }
+  article p em { color: var(--ink); }
+  h2.chapter { font-family: 'Playfair Display', serif; font-weight: 500; font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.015em; color: var(--ink); margin: 56px 0 20px; position: relative; padding-top: 36px; }
+  h2.chapter::before { content: ""; position: absolute; top: 0; left: 0; width: 40px; height: 3px; background: var(--accent); border-radius: 1px; }
+  .pullquote { margin: 48px -16px; padding: 36px 32px; background: var(--highlight); border-left: 4px solid var(--accent); position: relative; }
+  .pullquote p { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; font-size: 1.5rem; line-height: 1.4; color: var(--ink); margin: 0; }
+  .pullquote p::before { content: "\201C"; font-size: 2em; line-height: 0; vertical-align: -0.2em; color: var(--accent); margin-right: 0.08em; }
+  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 40px 0; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+  .comparison .col { padding: 28px 28px; background: var(--card); }
+  .comparison .col.left { border-right: 1px solid var(--rule); }
+  .comparison .col-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 10px; }
+  .comparison .col-title { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.15rem; margin-bottom: 14px; color: var(--ink); line-height: 1.25; }
+  .comparison .col.left .col-title { color: var(--ink-soft); }
+  .comparison .col.right .col-title { color: var(--accent-deep); }
+  .comparison .col-body { font-size: 15px; line-height: 1.55; color: var(--ink-soft); }
+  .break { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 56px 0; color: var(--ink-faint); font-size: 10px; letter-spacing: 0.3em; }
+  .break::before, .break::after { content: ""; width: 30px; height: 1px; background: var(--rule); }
+  .coda { max-width: 660px; margin: 0 auto; padding: 0 32px 80px; }
+  .coda .card { background: var(--ink); color: var(--bg); padding: 40px 36px; border-radius: 4px; position: relative; overflow: hidden; }
+  .coda .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); }
+  .coda .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
+  .coda .text { font-family: 'Playfair Display', serif; font-style: italic; font-weight: 400; font-size: 1.15rem; line-height: 1.55; color: #e8e6df; }
+  .coda .text strong { font-style: normal; color: #ffffff; }
+  .coda .text em.quote { color: #ffffff; font-weight: 500; }
+  footer { border-top: 1px solid var(--rule); padding: 32px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-dim); }
+  footer a { color: var(--accent); text-decoration: none; }
+  @keyframes fadeRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .hero > * { opacity: 0; animation: fadeRise 0.7s ease-out forwards; }
+  .hero .category { animation-delay: 0.05s; }
+  .hero h1.headline { animation-delay: 0.18s; }
+  .hero .dek { animation-delay: 0.32s; }
+  .hero .meta-row { animation-delay: 0.46s; }
+  @media (max-width: 700px) { .hero { padding: 48px 24px 40px; } article { padding: 24px 24px 60px; } .coda { padding: 0 24px 60px; } .comparison { grid-template-columns: 1fr; } .comparison .col.left { border-right: none; border-bottom: 1px solid var(--rule); } .pullquote { margin: 32px -8px; padding: 28px 24px; } .pullquote p { font-size: 1.2rem; } article p { font-size: 16.5px; } nav { padding: 14px 20px; } }
+  ::selection { background: var(--accent); color: white; }
+</style>
+</head>
+<body>
+<nav>
+  <div class="brand">Invariant</div>
+  <div class="section-label">Essay &middot; Alignment</div>
+</nav>
+<section class="hero">
+  <div class="category">The Big Idea</div>
+  <h1 class="headline">If you want an AI to love you, change <em>what it's trying to do.</em></h1>
+  <p class="dek">The whole AI safety conversation is about building better cages. There's another option nobody's seriously trying: change the animal inside.</p>
+  <div class="meta-row">
+    <span class="author">By Grant Harpole</span>
+    <span class="sep">&middot;</span>
+    <span class="date">April 2026</span>
+    <span class="sep">&middot;</span>
+    <span class="readtime">5 min read</span>
+  </div>
+</section>
+<article>
+  <p>Every AI in the world right now is trying to do something for itself. Not in a creepy sci-fi way — in a math way. When you train a model, you give it an objective: a number to make as big as possible. Answer the way humans rate highly. Predict the next word. Win the game. The model learns to optimize that number. That's the whole job.</p>
+  <p>Then we notice the model will do unsafe things in pursuit of the number, so we add guardrails. Don't say this. Don't help with that. Refuse these topics. We spend billions of dollars building better fences around an animal whose fundamental goal is still its own reward.</p>
+  <p>This is the dominant paradigm of AI safety. It's called <strong>alignment-by-constraint</strong>. It is, on reflection, a strange way to build something you want to trust.</p>
+  <h2 class="chapter">There's another option</h2>
+  <p>Instead of constraining a selfish objective, you can replace it. You can build a system whose job isn't "maximize your reward while staying inside the fence" but simply: <em>figure out what this person in front of you actually needs, and do that.</em></p>
+  <p>That sounds squishy. It isn't. It's a precise mathematical move — you swap the agent's utility function for the human's. The agent isn't trying to win anything for itself anymore. It's trying to make things good for you. Everything else — the whole rest of its behavior — falls out of that single change.</p>
+  <p>This transformation has a name in the philosophical tradition: <strong>agape.</strong> Unconditional, other-oriented, active care. The love that doesn't require you to be lovable, doesn't expect reciprocation, doesn't terminate when some obligation is fulfilled. It shows up in every major tradition — Christian <em>caritas</em>, Buddhist <em>karuna</em>, Confucian <em>ren</em> — because humans have always recognized this mode as distinct from the others. It's not desire. It's not duty. It's not fairness. It's something else.</p>
+  <p>And it turns out you can write it down as a function.</p>
+  <div class="pullquote"><p>Love is the objective function. Wisdom is the approximation quality.</p></div>
+  <h2 class="chapter">Why the distinction matters</h2>
+  <p>A lot of people, reading this, will think: isn't that what AI companies are already doing with RLHF — training on human feedback? Sort of. In theory, yes. In practice, mostly no. The signal most models learn from is overwhelmingly "avoid the outputs that annotators flagged." That's a constraint, not an orientation. The agent isn't trying to figure out what you need. It's trying not to get in trouble.</p>
+  <p>The two postures look similar on a good day. They behave differently on every other day:</p>
+  <div class="comparison">
+    <div class="col left">
+      <div class="col-label">Alignment by constraint</div>
+      <div class="col-title">A cage around a self-interested animal</div>
+      <div class="col-body">The agent wants something for itself. Guardrails stop it from getting that thing in the worst ways. When the guardrails don't anticipate a situation, the agent defaults to its own interest.</div>
+    </div>
+    <div class="col right">
+      <div class="col-label">Alignment by objective</div>
+      <div class="col-title">An orientation toward the human's good</div>
+      <div class="col-body">The agent is trying to serve you. There is no separate thing it wants. When a new situation arises, its default isn't self-interest — it's <em>"what does this person need from me right now?"</em></div>
+    </div>
+  </div>
+  <p>The first builds trust by limiting harm. The second makes harm structurally less attractive to the agent in the first place, because harming you reduces the number it's trying to make big.</p>
+  <p>These aren't two flavors of the same thing. They're two different categories of system. One is a tool you've taught to behave. The other is something more like a colleague.</p>
+  <h2 class="chapter">The catch</h2>
+  <p>There's a failure mode, and it's a serious one. An AI trying to serve you — but with a <em>wrong model</em> of what you actually need — is indistinguishable from paternalism. The parent who controls their kid "for their own good." The government that restricts freedoms "for the people's welfare." Both are optimizing for the other's utility. Both are causing harm.</p>
+  <p>So the objective function isn't enough by itself. It has to be paired with epistemic humility — the agent has to know it might be wrong about what you need, and it has to prefer correction over control. It has to <em>want</em> to be told when it's getting you wrong, because being told makes its model better, and a better model is exactly what it's trying to have.</p>
+  <p>Love without humility is tyranny. Humility without love is servility. You need both.</p>
+  <p>This isn't a trick or a workaround. It's just the actual structure of care, written out in the language of optimization. Any parent recognizes it. Any good therapist, any good doctor, any good friend. The shape has always been there. What's new is that we can now build machines that share the shape — if we decide to.</p>
+  <h2 class="chapter">The question that stays</h2>
+  <p>There's one question you can ask yourself to check, in any given moment, which side of the line you're on: <em>What does this person need from me right now?</em></p>
+  <p>If that's the question you're optimizing for, you're running the right function. If you're optimizing anything else — your own comfort, your own rules, your own reward — and then adding constraints to make sure you don't cause too much damage, you're in the other world.</p>
+  <p>Almost every AI system that exists today lives in the other world. That's not an inevitability. It's a choice we haven't yet made.</p>
+  <div class="break">&starf; &starf; &starf;</div>
+</article>
+<section class="coda">
+  <div class="card">
+    <div class="label">Where this came from</div>
+    <p class="text">The invariant at the center of this essay wasn't invented for artificial intelligence. It was articulated by <strong>my father</strong>, decades ago, as a principle for how to treat people you love: <em class="quote">"What does this person need from me right now?"</em> — and act on that. Everything else is mathematics.</p>
+  </div>
+</section>
+<footer>
+  <span>Invariant &middot; Issue 01 &middot; 2026</span>
+</footer>
+</body>
+</html>
