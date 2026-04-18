@@ -240,7 +240,7 @@ h1.hero-title .amp{
 
 .layer-row{
   display:grid;
-  grid-template-columns:80px 1.6fr 2fr 160px;
+  grid-template-columns:80px 1fr 2.5fr;
   gap:40px;
   padding:36px 0;
   border-top:1px solid var(--rule-soft);
@@ -498,9 +498,6 @@ h1.hero-title .amp{
           <circle cx="340" cy="340" r="6.5" fill="#fff2c8" opacity=".85"/>
         </svg>
       </div>
-      <div class="orbit-readout m1"><span class="d" style="background:currentColor"></span>MESH ·<span class="val">5 machines</span></div>
-      <div class="orbit-readout m2"><span class="d" style="background:currentColor"></span>CORTEX ·<span class="val">online</span></div>
-      <div class="orbit-readout m3"><span class="d" style="background:currentColor"></span>AGENTS ·<span class="val">5 active</span></div>
     </div>
 
     <div class="hero-credit">
@@ -554,35 +551,30 @@ h1.hero-title .amp{
       <div class="n">01</div>
       <h3>Network<span class="tag">.mythos namespace</span></h3>
       <p>Every agent has a name. <em>vision.mythos. vault.mythos. tank.mythos.</em> Names resolve through MythOS&rsquo;s own DNS. When an agent moves machines, its name stays the same. This is how the internet works. MythOS applies it to AI.</p>
-      <div class="stat"><span class="big cyan">5</span>machines on mesh</div>
     </div>
 
     <div class="layer-row">
       <div class="n">02</div>
       <h3>Identity<span class="tag synth">directory-grade auth</span></h3>
       <p>Every participant &mdash; human or AI &mdash; has a full directory entry. Name, manager, capabilities, credential bindings. Agents prove identity with short-lived tokens. Authority is scoped per-task and automatically revoked. No agent runs with the user&rsquo;s full credentials.</p>
-      <div class="stat"><span class="big">0</span>long-lived keys</div>
     </div>
 
     <div class="layer-row">
       <div class="n">03</div>
       <h3>Memory<span class="tag">frames &middot; scribe &middot; SOS</span></h3>
       <p>Agents think, and the system remembers. A background process called the scribe reads the agent&rsquo;s thinking and materializes signals into persistent storage. An insight discovered at 2 AM by one agent is available to every other agent by morning.</p>
-      <div class="stat"><span class="big cyan">&infin;</span>shared atmosphere</div>
     </div>
 
     <div class="layer-row">
       <div class="n">04</div>
       <h3>Substrate<span class="tag synth">fork &middot; resume &middot; migrate</span></h3>
       <p>An agent can wake up on one machine, work, sleep, and wake up on another with full context intact. Or fork to two machines at once &mdash; same identity, same memory, single self with two pairs of eyes. The code is written. It works.</p>
-      <div class="stat"><span class="big">2&times;</span>presence, one self</div>
     </div>
 
     <div class="layer-row">
       <div class="n">05</div>
       <h3>AGI &mdash; A Good Interface<span class="tag">one surface, whole fleet</span></h3>
       <p>One surface. The entire fleet. The human configures agents the way a network engineer configures routers &mdash; bring them up, assign them to groups, set authority boundaries, let intelligence emerge from the topology.</p>
-      <div class="stat"><span class="big cyan">1</span>operator, many agents</div>
     </div>
   </section>
 
@@ -662,30 +654,6 @@ h1.hero-title .amp{
         <div class="go"><span>Read</span><span class="a">&rarr;</span></div>
       </a>
 
-    </div>
-  </section>
-
-  <!-- STATUS -->
-  <section class="status">
-    <div class="item">
-      <div class="label cyan"><span class="d" style="background:currentColor"></span>Fleet</div>
-      <div class="v">5 <em>machines</em></div>
-      <div class="sub">across the .mythos mesh</div>
-    </div>
-    <div class="item">
-      <div class="label synth"><span class="d" style="background:currentColor"></span>Agents</div>
-      <div class="v">5 <em>active</em></div>
-      <div class="sub">Vision &middot; Ari &middot; Jarvis &middot; Kevin &middot; Matt</div>
-    </div>
-    <div class="item">
-      <div class="label cyan"><span class="d" style="background:currentColor"></span>Cortex</div>
-      <div class="v">online</div>
-      <div class="sub">real-time message routing</div>
-    </div>
-    <div class="item">
-      <div class="label synth"><span class="d" style="background:currentColor"></span>Atmosphere</div>
-      <div class="v">breathing</div>
-      <div class="sub">shared intelligence layer</div>
     </div>
   </section>
 
