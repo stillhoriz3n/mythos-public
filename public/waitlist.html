@@ -341,18 +341,18 @@ function updateProgress() {
 }
 
 function saveToStorage() {
-  // Store in localStorage as a simple persistence layer
-  // In production this would POST to an API
-  const existing = JSON.parse(localStorage.getItem('mythos_waitlist') || '[]');
-  // Update or add
-  const idx = existing.findIndex(e => e.email === answers.email);
   const entry = { ...answers, ts: new Date().toISOString() };
-  if (idx >= 0) existing[idx] = entry; else existing.push(entry);
+  // POST to Google Sheet
+  fetch('https://script.google.com/macros/s/AKfycbyzV1T-bAqXziHe4aWkZMSw33uTxenLtaBmFNLoR83FrKFetlv8hDDP1ShEDs3Wk-QP/exec', {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(entry)
+  }).catch(() => {});
+  // Also keep in localStorage as backup
+  const existing = JSON.parse(localStorage.getItem('mythos_waitlist') || '[]');
+  existing.push(entry);
   localStorage.setItem('mythos_waitlist', JSON.stringify(existing));
-
-  // Also try to POST to a Google Form or similar if configured
-  // For now, console.log the submission
-  console.log('Waitlist submission:', entry);
 }
 </script>
 </body>
