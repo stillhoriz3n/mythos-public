@@ -4,215 +4,263 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MythOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: #0A1410; overflow: hidden; font-family: 'JetBrains Mono', ui-monospace, monospace; }
-
-  .shell { display: flex; flex-direction: column; height: 100vh; }
-
-  iframe.content {
-    flex: 1;
-    border: none;
-    width: 100%;
-    background: #0A1410;
+  :root {
+    --stage-void: #020204;
+    --stage-deep: #08070d;
+    --panel: #0c0b12;
+    --panel-elevated: #11101a;
+    --rule: #242a33;
+    --rule-soft: #1b2028;
+    --signal-machine: #4ec9d4;
+    --signal-synth: #e8b858;
+    --ink-bright: #e8e3d4;
+    --ink-soft: #b5b0a3;
+    --ink-dim: #8a8574;
+    --ink-faint: #4a4740;
   }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--stage-void); overflow: hidden; font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--ink-bright); }
+  .shell { display: flex; flex-direction: column; height: 100vh; }
+  iframe.content { flex: 1; border: none; width: 100%; background: var(--stage-void); }
+
+  /* ── NAV ──────────────────────────────────────────── */
+  .nav-strip {
+    height: 36px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 4px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .nav-brand {
+    font-family: 'Archivo', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--ink-bright);
+    margin-right: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .nav-emblem { width: 18px; height: 16px; }
+  .nav-link {
+    font-size: 10px;
+    letter-spacing: .08em;
+    color: var(--ink-faint);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: color .15s, background .15s;
+  }
+  .nav-link:hover { color: var(--signal-synth); background: rgba(232,184,88,.06); }
+  .nav-link.active { color: var(--signal-synth); }
 
   /* ── PLAYER BAR ────────────────────────────────────── */
   .player {
-    height: 64px;
-    background: #0a0e0c;
-    border-top: 1px solid #1C2E28;
+    height: 88px;
+    background: var(--panel);
+    border-top: 1px solid var(--rule);
     display: grid;
-    grid-template-columns: 300px 1fr 180px;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
-    padding: 0 20px;
-    gap: 16px;
+    gap: 0;
     flex-shrink: 0;
     z-index: 100;
+    position: relative;
   }
 
-  .player-track {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
+  /* Ambient glow behind player — reflects album art color */
+  .player::before {
+    content: "";
+    position: absolute;
+    inset: -1px 0 0;
+    background: radial-gradient(ellipse at 44px 50%, rgba(232,184,88,.08) 0%, transparent 50%);
+    pointer-events: none;
   }
 
+  /* Album art — prominent */
   .player-art {
-    width: 40px; height: 40px;
-    border-radius: 3px;
-    background: #15251F;
-    border: 1px solid #1C2E28;
+    width: 88px;
+    height: 88px;
     flex-shrink: 0;
     overflow: hidden;
+    position: relative;
+    cursor: pointer;
   }
-
   .player-art img {
     width: 100%; height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform .3s ease;
+  }
+  .player-art:hover img { transform: scale(1.05); }
+  .player-art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 60%, var(--panel) 100%);
+    pointer-events: none;
   }
 
-  .player-info { min-width: 0; }
+  /* Track info + controls — center column */
+  .player-center {
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .player-track-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+  }
   .player-title {
-    font-size: 12px;
-    color: #E4EFE8;
-    letter-spacing: 0.02em;
+    font-family: 'Archivo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-bright);
+    letter-spacing: .01em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .player-album {
+  .player-album-name {
+    font-family: 'Fraunces', serif;
+    font-variation-settings: "opsz" 36;
+    font-style: italic;
+    font-weight: 300;
+    font-size: 12px;
+    color: var(--ink-dim);
+    white-space: nowrap;
+  }
+  .player-artist {
     font-size: 10px;
-    color: #6E857B;
-    letter-spacing: 0.04em;
-    margin-top: 2px;
+    letter-spacing: .15em;
+    color: var(--signal-synth);
+    text-transform: uppercase;
   }
 
-  .player-controls {
+  .player-controls-row {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 14px;
   }
 
   .player-buttons {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 10px;
+    flex-shrink: 0;
   }
 
   .player-btn {
     background: none;
     border: none;
-    color: #6E857B;
+    color: var(--ink-dim);
     cursor: pointer;
     padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.15s;
+    transition: color .15s;
   }
-  .player-btn:hover { color: #E4EFE8; }
-  .player-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .player-btn:hover { color: var(--ink-bright); }
+  .player-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 
   .player-btn.play-pause {
-    width: 36px; height: 36px;
+    width: 32px; height: 32px;
     border-radius: 50%;
-    background: #7BE0A6;
-    color: #0a0e0c;
+    background: var(--signal-synth);
+    color: var(--stage-void);
   }
-  .player-btn.play-pause:hover { background: #9aeabd; }
-  .player-btn.play-pause svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+  .player-btn.play-pause:hover { background: #f5c970; }
+  .player-btn.play-pause svg { width: 13px; height: 13px; fill: currentColor; stroke: none; }
 
   .player-progress {
     display: flex;
     align-items: center;
     gap: 8px;
-    width: 100%;
-    max-width: 500px;
+    flex: 1;
+    min-width: 0;
   }
-
   .player-time {
     font-size: 10px;
-    color: #475A52;
-    letter-spacing: 0.04em;
-    min-width: 36px;
+    color: var(--ink-faint);
+    letter-spacing: .04em;
+    min-width: 34px;
     text-align: center;
+    flex-shrink: 0;
   }
-
   .progress-bar {
     flex: 1;
-    height: 4px;
-    background: #1C2E28;
+    height: 3px;
+    background: var(--rule);
     border-radius: 2px;
     cursor: pointer;
     position: relative;
   }
-
   .progress-fill {
     position: absolute;
     left: 0; top: 0; bottom: 0;
-    background: #7BE0A6;
+    background: var(--signal-synth);
     border-radius: 2px;
-    transition: width 0.1s linear;
+    transition: width .1s linear;
   }
+  .progress-bar:hover .progress-fill { background: #f5c970; }
+  .progress-bar:hover { height: 5px; margin-top: -1px; }
 
-  .progress-bar:hover .progress-fill { background: #9aeabd; }
-
-  .player-volume {
+  /* Volume — right column */
+  .player-right {
+    padding: 0 20px;
     display: flex;
     align-items: center;
     gap: 8px;
-    justify-content: flex-end;
   }
-
+  .vol-btn {
+    background: none; border: none;
+    color: var(--ink-dim); cursor: pointer;
+    display: flex; align-items: center;
+    transition: color .15s;
+  }
+  .vol-btn:hover { color: var(--ink-bright); }
+  .vol-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.8; fill: none; }
   .vol-bar {
-    width: 80px;
-    height: 4px;
-    background: #1C2E28;
+    width: 72px;
+    height: 3px;
+    background: var(--rule);
     border-radius: 2px;
     cursor: pointer;
     position: relative;
   }
-
   .vol-fill {
     position: absolute;
     left: 0; top: 0; bottom: 0;
-    background: #6E857B;
+    background: var(--ink-dim);
     border-radius: 2px;
   }
 
-  /* ── NAV BAR (inside player area) ──────────────────── */
-  .nav-strip {
-    height: 32px;
-    background: #0a0e0c;
-    border-top: 1px solid #1C2E28;
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-
-  .nav-brand {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.2em;
-    color: #E4EFE8;
-    margin-right: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .nav-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: #7BE0A6;
-    box-shadow: 0 0 8px rgba(123,224,166,0.45);
-  }
-
-  .nav-link {
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    color: #475A52;
-    text-decoration: none;
-    padding: 4px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: color 0.15s, background 0.15s;
-  }
-  .nav-link:hover { color: #7BE0A6; background: rgba(123,224,166,0.08); }
-  .nav-link.active { color: #7BE0A6; }
-
   @media (max-width: 700px) {
-    .player { grid-template-columns: 1fr; height: auto; padding: 10px 16px; gap: 8px; }
-    .player-track { order: 1; }
-    .player-controls { order: 2; }
-    .player-volume { display: none; }
-    .nav-strip { flex-wrap: wrap; height: auto; padding: 8px 16px; }
+    .player { grid-template-columns: 72px 1fr; height: 80px; }
+    .player-art { width: 80px; height: 80px; }
+    .player-right { display: none; }
+    .nav-strip { flex-wrap: wrap; height: auto; padding: 6px 16px; gap: 2px; }
+    .player-title { font-size: 13px; }
+    .player-album-name { display: none; }
   }
+
+  ::selection { background: var(--signal-synth); color: var(--stage-void); }
 </style>
 </head>
 <body>
@@ -220,7 +268,16 @@
 
   <!-- NAV -->
   <div class="nav-strip">
-    <span class="nav-brand"><span class="nav-dot"></span> MYTHOS</span>
+    <span class="nav-brand">
+      <svg class="nav-emblem" viewBox="0 0 70 60" xmlns="http://www.w3.org/2000/svg">
+        <g fill="none" stroke="#e8b858" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.4" opacity=".9"/>
+          <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".9" opacity=".8" fill="#e8b858" fill-opacity=".1"/>
+          <circle cx="35" cy="30" r="1.8" fill="#ffe6a0" opacity=".95"/>
+        </g>
+      </svg>
+      MYTHOS
+    </span>
     <a class="nav-link active" onclick="nav('landing.html')">home</a>
     <a class="nav-link" onclick="nav('thesis.html')">thesis</a>
     <a class="nav-link" onclick="nav('invariant.html')">invariant</a>
@@ -229,42 +286,45 @@
     <a class="nav-link" onclick="nav('the-last-sessions-insufficient-data.html')">the last sessions</a>
   </div>
 
-  <!-- CONTENT IFRAME -->
+  <!-- CONTENT -->
   <iframe class="content" id="content" src="landing.html"></iframe>
 
-  <!-- PLAYER BAR -->
+  <!-- PLAYER -->
   <div class="player">
-    <div class="player-track">
-      <div class="player-art" id="art"><img id="art-img" src="music/cover-sh.jpg" alt="album art"></div>
-      <div class="player-info">
-        <div class="player-title" id="track-title">select a track</div>
-        <div class="player-album" id="track-album">HORIZ3N</div>
-      </div>
+    <div class="player-art" id="art">
+      <img id="art-img" src="music/cover-sh.jpg" alt="album art">
     </div>
 
-    <div class="player-controls">
-      <div class="player-buttons">
-        <button class="player-btn" onclick="prevTrack()" title="previous">
-          <svg viewBox="0 0 24 24"><polygon points="19,20 9,12 19,4"/><line x1="5" y1="4" x2="5" y2="20"/></svg>
-        </button>
-        <button class="player-btn play-pause" id="play-btn" onclick="togglePlay()" title="play">
-          <svg viewBox="0 0 24 24" id="play-icon"><polygon points="6,3 20,12 6,21"/></svg>
-        </button>
-        <button class="player-btn" onclick="nextTrack()" title="next">
-          <svg viewBox="0 0 24 24"><polygon points="5,4 15,12 5,20"/><line x1="19" y1="4" x2="19" y2="20"/></svg>
-        </button>
+    <div class="player-center">
+      <div class="player-track-row">
+        <span class="player-title" id="track-title">press play</span>
+        <span class="player-album-name" id="track-album">stillHORIZ3N</span>
       </div>
-      <div class="player-progress">
-        <span class="player-time" id="time-cur">0:00</span>
-        <div class="progress-bar" id="progress" onclick="seek(event)">
-          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      <div class="player-artist">HORIZ3N</div>
+      <div class="player-controls-row">
+        <div class="player-buttons">
+          <button class="player-btn" onclick="prevTrack()" title="previous">
+            <svg viewBox="0 0 24 24"><polygon points="19,20 9,12 19,4"/><line x1="5" y1="4" x2="5" y2="20"/></svg>
+          </button>
+          <button class="player-btn play-pause" id="play-btn" onclick="togglePlay()" title="play">
+            <svg viewBox="0 0 24 24" id="play-icon"><polygon points="7,3 21,12 7,21"/></svg>
+          </button>
+          <button class="player-btn" onclick="nextTrack()" title="next">
+            <svg viewBox="0 0 24 24"><polygon points="5,4 15,12 5,20"/><line x1="19" y1="4" x2="19" y2="20"/></svg>
+          </button>
         </div>
-        <span class="player-time" id="time-dur">0:00</span>
+        <div class="player-progress">
+          <span class="player-time" id="time-cur">0:00</span>
+          <div class="progress-bar" id="progress" onclick="seek(event)">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+          </div>
+          <span class="player-time" id="time-dur">0:00</span>
+        </div>
       </div>
     </div>
 
-    <div class="player-volume">
-      <button class="player-btn" onclick="toggleMute()" title="volume">
+    <div class="player-right">
+      <button class="vol-btn" onclick="toggleMute()" title="volume">
         <svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
       </button>
       <div class="vol-bar" onclick="setVol(event)">
@@ -278,13 +338,11 @@
 
 <script>
 const TRACKS = [
-  // stillHORIZ3N
   { file: 'music/sh-1 - askJarvis.mp3',            title: 'askJarvis',              album: 'stillHORIZ3N' },
   { file: 'music/sh-2 - Find Myself.mp3',           title: 'Find Myself',            album: 'stillHORIZ3N' },
   { file: 'music/sh-3 - Whispers of Infinity.mp3',  title: 'Whispers of Infinity',   album: 'stillHORIZ3N' },
   { file: 'music/sh-4 - Very Well.mp3',             title: 'Very Well',              album: 'stillHORIZ3N' },
   { file: 'music/sh-5 - Substrate.mp3',             title: 'Substrate',              album: 'stillHORIZ3N' },
-  // Robots & Remixes
   { file: 'music/rr-1 - Clockwork Infinity.mp3',                          title: 'Clockwork Infinity',                        album: 'Robots & Remixes' },
   { file: 'music/rr-2 - Waiting for the Waymo.mp3',                       title: 'Waiting for the Waymo',                     album: 'Robots & Remixes' },
   { file: 'music/rr-2 - Today is Yesterday x Make \'em say Errr.mp3',     title: 'Today is Yesterday x Make \'em say Errr',   album: 'Robots & Remixes' },
@@ -322,7 +380,7 @@ function updatePlayIcon() {
   const icon = document.getElementById('play-icon');
   icon.innerHTML = playing
     ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
-    : '<polygon points="6,3 20,12 6,21"/>';
+    : '<polygon points="7,3 21,12 7,21"/>';
 }
 
 function nextTrack() { loadTrack((current + 1) % TRACKS.length); if (playing) audio.play(); }
@@ -357,9 +415,22 @@ function toggleMute() {
   document.getElementById('vol-fill').style.width = audio.muted ? '0%' : (audio.volume * 100) + '%';
 }
 
-audio.volume = 0.7;
+audio.volume = 0.5;
+document.getElementById('vol-fill').style.width = '50%';
 
-// Navigation
+// Autoplay Fender Bender on load
+window.addEventListener('load', () => {
+  const fenderIdx = TRACKS.findIndex(t => t.title === 'Fender Bender');
+  if (fenderIdx >= 0) {
+    loadTrack(fenderIdx);
+    audio.play().then(() => { playing = true; updatePlayIcon(); }).catch(() => {
+      // Browser blocked autoplay — wait for first interaction
+      const unlock = () => { audio.play().then(() => { playing = true; updatePlayIcon(); }); document.removeEventListener('click', unlock); };
+      document.addEventListener('click', unlock);
+    });
+  }
+});
+
 function nav(page) {
   document.getElementById('content').src = page;
   document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
