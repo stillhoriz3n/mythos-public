@@ -186,19 +186,17 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
   mix-blend-mode:overlay;
 }
 
-/* Singularity orb — collapses above player on paper pages */
+/* Singularity orb — collapses to bottom-left on paper pages */
 .singularity-orb{
   position:absolute;
-  top:-20px;
-  left:50%;
-  transform:translateX(-50%);
+  bottom:calc(100% + 12px);
+  left:24px;
   border-radius:50%;
   background:radial-gradient(circle,#fff2c8 0%,#e8b858 35%,rgba(232,184,88,.3) 60%,transparent 75%);
   width:8px;height:8px;
   opacity:0;
   pointer-events:none;
   z-index:101;
-  transition:opacity .3s;
 }
 
 /* ── MAIN ─────────────────────────────────── */

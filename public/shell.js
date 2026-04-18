@@ -153,7 +153,12 @@
   audio.addEventListener('pause', function() { playing = false; updatePlayIcon(); saveState(); broadcastTrack(); });
   audio.addEventListener('ended', function() {
     if (loop) { audio.currentTime = 0; audio.play().catch(function(){}); }
-    else nextTrack();
+    else {
+      // Force-advance: playing may have been set false by the pause event
+      // that fires just before ended, so we need to explicitly play
+      loadTrack(current + 1);
+      audio.play().catch(function(){});
+    }
   });
   audio.addEventListener('timeupdate', function() {
     if (!audio.duration || !isFinite(audio.duration)) return;
@@ -352,6 +357,12 @@
       singularityEl.style.opacity = Math.max(0, viewT).toFixed(3);
     }
 
+    // ── Read audio data (always, even when collapsed — singularity needs it) ──
+    if (analyser && audioContextReady) {
+      analyser.getByteTimeDomainData(dataArray);
+      analyser.getByteFrequencyData(freqArray);
+    }
+
     // Don't render canvas when fully collapsed
     if (expand < 0.005) {
       // Still update singularity beat
@@ -359,12 +370,7 @@
       return;
     }
 
-    // ── Read audio data ──
     var bass = 0, subBass = 0, mid = 0, high = 0, presence = 0, total = 0;
-    if (analyser && audioContextReady) {
-      analyser.getByteTimeDomainData(dataArray);
-      analyser.getByteFrequencyData(freqArray);
-    }
     bass = avg(freqArray, 0, 10) / 255;
     subBass = avg(freqArray, 0, 4) / 255;
     mid = avg(freqArray, 10, 80) / 255;
