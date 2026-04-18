@@ -68,8 +68,7 @@
   .player {
     min-height: 96px;
     height: 96px;
-    background: var(--panel);
-    border-top: 2px solid var(--rule);
+    background: transparent;
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
@@ -79,13 +78,26 @@
     position: relative;
   }
 
-  /* Ambient glow behind player — reflects album art color */
+  /* Gradient vignette — invisible center, materializes at edges + bottom */
   .player::before {
     content: "";
     position: absolute;
-    inset: -1px 0 0;
-    background: radial-gradient(ellipse at 44px 50%, rgba(232,184,88,.08) 0%, transparent 50%);
+    inset: -60px 0 0;
+    background:
+      linear-gradient(to top, rgba(2,2,4,.95) 0%, rgba(2,2,4,.7) 30%, rgba(2,2,4,.15) 60%, transparent 100%),
+      linear-gradient(to right, rgba(2,2,4,.6) 0%, transparent 15%, transparent 85%, rgba(2,2,4,.6) 100%);
     pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Warm ambient glow near album art */
+  .player::after {
+    content: "";
+    position: absolute;
+    inset: -40px 0 0;
+    background: radial-gradient(ellipse at 48px 70%, rgba(232,184,88,.06) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: -1;
   }
 
   /* Album art — prominent */
