@@ -236,17 +236,29 @@
   .vol-btn:hover { color: var(--ink-bright); }
   .vol-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.8; fill: none; }
   .vol-bar {
-    width: 72px; height: 3px;
-    background: rgba(36,42,51,.7);
-    border-radius: 2px;
+    width: 72px; height: 20px;
     cursor: pointer;
     position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .vol-bar::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%; transform: translateY(-50%);
+    height: 3px;
+    background: rgba(36,42,51,.7);
+    border-radius: 2px;
   }
   .vol-fill {
     position: absolute;
-    left: 0; top: 0; bottom: 0;
+    left: 0;
+    top: 50%; transform: translateY(-50%);
+    height: 3px;
     background: var(--ink-dim);
     border-radius: 2px;
+    pointer-events: none;
   }
 
   @media (max-width: 700px) {
