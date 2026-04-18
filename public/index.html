@@ -353,14 +353,16 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
 .queue-btn{position:relative}
 .queue-btn.on{color:var(--signal-synth)}
 
-/* Queue panel */
+/* Album browser panel */
 .queue-panel{
   position:absolute;
   right:20px;bottom:calc(100% + 8px);
-  width:360px;max-height:60vh;
-  background:var(--panel);
+  width:420px;max-height:70vh;
+  background:rgba(8,7,13,.95);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
   border:1px solid var(--rule);
-  border-radius:4px;
+  border-radius:6px;
   box-shadow:0 -8px 48px rgba(0,0,0,.7);
   overflow:hidden;display:flex;flex-direction:column;
   opacity:0;pointer-events:none;
@@ -369,8 +371,52 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
   z-index:120;
 }
 .queue-panel.on{opacity:1;pointer-events:auto;transform:translateY(0)}
+
+/* Album selector */
+.album-selector{
+  padding:18px 20px 14px;
+  border-bottom:1px solid var(--rule);
+  display:flex;gap:14px;
+  overflow-x:auto;
+}
+.album-card{
+  flex-shrink:0;
+  width:120px;
+  cursor:pointer;
+  border-radius:4px;
+  overflow:hidden;
+  border:2px solid transparent;
+  transition:border-color .15s, transform .15s;
+  position:relative;
+}
+.album-card:hover{transform:translateY(-2px)}
+.album-card.active{border-color:var(--signal-synth);box-shadow:0 0 16px rgba(232,184,88,.2)}
+.album-card img{
+  width:120px;height:120px;
+  object-fit:cover;display:block;
+}
+.album-card .album-label{
+  padding:8px 8px 6px;
+  background:rgba(8,7,13,.85);
+}
+.album-card .album-name{
+  font-family:'Archivo',sans-serif;font-weight:700;
+  font-size:11px;color:var(--ink-bright);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.album-card .album-artist{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--signal-synth);margin-top:2px;
+}
+.album-card .album-count{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;color:var(--ink-faint);margin-top:1px;
+}
+
+/* Tracklist */
 .queue-head{
-  padding:14px 18px;border-bottom:1px solid var(--rule);
+  padding:12px 20px;border-bottom:1px solid var(--rule);
   display:flex;justify-content:space-between;align-items:center;
   font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.24em;text-transform:uppercase;
   color:var(--ink-dim);
@@ -379,7 +425,7 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
 .queue-list{overflow-y:auto;flex:1}
 .queue-item{
   display:grid;grid-template-columns:32px 1fr auto;gap:10px;
-  align-items:center;padding:10px 18px;
+  align-items:center;padding:10px 20px;
   cursor:pointer;border-bottom:1px solid var(--rule-soft);
   transition:background .1s;
 }
@@ -541,7 +587,7 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
   <!-- PLAYER -->
   <section class="player" role="region" aria-label="Audio player">
     <div class="player-info">
-      <div class="player-art" onclick="nav('visualizer.html')" title="Open visualizer">
+      <div class="player-art" onclick="toggleQueue()" title="Browse albums">
         <img id="art" src="music/cover-rr.png" alt="album art">
       </div>
       <div class="player-meta">
@@ -597,8 +643,9 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
     <div class="singularity-orb" id="singularity"></div>
 
     <div class="queue-panel" id="queue-panel">
+      <div class="album-selector" id="album-selector"></div>
       <div class="queue-head">
-        <span>Queue</span>
+        <span id="queue-album-title">All Tracks</span>
         <span><span class="count" id="queue-count">0</span> tracks</span>
       </div>
       <div class="queue-list" id="queue-list"></div>

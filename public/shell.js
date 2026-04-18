@@ -232,30 +232,88 @@
     saveState();
   }
 
-  // ── QUEUE ────────────────────────────────────────────
+  // ── ALBUMS & QUEUE ────────────────────────────────────
+  var ALBUMS = [
+    { id: 'rr', name: 'Robots & Remixes', artist: 'HORIZ3N', cover: 'music/cover-rr.png' },
+    { id: 'sh', name: 'stillHORIZ3N',     artist: 'HORIZ3N', cover: 'music/cover-sh.jpg' },
+  ];
+
   var queueOpen = false;
+  var selectedAlbum = null; // null = show all
+
   function toggleQueue() {
     queueOpen = !queueOpen;
     document.getElementById('queue-panel').classList.toggle('on', queueOpen);
     document.getElementById('btn-queue').classList.toggle('on', queueOpen);
+    if (queueOpen) {
+      renderAlbumSelector();
+      renderQueue();
+    }
+  }
+
+  function renderAlbumSelector() {
+    var container = document.getElementById('album-selector');
+    container.innerHTML = '';
+    ALBUMS.forEach(function(alb) {
+      var card = document.createElement('div');
+      card.className = 'album-card' + (selectedAlbum === alb.id ? ' active' : '');
+      var trackCount = TRACKS.filter(function(t) { return t.cover === alb.id; }).length;
+      card.innerHTML =
+        '<img src="' + alb.cover + '" alt="' + escapeHtml(alb.name) + '">' +
+        '<div class="album-label">' +
+          '<div class="album-name">' + escapeHtml(alb.name) + '</div>' +
+          '<div class="album-artist">' + escapeHtml(alb.artist) + '</div>' +
+          '<div class="album-count">' + trackCount + ' tracks</div>' +
+        '</div>';
+      card.addEventListener('click', function() {
+        if (selectedAlbum === alb.id) {
+          selectedAlbum = null; // deselect — show all
+        } else {
+          selectedAlbum = alb.id;
+        }
+        renderAlbumSelector();
+        renderQueue();
+      });
+      container.appendChild(card);
+    });
   }
 
   function renderQueue() {
     var list = document.getElementById('queue-list');
     var count = document.getElementById('queue-count');
-    count.textContent = TRACKS.length;
-    if (list.children.length === TRACKS.length) {
-      [].slice.call(list.children).forEach(function(el, i) { el.classList.toggle('active', i === current); });
-      return;
-    }
-    list.innerHTML = '';
+    var titleEl = document.getElementById('queue-album-title');
+
+    // Filter tracks by selected album
+    var filtered = [];
     TRACKS.forEach(function(t, i) {
+      if (!selectedAlbum || t.cover === selectedAlbum) {
+        filtered.push({ track: t, index: i });
+      }
+    });
+
+    count.textContent = filtered.length;
+    if (selectedAlbum) {
+      var alb = ALBUMS.find(function(a) { return a.id === selectedAlbum; });
+      titleEl.textContent = alb ? alb.name : 'All Tracks';
+    } else {
+      titleEl.textContent = 'All Tracks';
+    }
+
+    list.innerHTML = '';
+    filtered.forEach(function(item, displayIdx) {
+      var t = item.track;
+      var i = item.index;
       var el = document.createElement('div');
       el.className = 'queue-item' + (i === current ? ' active' : '');
-      el.innerHTML = '<div class="n">' + String(i + 1).padStart(2, '0') + '</div>' +
+      el.innerHTML =
+        '<div class="n">' + String(displayIdx + 1).padStart(2, '0') + '</div>' +
         '<div class="titlebox"><div class="t">' + escapeHtml(t.title) + '</div><div class="a">' + escapeHtml(t.album) + '</div></div>' +
         '<div class="dur"></div>';
-      el.addEventListener('click', function() { loadTrack(i); audio.play().catch(function(){}); });
+      el.addEventListener('click', function() {
+        ensureAudioContext();
+        loadTrack(i);
+        audio.play().catch(function(){});
+      });
       list.appendChild(el);
     });
   }
