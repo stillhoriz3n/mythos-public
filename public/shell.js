@@ -4,22 +4,22 @@
 
   // ── TRACKS ──────────────────────────────────────────
   const TRACKS = [
-    { file: 'music/rr-4 - Fender Bender.mp3',                              title: 'Fender Bender',                         album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. GLYF' },
-    { file: 'music/rr-1 - Clockwork Infinity.mp3',                         title: 'Clockwork Infinity',                    album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. joeY' },
-    { file: 'music/rr-2 - Waiting for the Waymo.mp3',                      title: 'Waiting for the Waymo',                 album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. KISTONE' },
-    { file: "music/rr-2 - Today is Yesterday x Make 'em say Errr.mp3",     title: "Today is Yesterday x Make 'em say Errr", album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. THE DAYLIGHTS' },
-    { file: 'music/rr-3 - I Got Hosts.mp3',                                title: 'I Got Hosts',                           album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. AKS' },
-    { file: 'music/rr-5 - Goodtime.mp3',                                   title: 'Goodtime',                              album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. GLYF' },
-    { file: 'music/rr-6 - Treading Water.mp3',                             title: 'Treading Water',                        album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N' },
-    { file: 'music/rr-8 - Rogue Machine x Goodtime.mp3',                   title: 'Rogue Machine x Goodtime',              album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. GLYF' },
-    { file: 'music/rr-9 - Barbra Streisand x Eduardo Saverin.mp3',         title: 'Barbra Streisand x Eduardo Saverin',    album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. joeY' },
-    { file: 'music/rr-10 - Rock Lobster.mp3',                              title: 'Rock Lobster',                          album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N' },
-    { file: 'music/rr-11 - Orange Chicken.mp3',                            title: 'Orange Chicken',                        album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N' },
-    { file: 'music/sh-1 - askJarvis.mp3',                                  title: 'askJarvis',                             album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N' },
-    { file: 'music/sh-2 - Find Myself.mp3',                                title: 'Find Myself',                           album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N' },
-    { file: 'music/sh-3 - Whispers of Infinity.mp3',                       title: 'Whispers of Infinity',                  album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N' },
-    { file: 'music/sh-4 - Very Well.mp3',                                  title: 'Very Well',                             album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N' },
-    { file: 'music/sh-5 - Substrate.mp3',                                  title: 'Substrate',                             album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N' },
+    { file: 'music/rr-4 - Fender Bender.mp3',                              title: 'Fender Bender',                         album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. GLYF',         bpm: 141 },
+    { file: 'music/rr-1 - Clockwork Infinity.mp3',                         title: 'Clockwork Infinity',                    album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. joeY',         bpm: 131 },
+    { file: 'music/rr-2 - Waiting for the Waymo.mp3',                      title: 'Waiting for the Waymo',                 album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. KISTONE',      bpm: 134 },
+    { file: "music/rr-2 - Today is Yesterday x Make 'em say Errr.mp3",     title: "Today is Yesterday x Make 'em say Errr", album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. THE DAYLIGHTS', bpm: 120 },
+    { file: 'music/rr-3 - I Got Hosts.mp3',                                title: 'I Got Hosts',                           album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. AKS',          bpm: 131 },
+    { file: 'music/rr-5 - Goodtime.mp3',                                   title: 'Goodtime',                              album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. GLYF',         bpm: 125 },
+    { file: 'music/rr-6 - Treading Water.mp3',                             title: 'Treading Water',                        album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N',                    bpm: 128 },
+    { file: 'music/rr-8 - Rogue Machine x Goodtime.mp3',                   title: 'Rogue Machine x Goodtime',              album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. GLYF',         bpm: 128 },
+    { file: 'music/rr-9 - Barbra Streisand x Eduardo Saverin.mp3',         title: 'Barbra Streisand x Eduardo Saverin',    album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. joeY',         bpm: 128 },
+    { file: 'music/rr-10 - Rock Lobster.mp3',                              title: 'Rock Lobster',                          album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N',                    bpm: 141 },
+    { file: 'music/rr-11 - Orange Chicken.mp3',                            title: 'Orange Chicken',                        album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N',                    bpm: 156 },
+    { file: 'music/sh-1 - askJarvis.mp3',                                  title: 'askJarvis',                             album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N',                    bpm: 122 },
+    { file: 'music/sh-2 - Find Myself.mp3',                                title: 'Find Myself',                           album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N',                    bpm: 131 },
+    { file: 'music/sh-3 - Whispers of Infinity.mp3',                       title: 'Whispers of Infinity',                  album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N',                    bpm: 131 },
+    { file: 'music/sh-4 - Very Well.mp3',                                  title: 'Very Well',                             album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N',                    bpm: 128 },
+    { file: 'music/sh-5 - Substrate.mp3',                                  title: 'Substrate',                             album: 'stillHORIZ3N',      cover:'sh', artist:'HORIZ3N',                    bpm: 110 },
   ];
 
   const PAGE_META = {
@@ -61,6 +61,31 @@
   let viewTarget = 0;
   let singularityEl;
   let vizStarted = false;
+
+  // ── MATRIX EASTER EGG STATE ──────────────────────────
+  let matrixMode = false;
+  let matrixT = 0;       // 0 = cosmos, 1 = fully matrix (smooth transition)
+  let matrixDrops = [];   // rain columns
+  let matrixChars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンMYTHOSSubstrate01'.split('');
+  let matrixLastAlbum = null;
+
+  // ── BEAT CLOCK ───────────────────────────────────────
+  // beatPhase: 0→1 sawtooth synced to track BPM (0 = downbeat, 1 = next beat)
+  // beatPulse: 0→1 exponential decay that fires on each beat (for visual kicks)
+  // beatHalf/beatQuarter: subdivisions
+  function getBeat() {
+    var bpm = TRACKS[current] ? (TRACKS[current].bpm || 120) : 120;
+    var t = audio.currentTime || 0;
+    var beatsPerSec = bpm / 60;
+    var raw = t * beatsPerSec;
+    var phase = raw % 1;                     // 0→1 sawtooth per beat
+    var half = (raw * 2) % 1;                // 0→1 sawtooth per half-beat
+    var quarter = (raw * 4) % 1;             // 0→1 sawtooth per quarter-beat
+    var bar = (raw / 4) % 1;                 // 0→1 sawtooth per 4-beat bar
+    var pulse = Math.exp(-phase * 6);        // sharp attack, exponential decay
+    var barPulse = Math.exp(-(raw % 4) * 3); // slower pulse on bar downbeat
+    return { phase: phase, half: half, quarter: quarter, bar: bar, pulse: pulse, barPulse: barPulse, raw: raw, bpm: bpm };
+  }
 
   // Fill dataArray with silence (128 = zero crossing)
   dataArray.fill(128);
@@ -126,6 +151,13 @@
     renderQueue();
     saveState();
     broadcastTrack();
+
+    // ── Matrix Easter egg: activate on stillHORIZ3N ──
+    var albumId = t.cover;
+    if (albumId !== matrixLastAlbum) {
+      matrixLastAlbum = albumId;
+      setMatrixMode(albumId === 'sh');
+    }
   }
 
   function togglePlay() {
@@ -357,6 +389,7 @@
     vizCanvas.width = trailCanvas.width = window.innerWidth * dpr;
     vizCanvas.height = trailCanvas.height = window.innerHeight * dpr;
     initStars();
+    if (matrixMode) initMatrixDrops();
   }
 
   function initStars() {
@@ -429,6 +462,11 @@
       return;
     }
 
+    // ── Smooth matrix transition ──
+    var matrixTarget = matrixMode ? 1 : 0;
+    matrixT += (matrixTarget - matrixT) * 0.04;
+    if (Math.abs(matrixT - matrixTarget) < 0.005) matrixT = matrixTarget;
+
     var bass = 0, subBass = 0, mid = 0, high = 0, presence = 0, total = 0;
     bass = avg(freqArray, 0, 10) / 255;
     subBass = avg(freqArray, 0, 4) / 255;
@@ -436,6 +474,9 @@
     high = avg(freqArray, 80, 300) / 255;
     presence = avg(freqArray, 300, 600) / 255;
     total = avg(freqArray, 0, 400) / 255;
+
+    // ── Beat clock ──
+    var beat = playing ? getBeat() : { phase:0, half:0, quarter:0, bar:0, pulse:0, barPulse:0, raw:0, bpm:120 };
 
     phase += 0.006 + total * 0.025;
 
@@ -453,14 +494,24 @@
     trailCtx.drawImage(vizCanvas, 0, 0);
     c.clearRect(0, 0, w, h);
 
-    // ── Cosmic ground gradient ──
-    var grad = c.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, Math.max(w, h) * 0.7);
-    grad.addColorStop(0, '#1f1a2a');
-    grad.addColorStop(0.22, '#14121c');
-    grad.addColorStop(0.52, '#08070d');
-    grad.addColorStop(1, '#020204');
-    c.fillStyle = grad;
-    c.fillRect(0, 0, w, h);
+    // ── Background — cosmos or matrix ──
+    if (matrixT > 0.01) {
+      // Matrix rain (drawn underneath when transitioning, or full when matrixT=1)
+      drawMatrixRain(c, w, h, bass, mid, total);
+    }
+    if (matrixT < 0.99) {
+      // Cosmic ground gradient (fades out as matrix takes over)
+      var cosmosAlpha = 1 - matrixT;
+      c.globalAlpha = cosmosAlpha;
+      var grad = c.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, Math.max(w, h) * 0.7);
+      grad.addColorStop(0, '#1f1a2a');
+      grad.addColorStop(0.22, '#14121c');
+      grad.addColorStop(0.52, '#08070d');
+      grad.addColorStop(1, '#020204');
+      c.fillStyle = grad;
+      c.fillRect(0, 0, w, h);
+      c.globalAlpha = 1;
+    }
 
     // ── Trails ──
     var minDim = Math.min(w, h);
@@ -469,11 +520,12 @@
     c.globalAlpha = (0.78 + total * 0.1) * glowDim;
     c.drawImage(trailCanvas, 0, 0);
     c.globalAlpha = 1;
-    trailCtx.fillStyle = 'rgba(2,2,4,0.12)';
+    trailCtx.fillStyle = matrixT > 0.5 ? 'rgba(13,2,8,0.18)' : 'rgba(2,2,4,0.12)';
     trailCtx.fillRect(0, 0, w, h);
 
-    // ── Stars (fade with viewT) ──
-    var starAlphaScale = expand;
+    // ── Stars (fade with viewT and matrix transition) ──
+    var cosmosOpacity = 1 - matrixT;
+    var starAlphaScale = expand * cosmosOpacity;
     if (starAlphaScale > 0.01) {
       var time = performance.now() / 1000;
       for (var si = 0; si < stars.length; si++) {
@@ -499,9 +551,9 @@
       }
     }
 
-    // ── Dark-matter filaments (static, fade with expand) ──
-    if (expand > 0.1) {
-      c.globalAlpha = 0.25 * expand;
+    // ── Dark-matter filaments (static, fade with expand and matrix) ──
+    if (expand > 0.1 && cosmosOpacity > 0.05) {
+      c.globalAlpha = 0.25 * expand * cosmosOpacity;
       c.strokeStyle = '#6a5a7a'; c.lineWidth = 0.6 * dpr; c.lineCap = 'round';
       c.beginPath();
       c.moveTo(w*0.05, h*0.15);
@@ -509,7 +561,7 @@
       c.bezierCurveTo(w*0.38,h*0.17, w*0.43,h*0.19, w*0.48,h*0.22);
       c.stroke();
 
-      c.globalAlpha = 0.2 * expand;
+      c.globalAlpha = 0.2 * expand * cosmosOpacity;
       c.strokeStyle = '#5c5068'; c.lineWidth = 0.5 * dpr;
       c.beginPath();
       c.moveTo(w*0.08, h*0.68);
@@ -518,7 +570,7 @@
       c.bezierCurveTo(w*0.41,h*0.62, w*0.45,h*0.61, w*0.50,h*0.61);
       c.stroke();
 
-      c.globalAlpha = 0.18 * expand;
+      c.globalAlpha = 0.18 * expand * cosmosOpacity;
       c.strokeStyle = '#8b6a3a'; c.lineWidth = 0.5 * dpr;
       c.beginPath();
       c.moveTo(w*0.56, h*0.08);
@@ -528,43 +580,58 @@
       c.globalAlpha = 1;
     }
 
-    // ── Hot event ──
+    // ── Hot event (beat-synced) ──
     var ex = w * 0.52, ey = h * 0.48;
+    var beatKick = beat.pulse * 0.3; // 0→0.3 on each beat
     // Scale the event by expand — contracts toward a point as viewT → 1
-    var eventR = (40 + bass * 100 + subBass * 35) * dpr * bloomScale * (0.15 + expand * 0.85);
+    var eventR = (40 + bass * 100 + subBass * 35 + beatKick * 40) * dpr * bloomScale * (0.15 + expand * 0.85);
+
+    // ── Color lerp for hot event (amber → green in matrix mode) ──
+    var mT = matrixT;
+    function lerpRGB(r1,g1,b1, r2,g2,b2, t) {
+      return Math.round(r1+(r2-r1)*t)+','+Math.round(g1+(g2-g1)*t)+','+Math.round(b1+(b2-b1)*t);
+    }
+    var haloInner = lerpRGB(232,184,88, 0,255,65, mT);
+    var haloMid   = lerpRGB(217,164,65, 0,200,50, mT);
+    var coreWhite = lerpRGB(255,242,200, 180,255,180, mT);
+    var coreBright= lerpRGB(255,223,138, 80,255,100, mT);
+    var coreMid   = lerpRGB(232,184,88, 0,255,65, mT);
+    var coreDim   = lerpRGB(217,164,65, 0,180,40, mT);
+    var spikeCol  = lerpRGB(255,230,176, 0,255,65, mT);
+    var singWhite = lerpRGB(255,242,200, 180,255,180, mT);
 
     // Outer halo
     var haloR = eventR * (1 + expand * 2);
     var halo = c.createRadialGradient(ex, ey, 0, ex, ey, haloR);
-    halo.addColorStop(0, 'rgba(232,184,88,' + ((0.04 + bass * 0.06) * glowDim) + ')');
-    halo.addColorStop(0.3, 'rgba(217,164,65,' + ((0.015 + bass * 0.02) * glowDim) + ')');
-    halo.addColorStop(1, 'rgba(139,90,30,0)');
+    halo.addColorStop(0, 'rgba(' + haloInner + ',' + ((0.04 + bass * 0.06) * glowDim) + ')');
+    halo.addColorStop(0.3, 'rgba(' + haloMid + ',' + ((0.015 + bass * 0.02) * glowDim) + ')');
+    halo.addColorStop(1, 'rgba(' + haloMid + ',0)');
     c.fillStyle = halo;
     c.fillRect(0, 0, w, h);
 
     // Core
     var core = c.createRadialGradient(ex, ey, 0, ex, ey, eventR);
-    core.addColorStop(0, 'rgba(255,242,200,' + ((0.5 + bass * 0.3) * glowDim) + ')');
-    core.addColorStop(0.06, 'rgba(255,223,138,' + ((0.3 + bass * 0.2) * glowDim) + ')');
-    core.addColorStop(0.2, 'rgba(232,184,88,' + ((0.12 + bass * 0.1) * glowDim) + ')');
-    core.addColorStop(0.5, 'rgba(217,164,65,' + ((0.03 + bass * 0.04) * glowDim) + ')');
-    core.addColorStop(1, 'rgba(139,90,30,0)');
+    core.addColorStop(0, 'rgba(' + coreWhite + ',' + ((0.5 + bass * 0.3) * glowDim) + ')');
+    core.addColorStop(0.06, 'rgba(' + coreBright + ',' + ((0.3 + bass * 0.2) * glowDim) + ')');
+    core.addColorStop(0.2, 'rgba(' + coreMid + ',' + ((0.12 + bass * 0.1) * glowDim) + ')');
+    core.addColorStop(0.5, 'rgba(' + coreDim + ',' + ((0.03 + bass * 0.04) * glowDim) + ')');
+    core.addColorStop(1, 'rgba(' + coreDim + ',0)');
     c.beginPath(); c.arc(ex, ey, eventR, 0, Math.PI * 2);
     c.fillStyle = core; c.fill();
 
-    // Singularity point
-    var singR = (2 + bass * 3 + subBass * 1.5) * dpr;
+    // Singularity point (beat-synced)
+    var singR = (2 + bass * 3 + subBass * 1.5 + beatKick * 4) * dpr;
     c.beginPath(); c.arc(ex, ey, singR, 0, Math.PI * 2);
     c.fillStyle = 'rgba(255,255,255,' + (0.85 + bass * 0.15) + ')'; c.fill();
     c.beginPath(); c.arc(ex, ey, singR * 2, 0, Math.PI * 2);
-    c.fillStyle = 'rgba(255,242,200,' + ((0.2 + bass * 0.15) * glowDim) + ')'; c.fill();
+    c.fillStyle = 'rgba(' + singWhite + ',' + ((0.2 + bass * 0.15) * glowDim) + ')'; c.fill();
 
     // Diffraction spikes
     var spikeAlpha = expand;
     if (spikeAlpha > 0.05) {
       var spikeAngle = total * 0.3;
-      var sLen = (20 + bass * 40 + subBass * 20) * dpr * expand;
-      c.strokeStyle = 'rgba(255,230,176,' + ((0.25 + bass * 0.35) * spikeAlpha) + ')';
+      var sLen = (20 + bass * 40 + subBass * 20 + beat.pulse * 25) * dpr * expand;
+      c.strokeStyle = 'rgba(' + spikeCol + ',' + ((0.25 + bass * 0.35) * spikeAlpha) + ')';
       c.lineWidth = (0.5 + bass * 0.5) * dpr;
       for (var a = 0; a < 4; a++) {
         var ang = spikeAngle + a * Math.PI / 2;
@@ -587,9 +654,13 @@
       if (p.life <= 0) { particles.splice(pi, 1); continue; }
       c.beginPath();
       c.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
-      c.fillStyle = p.cyan
-        ? 'rgba(78,201,212,' + (p.life * 0.7) + ')'
-        : 'rgba(232,184,88,' + (p.life * 0.8) + ')';
+      if (matrixT > 0.5) {
+        c.fillStyle = 'rgba(0,255,65,' + (p.life * 0.8) + ')';
+      } else {
+        c.fillStyle = p.cyan
+          ? 'rgba(78,201,212,' + (p.life * 0.7) + ')'
+          : 'rgba(232,184,88,' + (p.life * 0.8) + ')';
+      }
       c.fill();
     }
 
@@ -629,16 +700,21 @@
         c.shadowBlur = 0;
       }
 
+      // Wave colors shift amber→green, cyan→green, bone→green in matrix mode
+      var waveAmber = lerpRGB(232,184,88, 0,255,65, mT);
+      var waveCyan  = lerpRGB(78,201,212, 0,200,40, mT);
+      var waveBone  = lerpRGB(240,235,219, 0,180,30, mT);
+
       var amberA = 0.55 + mid * 0.45;
       var amberW = 1.6 + mid * 2;
-      drawWave('232,184,88', '232,184,88,0.45', amberA, 50 + mid * 30, 0.028, 1, 0, 0, amberW, 14, 0);
+      drawWave(waveAmber, waveAmber+',0.45', amberA, 50 + mid * 30, 0.028, 1, 0, 0, amberW, 14, 0);
 
       var cyanA = 0.4 + high * 0.5;
       var cyanW = 1.1 + high * 1.8;
-      drawWave('78,201,212', '78,201,212,0.4', cyanA, 38 + high * 25, 0.045, 1.4, 1.8, -10, cyanW, 12, Math.floor(step * 0.4));
+      drawWave(waveCyan, waveCyan+',0.4', cyanA, 38 + high * 25, 0.045, 1.4, 1.8, -10, cyanW, 12, Math.floor(step * 0.4));
 
       var boneA = 0.08 + total * 0.18;
-      drawWave('240,235,219', '240,235,219,0.15', boneA, 22 + total * 15, 0.035, 0.7, 3.5, 8, 0.7, 0, Math.floor(step * 0.7));
+      drawWave(waveBone, waveBone+',0.15', boneA, 22 + total * 15, 0.035, 0.7, 3.5, 8, 0.7, 0, Math.floor(step * 0.7));
     }
 
     // ── Presence shimmer ──
@@ -650,7 +726,9 @@
         var py = h * 0.48 + (Math.random() - 0.5) * spread;
         var pr = (0.3 + Math.random() * 0.8) * dpr;
         c.beginPath(); c.arc(px, py, pr, 0, Math.PI * 2);
-        c.fillStyle = Math.random() < 0.5 ? 'rgba(78,201,212,0.6)' : 'rgba(232,184,88,0.5)';
+        c.fillStyle = matrixT > 0.5
+          ? 'rgba(0,255,65,' + (Math.random() < 0.5 ? '0.6' : '0.4') + ')'
+          : (Math.random() < 0.5 ? 'rgba(78,201,212,0.6)' : 'rgba(232,184,88,0.5)');
         c.fill();
       }
       c.globalAlpha = 1;
@@ -670,10 +748,14 @@
         var y1 = ey + Math.sin(angle) * specRadius;
         var x2 = ex + Math.cos(angle) * (specRadius + barLen);
         var y2 = ey + Math.sin(angle) * (specRadius + barLen);
-        var t = i / specBands;
-        c.strokeStyle = t < 0.5
-          ? 'rgba(232,184,88,' + (0.5 + val * 0.5) + ')'
-          : 'rgba(78,201,212,' + (0.4 + val * 0.5) + ')';
+        var bandT = i / specBands;
+        if (matrixT > 0.5) {
+          c.strokeStyle = 'rgba(0,255,65,' + (0.4 + val * 0.5) + ')';
+        } else {
+          c.strokeStyle = bandT < 0.5
+            ? 'rgba(232,184,88,' + (0.5 + val * 0.5) + ')'
+            : 'rgba(78,201,212,' + (0.4 + val * 0.5) + ')';
+        }
         c.lineWidth = (1 + val * 1.5) * dpr;
         c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
       }
@@ -694,17 +776,160 @@
       total = avg(freqArray, 0, 400) / 255;
     }
 
-    var size = 6 + bass * 14 + total * 4;
-    var glow1 = 12 + bass * 35;
+    var beat = playing ? getBeat() : { pulse:0 };
+    var size = 6 + bass * 14 + total * 4 + beat.pulse * 8;
+    var glow1 = 12 + bass * 35 + beat.pulse * 20;
     var glow2 = glow1 * 2.5;
-    var brightness = 0.35 + bass * 0.5;
+    var brightness = 0.35 + bass * 0.5 + beat.pulse * 0.15;
     var brightness2 = 0.08 + bass * 0.15;
 
     singularityEl.style.width = size + 'px';
     singularityEl.style.height = size + 'px';
+    var orbColor = matrixMode ? '0,255,65' : '232,184,88';
     singularityEl.style.boxShadow =
-      '0 0 ' + glow1 + 'px rgba(232,184,88,' + brightness + '),' +
-      '0 0 ' + glow2 + 'px rgba(232,184,88,' + brightness2 + ')';
+      '0 0 ' + glow1 + 'px rgba(' + orbColor + ',' + brightness + '),' +
+      '0 0 ' + glow2 + 'px rgba(' + orbColor + ',' + brightness2 + ')';
+    if (matrixMode) {
+      singularityEl.style.background = 'radial-gradient(circle,#b4ffb4 0%,#00ff41 35%,rgba(0,255,65,.3) 60%,transparent 75%)';
+    } else {
+      singularityEl.style.background = '';
+    }
+  }
+
+  // ══════════════════════════════════════════════════════
+  // ── MATRIX EASTER EGG ──────────────────────────────
+  // ══════════════════════════════════════════════════════
+
+  var MATRIX_PALETTE = {
+    '--signal-machine': '#00ff41',
+    '--signal-synth': '#00ff41',
+    '--signal-synth-bright': '#33ff66',
+    '--stage-void': '#0d0208',
+    '--stage-deep': '#0a0a0a',
+    '--panel': '#0d0d0d',
+    '--rule': '#0f3a0f',
+    '--rule-soft': '#0a2a0a',
+    '--ink-bright': '#00ff41',
+    '--ink-soft': '#00cc33',
+    '--ink-dim': '#008f11',
+    '--ink-faint': '#003b00',
+  };
+
+  var COSMOS_PALETTE = {
+    '--signal-machine': '#4ec9d4',
+    '--signal-synth': '#e8b858',
+    '--signal-synth-bright': '#f5c970',
+    '--stage-void': '#020204',
+    '--stage-deep': '#08070d',
+    '--panel': '#0c0b12',
+    '--rule': '#242a33',
+    '--rule-soft': '#1b2028',
+    '--ink-bright': '#e8e3d4',
+    '--ink-soft': '#b5b0a3',
+    '--ink-dim': '#8a8574',
+    '--ink-faint': '#4a4740',
+  };
+
+  function setMatrixMode(on) {
+    matrixMode = on;
+    var palette = on ? MATRIX_PALETTE : COSMOS_PALETTE;
+    var root = document.documentElement;
+    for (var key in palette) {
+      root.style.setProperty(key, palette[key]);
+    }
+    // Re-init rain columns when entering matrix mode
+    if (on) initMatrixDrops();
+  }
+
+  function initMatrixDrops() {
+    matrixDrops = [];
+    if (!vizCanvas) return;
+    var colW = 18 * devicePixelRatio;
+    var cols = Math.ceil(vizCanvas.width / colW);
+    for (var i = 0; i < cols; i++) {
+      matrixDrops.push({
+        x: i * colW,
+        y: Math.random() * -vizCanvas.height,
+        speed: (2 + Math.random() * 6) * devicePixelRatio,
+        chars: [],
+        len: 8 + Math.floor(Math.random() * 24),
+        lastSwap: 0,
+      });
+      // Pre-fill char array
+      for (var j = 0; j < matrixDrops[i].len; j++) {
+        matrixDrops[i].chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
+      }
+    }
+  }
+
+  function drawMatrixRain(c, w, h, bass, mid, total) {
+    var dpr = devicePixelRatio;
+    var fontSize = 14 * dpr;
+    var colW = 18 * dpr;
+
+    // Background — deep black-green
+    c.fillStyle = 'rgba(13,2,8,' + (0.12 + bass * 0.08) + ')';
+    c.fillRect(0, 0, w, h);
+
+    c.font = fontSize + 'px "JetBrains Mono", monospace';
+    c.textAlign = 'center';
+
+    var now = performance.now();
+
+    for (var i = 0; i < matrixDrops.length; i++) {
+      var drop = matrixDrops[i];
+
+      // Audio-reactive speed boost
+      drop.y += drop.speed * (1 + bass * 2);
+
+      // Randomly swap characters for the flicker effect
+      if (now - drop.lastSwap > 80) {
+        var swapIdx = Math.floor(Math.random() * drop.chars.length);
+        drop.chars[swapIdx] = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+        drop.lastSwap = now;
+      }
+
+      // Draw the trail of characters
+      for (var j = 0; j < drop.len; j++) {
+        var charY = drop.y - j * fontSize;
+        if (charY < -fontSize || charY > h + fontSize) continue;
+
+        var age = j / drop.len; // 0 = head, 1 = tail
+
+        if (j === 0) {
+          // Head glyph — bright white-green
+          c.fillStyle = 'rgba(180,255,180,' + (0.9 + mid * 0.1) + ')';
+        } else if (j < 3) {
+          // Near-head — bright green
+          var a = 0.85 - age * 0.3 + total * 0.15;
+          c.fillStyle = 'rgba(0,255,65,' + Math.max(0, a) + ')';
+        } else {
+          // Tail — fading green
+          var a = Math.max(0, (1 - age) * 0.6);
+          c.fillStyle = 'rgba(0,255,65,' + a + ')';
+        }
+
+        c.fillText(drop.chars[j] || '0', drop.x + colW * 0.5, charY);
+      }
+
+      // Reset when fully off screen
+      if (drop.y - drop.len * fontSize > h) {
+        drop.y = Math.random() * -300 * dpr;
+        drop.speed = (2 + Math.random() * 6) * dpr;
+        drop.len = 8 + Math.floor(Math.random() * 24);
+        drop.chars = [];
+        for (var j = 0; j < drop.len; j++) {
+          drop.chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
+        }
+      }
+    }
+
+    // Audio-reactive horizontal scan line
+    if (bass > 0.3) {
+      var scanY = (now * 0.3 * dpr) % h;
+      c.fillStyle = 'rgba(0,255,65,' + (bass * 0.08) + ')';
+      c.fillRect(0, scanY, w, 2 * dpr);
+    }
   }
 
   // ── NAVIGATION ───────────────────────────────────────
@@ -801,6 +1026,8 @@
     tracks: TRACKS,
     getCurrent: function() { return current; },
     isPlaying: function() { return playing; },
+    isMatrix: function() { return matrixMode; },
+    getBeat: getBeat,
     togglePlay: togglePlay, nextTrack: nextTrack, prevTrack: prevTrack, loadTrack: loadTrack,
   };
 
