@@ -684,6 +684,16 @@ h1.hero-title .amp{
       window.parent.postMessage({type:'mythos:nav', href}, '*');
     }
   });
+
+  // Skin sync — receive palette from shell
+  window.addEventListener('message', function(e) {
+    var d = e.data;
+    if (!d || d.type !== 'mythos:skin' || !d.palette) return;
+    var root = document.documentElement;
+    for (var key in d.palette) {
+      root.style.setProperty(key, d.palette[key]);
+    }
+  });
 </script>
 </body>
 </html>

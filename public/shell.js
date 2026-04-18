@@ -778,7 +778,7 @@
     updateSingularity();
   }
 
-  // ── Singularity orb — beat-reactive CSS element ──
+  // ── Singularity orb — spinning radiant, beat-reactive ──
   function updateSingularity() {
     if (!singularityEl || viewT < 0.01) return;
 
@@ -789,23 +789,14 @@
     }
 
     var beat = playing ? getBeat() : { pulse:0 };
-    var size = 6 + bass * 14 + total * 4 + beat.pulse * 8;
-    var glow1 = 12 + bass * 35 + beat.pulse * 20;
-    var glow2 = glow1 * 2.5;
-    var brightness = 0.35 + bass * 0.5 + beat.pulse * 0.15;
-    var brightness2 = 0.08 + bass * 0.15;
+    var size = 18 + bass * 10 + beat.pulse * 6;
+    var glowR = 3 + bass * 6 + beat.pulse * 4;
+    var orbColor = matrixMode ? '#00ff41' : 'var(--signal-synth)';
 
     singularityEl.style.width = size + 'px';
-    singularityEl.style.height = size + 'px';
-    var orbColor = matrixMode ? '0,255,65' : '232,184,88';
-    singularityEl.style.boxShadow =
-      '0 0 ' + glow1 + 'px rgba(' + orbColor + ',' + brightness + '),' +
-      '0 0 ' + glow2 + 'px rgba(' + orbColor + ',' + brightness2 + ')';
-    if (matrixMode) {
-      singularityEl.style.background = 'radial-gradient(circle,#b4ffb4 0%,#00ff41 35%,rgba(0,255,65,.3) 60%,transparent 75%)';
-    } else {
-      singularityEl.style.background = '';
-    }
+    singularityEl.style.height = (size * 60/70) + 'px';
+    singularityEl.style.color = orbColor;
+    singularityEl.style.filter = 'drop-shadow(0 0 ' + glowR + 'px ' + (matrixMode ? '#00ff41' : '#e8b858') + ')';
   }
 
   // ══════════════════════════════════════════════════════
@@ -842,6 +833,12 @@
     '--ink-faint': '#4a4740',
   };
 
+  // Content palette for iframes — signal-synth is lilac, not green
+  var MATRIX_CONTENT_PALETTE = {};
+  for (var k in MATRIX_PALETTE) MATRIX_CONTENT_PALETTE[k] = MATRIX_PALETTE[k];
+  MATRIX_CONTENT_PALETTE['--signal-synth'] = '#c4b8d9';
+  MATRIX_CONTENT_PALETTE['--signal-synth-bright'] = '#d8cef0';
+
   function setMatrixMode(on) {
     matrixMode = on;
     var palette = on ? MATRIX_PALETTE : COSMOS_PALETTE;
@@ -849,8 +846,19 @@
     for (var key in palette) {
       root.style.setProperty(key, palette[key]);
     }
+    // Broadcast skin to iframe content pages
+    broadcastSkin(on);
     // Re-init rain columns when entering matrix mode
     if (on) initMatrixDrops();
+  }
+
+  function broadcastSkin(matrix) {
+    var palette = matrix ? MATRIX_CONTENT_PALETTE : COSMOS_PALETTE;
+    try {
+      if (frame.contentWindow) {
+        frame.contentWindow.postMessage({ type: 'mythos:skin', palette: palette }, '*');
+      }
+    } catch(e) {}
   }
 
   function initMatrixDrops() {
@@ -980,7 +988,10 @@
 
   frame.addEventListener('load', function() {
     loader.classList.remove('on');
-    setTimeout(broadcastTrack, 50);
+    setTimeout(function() {
+      broadcastTrack();
+      broadcastSkin(matrixMode);
+    }, 50);
   });
 
   function toggleSide(force) {

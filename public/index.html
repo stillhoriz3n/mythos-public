@@ -189,18 +189,20 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
   mix-blend-mode:overlay;
 }
 
-/* Singularity orb — collapses to bottom-left on paper pages */
+/* Singularity orb — spinning radiant, collapses to bottom-left on paper pages */
 .singularity-orb{
   position:absolute;
   bottom:calc(100% + 12px);
   left:24px;
-  border-radius:50%;
-  background:radial-gradient(circle,#fff2c8 0%,#e8b858 35%,rgba(232,184,88,.3) 60%,transparent 75%);
-  width:8px;height:8px;
+  width:24px;height:22px;
   opacity:0;
   pointer-events:none;
   z-index:101;
+  animation:spin-radiant 12s linear infinite;
+  filter:drop-shadow(0 0 4px var(--signal-synth));
+  transition:opacity .8s, filter .8s;
 }
+@keyframes spin-radiant{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
 /* ── MAIN ─────────────────────────────────── */
 .main{
@@ -735,7 +737,15 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
       </div>
     </div>
 
-    <div class="singularity-orb" id="singularity"></div>
+    <div class="singularity-orb" id="singularity">
+      <svg viewBox="0 0 70 60" xmlns="http://www.w3.org/2000/svg">
+        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="2.2"/>
+          <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width="1.6" opacity=".92" fill="currentColor" fill-opacity=".18"/>
+          <circle cx="35" cy="30" r="3" fill="#ffe6a0" stroke="none"/>
+        </g>
+      </svg>
+    </div>
 
     <div class="queue-panel" id="queue-panel">
       <div class="album-selector" id="album-selector"></div>
