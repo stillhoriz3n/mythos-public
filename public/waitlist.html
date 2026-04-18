@@ -343,7 +343,7 @@ function updateProgress() {
 function saveToStorage() {
   const entry = { ...answers, ts: new Date().toISOString() };
   // POST to Google Sheet
-  fetch('https://script.google.com/macros/s/AKfycbyzV1T-bAqXziHe4aWkZMSw33uTxenLtaBmFNLoR83FrKFetlv8hDDP1ShEDs3Wk-QP/exec', {
+  fetch('https://script.google.com/macros/s/AKfycbxYz0SjghuFujuMI5ShaygDDKDv7Mz9oWLfe18xxnMHK4jeOy5EJCum6CHfjdiHPuFC/exec', {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'application/json' },
