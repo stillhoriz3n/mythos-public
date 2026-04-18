@@ -215,6 +215,9 @@ function draw() {
   analyser.getByteFrequencyData(freqArray);
 
   const w = canvas.width, h = canvas.height, dpr = devicePixelRatio;
+  const minDimEarly = Math.min(w, h);
+  const bloomScaleEarly = Math.min(1, minDimEarly / (1200 * dpr));
+  const glowDimEarly = bloomScaleEarly * 0.7 + 0.3;
 
   const bass = avg(freqArray, 0, 10) / 255;
   const subBass = avg(freqArray, 0, 4) / 255;
@@ -236,7 +239,7 @@ function draw() {
   // Copy current frame to trail canvas with fade
   tc.drawImage(canvas, 0, 0);
   c.clearRect(0, 0, w, h);
-  c.globalAlpha = 0.82 + total * 0.1; // trails linger more when quiet
+  c.globalAlpha = (0.78 + total * 0.1) * glowDimEarly; // trails dimmer on small screens
   c.drawImage(trailCanvas, 0, 0);
   c.globalAlpha = 1;
   // Fade the trail canvas
@@ -269,32 +272,36 @@ function draw() {
 
   // ── HOT EVENT ────────────────────────────────────────
   const ex = w * 0.52, ey = h * 0.48;
-  const eventR = (60 + bass * 180 + subBass * 60) * dpr;
+  // Scale bloom relative to the shorter viewport dimension so it doesn't flood small screens
+  const minDim = Math.min(w, h);
+  const bloomScale = Math.min(1, minDim / (1200 * dpr)); // 1.0 at 1200px+, shrinks below
+  const eventR = (40 + bass * 100 + subBass * 35) * dpr * bloomScale;
+  const glowDim = bloomScale * 0.7 + 0.3; // opacity damper: 0.3–1.0
 
   // Outer halo
-  const halo = c.createRadialGradient(ex, ey, 0, ex, ey, eventR * 3.5);
-  halo.addColorStop(0, `rgba(232,184,88,${0.05 + bass * 0.08})`);
-  halo.addColorStop(0.3, `rgba(217,164,65,${0.02 + bass * 0.03})`);
+  const halo = c.createRadialGradient(ex, ey, 0, ex, ey, eventR * 3);
+  halo.addColorStop(0, `rgba(232,184,88,${(0.04 + bass * 0.06) * glowDim})`);
+  halo.addColorStop(0.3, `rgba(217,164,65,${(0.015 + bass * 0.02) * glowDim})`);
   halo.addColorStop(1, 'rgba(139,90,30,0)');
   c.fillStyle = halo;
   c.fillRect(0, 0, w, h);
 
   // Core
   const core = c.createRadialGradient(ex, ey, 0, ex, ey, eventR);
-  core.addColorStop(0, `rgba(255,242,200,${0.65 + bass * 0.35})`);
-  core.addColorStop(0.06, `rgba(255,223,138,${0.4 + bass * 0.25})`);
-  core.addColorStop(0.2, `rgba(232,184,88,${0.18 + bass * 0.12})`);
-  core.addColorStop(0.5, `rgba(217,164,65,${0.04 + bass * 0.05})`);
+  core.addColorStop(0, `rgba(255,242,200,${(0.5 + bass * 0.3) * glowDim})`);
+  core.addColorStop(0.06, `rgba(255,223,138,${(0.3 + bass * 0.2) * glowDim})`);
+  core.addColorStop(0.2, `rgba(232,184,88,${(0.12 + bass * 0.1) * glowDim})`);
+  core.addColorStop(0.5, `rgba(217,164,65,${(0.03 + bass * 0.04) * glowDim})`);
   core.addColorStop(1, 'rgba(139,90,30,0)');
   c.beginPath(); c.arc(ex, ey, eventR, 0, Math.PI * 2);
   c.fillStyle = core; c.fill();
 
-  // Singularity
-  const sr = (2 + bass * 4 + subBass * 2) * dpr;
+  // Singularity — stays crisp regardless of screen size
+  const sr = (2 + bass * 3 + subBass * 1.5) * dpr;
   c.beginPath(); c.arc(ex, ey, sr, 0, Math.PI * 2);
   c.fillStyle = `rgba(255,255,255,${0.85 + bass * 0.15})`; c.fill();
-  c.beginPath(); c.arc(ex, ey, sr * 2.5, 0, Math.PI * 2);
-  c.fillStyle = `rgba(255,242,200,${0.25 + bass * 0.2})`; c.fill();
+  c.beginPath(); c.arc(ex, ey, sr * 2, 0, Math.PI * 2);
+  c.fillStyle = `rgba(255,242,200,${(0.2 + bass * 0.15) * glowDim})`; c.fill();
 
   // Diffraction spikes — 4-point, rotating slightly with energy
   const spikeAngle = total * 0.3;
@@ -396,7 +403,7 @@ function draw() {
 
   // ── CIRCULAR SPECTRUM (orbiting the hot event) ───────
   const specBands = 90;
-  const specRadius = (100 + bass * 40) * dpr;
+  const specRadius = (60 + bass * 30) * dpr * bloomScale;
   c.globalAlpha = 0.08 + total * 0.07;
   for (let i = 0; i < specBands; i++) {
     const angle = (i / specBands) * Math.PI * 2 + phase * 0.3;
