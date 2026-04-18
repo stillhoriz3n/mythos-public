@@ -818,10 +818,10 @@
     '--panel': '#0d0d0d',
     '--rule': '#0f3a0f',
     '--rule-soft': '#0a2a0a',
-    '--ink-bright': '#00ff41',
-    '--ink-soft': '#00cc33',
-    '--ink-dim': '#008f11',
-    '--ink-faint': '#003b00',
+    '--ink-bright': '#f0ecf8',
+    '--ink-soft': '#c4b8d9',
+    '--ink-dim': '#8b7aa8',
+    '--ink-faint': '#4a3d5c',
   };
 
   var COSMOS_PALETTE = {
