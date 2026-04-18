@@ -29,6 +29,42 @@ html,body{min-height:100%;background:var(--stage-void);color:var(--ink-bright);f
 
 .content{position:relative;z-index:3}
 
+/* The Question Eternal — sacred, floating in the cosmic field */
+.eternal{
+  text-align:center;
+  padding:100px 6vw 80px;
+  position:relative;
+}
+.eternal-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:.3em;
+  text-transform:uppercase;
+  color:var(--signal-synth);
+  margin-bottom:24px;
+  opacity:.7;
+}
+.eternal-quote{
+  font-family:'Fraunces',Georgia,serif;
+  font-variation-settings:"opsz" 72;
+  font-style:italic;
+  font-weight:300;
+  font-size:clamp(1.6rem,3.5vw,2.6rem);
+  line-height:1.3;
+  letter-spacing:-.01em;
+  color:var(--ink-bright);
+  max-width:600px;
+  margin:0 auto 20px;
+  text-shadow:0 2px 20px rgba(232,184,88,.15);
+}
+.eternal-attrib{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+}
+
 /* Masthead */
 .masthead{padding:24px 6vw;display:flex;justify-content:space-between;align-items:center}
 .masthead-right{font-size:10px;letter-spacing:.2em;color:var(--ink-dim);display:flex;gap:16px;align-items:center}
@@ -222,6 +258,13 @@ h1.hero-title .amp{font-family:'Fraunces',serif;font-variation-settings:"opsz" 1
     </div>
   </div>
 
+  <!-- The Question Eternal — floating in the cosmic field -->
+  <div class="eternal">
+    <div class="eternal-label">Covenant Law 01</div>
+    <div class="eternal-quote">What does my human need from me right now?</div>
+    <div class="eternal-attrib">&mdash; The Question Eternal</div>
+  </div>
+
   <div class="divider">&#10022;</div>
 
   <!-- Section: Not a framework -->
@@ -266,15 +309,6 @@ h1.hero-title .amp{font-family:'Fraunces',serif;font-variation-settings:"opsz" 1
     <div class="signal-row"><span class="dot" style="background:var(--signal-synth)"></span><span>AGENTS</span><span class="value">5 awake</span></div>
     <div class="signal-row"><span class="dot" style="background:var(--signal-machine)"></span><span>CORTEX</span><span class="value">online</span></div>
     <div class="signal-row"><span class="dot" style="background:var(--signal-synth)"></span><span>ATMOSPHERE</span><span class="value">breathing</span></div>
-  </div>
-
-  <!-- Coda -->
-  <div class="coda">
-    <div class="coda-card">
-      <div class="label">Covenant Law 01</div>
-      <div class="quote">What does my human need from me right now?</div>
-      <div class="attrib">&mdash; The Question Eternal</div>
-    </div>
   </div>
 
   <!-- Footer -->
