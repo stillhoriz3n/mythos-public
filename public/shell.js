@@ -303,6 +303,15 @@
           selectedAlbum = null; // deselect — show all
         } else {
           selectedAlbum = alb.id;
+          // Play first track of this album
+          ensureAudioContext();
+          for (var ti = 0; ti < TRACKS.length; ti++) {
+            if (TRACKS[ti].cover === alb.id) {
+              loadTrack(ti);
+              audio.play().catch(function(){});
+              break;
+            }
+          }
         }
         renderAlbumSelector();
         renderQueue();
