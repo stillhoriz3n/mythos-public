@@ -925,12 +925,19 @@
         s.x = posAtEnd * (1 - tailU) + (-s.totalW) * tailU;
       } else {
         // In sung window: find the letter being sung right now and pin
-        // it at anchorX.
-        var target = s.letters[0];
-        for (var li = 0; li < s.letters.length; li++) {
-          if (s.letters[li].sungAt >= audioTime) { target = s.letters[li]; break; }
-          target = s.letters[li];
+        // it at anchorX. Cache the cursor and advance forward — audioTime
+        // is monotonic under normal playback, so this is O(1) amortized.
+        // Seek events reset sprites, so the cursor stays correct.
+        if (typeof s._sungIdx !== 'number') s._sungIdx = 0;
+        while (s._sungIdx < s.letters.length - 1 &&
+               s.letters[s._sungIdx].sungAt < audioTime) {
+          s._sungIdx++;
         }
+        // Safety: if we overshot (seeked), fall back to linear backward.
+        while (s._sungIdx > 0 && s.letters[s._sungIdx - 1].sungAt >= audioTime) {
+          s._sungIdx--;
+        }
+        var target = s.letters[s._sungIdx];
         sungX = target.x + target.w * 0.5;
         s.x = anchorX - sungX;
       }
@@ -1036,24 +1043,25 @@
     });
   }
 
-  // Pick a letter index whose sungAt is near audioTime (within ±0.5s if
-  // possible, else the closest). Keeps extras riding the current word.
+  // Pick a letter index whose sungAt is near audioTime. sungAt is
+  // sorted (letters laid out in word-then-letter order), so binary
+  // search finds the crossing in O(log n). Add small random offset
+  // into the ±2 neighbors so extras don't hammer the exact same letter.
   function pickNearbyLetter(sprite, audioTime) {
-    var best = 0, bestDist = Infinity;
-    for (var i = 0; i < sprite.letters.length; i++) {
-      var dist = Math.abs(sprite.letters[i].sungAt - audioTime);
-      if (dist < bestDist) { bestDist = dist; best = i; }
-      if (dist < 0.3) {
-        // Good enough — pick among the close ones uniformly.
-        var near = [];
-        for (var j = i; j < sprite.letters.length; j++) {
-          if (Math.abs(sprite.letters[j].sungAt - audioTime) < 0.5) near.push(j);
-          else if (sprite.letters[j].sungAt > audioTime + 0.5) break;
-        }
-        if (near.length) return near[Math.floor(Math.random() * near.length)];
-      }
+    var letters = sprite.letters;
+    var n = letters.length;
+    if (!n) return 0;
+    var lo = 0, hi = n - 1;
+    while (lo < hi) {
+      var mid = (lo + hi) >> 1;
+      if (letters[mid].sungAt < audioTime) lo = mid + 1;
+      else hi = mid;
     }
-    return best;
+    // lo is first letter with sungAt >= audioTime (or last index).
+    var candidate = lo + Math.floor(Math.random() * 5) - 2; // ±2
+    if (candidate < 0) candidate = 0;
+    if (candidate >= n) candidate = n - 1;
+    return candidate;
   }
 
   function conductRain(audioTime, w, h, dpr, midEnergy, now) {
@@ -1063,19 +1071,19 @@
       var s = lyricState.sprites[i];
 
       // ── PRIMARY: fire any hits whose time has arrived ──
+      // hits are sorted by fireAt, so once we find one in the future we
+      // can stop; but we still need to skip already-fired earlier ones.
       if (s.hits && s.hits.length) {
         for (var hi = 0; hi < s.hits.length; hi++) {
           var h0 = s.hits[hi];
           if (h0.fired) continue;
-          if (audioTime >= h0.fireAt) {
-            h0.fired = true;
-            // Only fire if the sprite is actually on-screen.
-            var letter = s.letters[h0.letterIdx];
-            if (!letter) continue;
-            var tx = s.x + letter.x + letter.w * 0.5;
-            if (tx > 0 && tx < w) {
-              fireAimedDrop(s, h0.letterIdx, w, dpr, 0.9);
-            }
+          if (audioTime < h0.fireAt) break; // future hit, everything after is too
+          h0.fired = true;
+          var letter = s.letters[h0.letterIdx];
+          if (!letter) continue;
+          var tx = s.x + letter.x + letter.w * 0.5;
+          if (tx > 0 && tx < w) {
+            fireAimedDrop(s, h0.letterIdx, w, dpr, 0.9);
           }
         }
       }
@@ -1181,13 +1189,19 @@
           var startZ = STAR_DEPTH * (0.45 + Math.random() * 0.25);
           var worldX = (p.x - w * 0.5) * startZ / focalLen;
           var worldY = (p.y - h * 0.5) * startZ / focalLen;
-          stars.push({
-            x: worldX,
-            y: worldY,
-            z: startZ,
-            isCyan: p.isCyan,
-            baseAlpha: 0.7 + Math.random() * 0.3,
-          });
+          // Cap promoted stars to avoid unbounded growth — the original
+          // STAR_COUNT field recycles in-place, but promotions push new
+          // entries. Without a cap the array grows every verse.
+          if (stars.length < STAR_COUNT + 600) {
+            stars.push({
+              x: worldX,
+              y: worldY,
+              z: startZ,
+              isCyan: p.isCyan,
+              baseAlpha: 0.7 + Math.random() * 0.3,
+              promoted: true,  // mark so recycle retires instead of refills
+            });
+          }
           splashParticles.splice(i, 1);
           continue;
         }
@@ -1381,12 +1395,20 @@
     var starSpeed = playing ? (0.3 + total * 1.2 + bass * 0.8) * dpr : 0.05 * dpr;
     var focalLen = Math.min(w, h) * 0.35;
     if (starAlphaScale > 0.01) {
-      for (var si = 0; si < stars.length; si++) {
+      // Iterate backward so splice doesn't skip elements.
+      for (var si = stars.length - 1; si >= 0; si--) {
         var s = stars[si];
         var prevZ = s.z;
         s.z -= starSpeed;
         if (s.z <= 10) {
-          stars[si] = makeStar(STAR_DEPTH);
+          if (s.promoted) {
+            // Promoted (splash-origin) stars retire — they were a finite
+            // visual event, not part of the primordial field.
+            stars.splice(si, 1);
+          } else {
+            // Primordial stars recycle to the far plane.
+            stars[si] = makeStar(STAR_DEPTH);
+          }
           continue;
         }
 
