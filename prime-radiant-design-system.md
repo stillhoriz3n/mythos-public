@@ -1,7 +1,10 @@
 # Prime Radiant — Design System
 
 **A visual doctrine derived from the *Robots & Remixes №05* album cover, adapted for web.**
-**Version 1.0** · For use on GitHub Pages landing and future surfaces in the Prime Radiant / MythOS family.
+**Version 1.1** · For use on GitHub Pages landing and future surfaces in the Prime Radiant / MythOS family.
+
+> **Companion spec:** [`public/docs/SPECTRUM.md`](public/docs/SPECTRUM.md) — the audio-reactive layer.
+> The page breathes with the song: every meter, sidebar, starfield, and headline can subscribe to the live FFT/beat clock published by the player. This document defines the *visual* vocabulary; SPECTRUM defines how that vocabulary becomes time-varying. Read this first, then SPECTRUM if you're touching anything that moves with the music.
 
 ---
 
@@ -59,6 +62,11 @@ All values are final — no tweaking per-page.
 - **Cyan + Amber are the semantic pair.** Anything representing machines, automation, code, AI = cyan. Anything representing human output, brand, the work produced = amber. Don't mix — a button isn't "cyan and amber," it's one or the other based on what it represents.
 - **Bone white is for text, not for signal.** Body text, headlines. Use sparingly for signal lines (the way the raw human waveform is a third, quieter voice in the cover).
 - **Hot white is reserved.** Only the central event/singularity on a surface uses hot white. Don't use `#ffffff` for text. If you need bright text, use `--ink-bright` (#e8e3d4).
+- **No hardcoded amber.** Reference `--signal-synth` (or the page-level `--gold` alias). Hardcoded `#e8b858` breaks skin propagation and is treated as a defect — see *Forbidden patterns* below.
+
+### Skin propagation (multi-skin surfaces)
+
+The shell publishes the active palette to every embedded surface; pages subscribe rather than redefine. If you're authoring a page that may be loaded inside the shell (any iframe surface), **do not hardcode color values** — declare CSS variables on `:root` and let the shell overwrite them via the skin-subscribe `postMessage` handshake. New surfaces should accept the message and remap any local aliases (e.g. a page-local `--gold`) onto the incoming `--signal-synth`. This is what makes Dark/Singularity ↔ Dark/CodeRain ↔ Light/Singularity ↔ Light/CodeRain a one-keystroke toggle (`S` for skin, `T` for theme) that propagates everywhere.
 
 ---
 
@@ -194,7 +202,7 @@ The background is not a flat color. It is a **radial gradient that warms toward 
 
 ### Full (hero / landing surfaces)
 
-Use an actual star field behind content. Here's the recipe, in four tiers:
+Use an actual star field behind content. The current implementation is a **forward-flying canvas starfield** — ~600 stars drifting toward the viewer with parallax depth, brightening as they approach. It's a Windows-95 screensaver remembered in 2026: motion as ambient atmosphere, not spectacle. When the player is paused, the field nearly stills (drift drops from `~0.3` to `~0.05`); when music plays, the beat clock can optionally accelerate it. The hand-placed SVG recipe below is preserved as a static reference for surfaces where canvas is overkill (cards, sections, print).
 
 **Tier 1 — Luminous stars (with soft glow).** Rare, 5–10 per viewport. Warm bone-white.
 **Tier 2 — Medium pinpoints.** 25–40 per viewport. Bone-white or slightly warmer.
@@ -265,6 +273,8 @@ Thin wispy irregular strands crossing the dark field. These are *cosmic web* geo
 - Some broken into fragments (implies density occluding the line)
 - Occasional amber filament (`#8b6a3a`) among the violet-grays, rare
 - Never smooth sine waves. Always irregular Bezier curves
+
+**Motion (current build):** filaments now drift, flex, and breathe at the mid-frequency band — the cosmic web is alive, but barely. Animation amplitude is sub-perceptual unless you stare; the goal is "the room is breathing," not "look at the filaments." When music is paused, motion damps to near-zero so the field reads as a still photograph. See [`SPECTRUM.md`](public/docs/SPECTRUM.md) `data-band-role` for the binding.
 
 ---
 
@@ -595,14 +605,19 @@ When in doubt, default to bone/dim. Color is a statement. Statements should be r
 
 ---
 
-## Artifacts for Vision
+## Where things live
 
-The following files can be referenced or inlined:
+Authoritative locations in the public repo:
 
-- `robots-remixes-05.svg` — the reference album cover. Use as hero art if needed, or as inspiration for proportions / composition balance.
-- `robots-remixes-05-3000.png` — the full-res cover render.
-- The Prime Radiant emblem SVG (inline above) — copy/paste directly into markup.
+- **This document** — `prime-radiant-design-system.md` (root) and `public/design-system.md` (served copy). Keep them in sync.
+- **Audio-reactive spec** — [`public/docs/SPECTRUM.md`](public/docs/SPECTRUM.md). The companion to this file; covers beat clock, FFT bands, onset pulses, declarative `data-band` / `data-band-role` / `data-tint` / `data-reveal` hooks, the `.m-*` utility classes (meter, strobe, spin-bar, spectrogram, lyrics, reactive type, flash overlays).
+- **Brand kit (handoff package)** — `M:\PrimeRadiantDesign\` on the share. Self-contained showcase (`kit/brand-kit.html`), canonical SVGs (`assets/`), and the original design-system handoff (`source/`). The kit is the deliverable for designers/engineers onboarding to the system.
+- **Emblem SVGs** — `PrimeRadiantDesign/assets/prime-radiant-emblem-canonical.svg` (master, ≥22px), `prime-radiant-emblem-monogram.svg` (favicon / ≤22px), `mythos-seal.svg` (circular seal with curved wordmark, for covers/swag).
+
+### Promoted page → singularity
+
+The **Radiant Seal** (formerly *The Living Mark*) is no longer a standalone page — it's been **promoted to the player singularity**, so the seal lives inside the audio player and is visible on every surface as the page breathes with the song. The `every-m.html` and `rotation-scan.html` artifacts have been removed from the live site; both still ship in the `PrimeRadiantDesign/` brand kit as historical interactives documenting the geometry hidden in the mark.
 
 ---
 
-*Prime Radiant v1 · Signal architecture for dark space · The session is just where the eyes are pointing.*
+*Prime Radiant v1.1 · Signal architecture for dark space · The session is just where the eyes are pointing.*
