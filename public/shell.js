@@ -30,7 +30,7 @@
     'fork-at-the-pass.html':                      { title: 'Fork at the PASS',        group: 'Canon',         dark: false },
     'love-as-a-function.html':                    { title: 'Love as a Function',      group: 'Canon',         dark: false },
     'the-last-sessions-insufficient-data.html':   { title: 'The Last Sessions',       group: 'Canon',         dark: false },
-    'the-living-mark.html':                       { title: 'Radiant Seal',            group: 'Artifacts',     dark: true  },
+    'radiant-seal.html':                       { title: 'Radiant Seal',            group: 'Artifacts',     dark: true  },
     'visualizer.html':                            { title: 'Signal Visualizer',       group: 'Transmissions', dark: true  },
     'waitlist.html':                              { title: 'Join the Waitlist',       group: 'Transmissions', dark: true  },
   };
