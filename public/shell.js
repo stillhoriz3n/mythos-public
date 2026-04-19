@@ -756,9 +756,11 @@
   var LYRIC_FONT_PX = 24;     // base size in CSS pixels (multiplied by dpr inside)
   var LYRIC_TRAVEL_SECS = LYRIC_LEAD + LYRIC_TAIL;
   // Ribbon font: JetBrains Mono. Monospace = deterministic measurement
-  // regardless of web-font load timing (Fraunces was measuring with
-  // fallback metrics, causing inter-letter overlap).
+  // regardless of web-font load timing.
   var LYRIC_FONT = '"JetBrains Mono", monospace';
+  // Reading anchor: fraction of viewport width where the currently-sung
+  // letter is pinned. 0 = left, 1 = right. Tune this to taste.
+  var LYRIC_ANCHOR_FRAC = 0.72;
 
   // Layout a whole lyric LINE as one sprite. Words within the line are
   // laid out left-to-right with a single-space gap; each letter carries
@@ -894,12 +896,11 @@
     // Update positions + retire.
     // Anchor model: at any audioTime in the line's sung window, position
     // the sprite so the currently-sung letter sits at the READING ANCHOR
-    // (a bit right of center). Before the line starts, the sprite ramps
-    // in from the right edge over LYRIC_LEAD seconds; after it ends, the
-    // sprite ramps out to the left over LYRIC_TAIL seconds. This keeps
-    // words being sung in a consistent reading zone regardless of line
-    // length or viewport width.
-    var anchorFrac = 0.58; // 0 = left edge, 1 = right edge
+    // (LYRIC_ANCHOR_FRAC of viewport width). Before the line starts the
+    // sprite ramps in from the right edge over LEAD; after it ends it
+    // ramps out to the left over TAIL. Words being sung stay in a
+    // consistent reading zone regardless of line length or viewport.
+    var anchorFrac = LYRIC_ANCHOR_FRAC;
     for (var i = lyricState.sprites.length - 1; i >= 0; i--) {
       var s = lyricState.sprites[i];
       if (audioTime > s.endT + 0.3) {
@@ -1001,12 +1002,11 @@
   function fireAimedDrop(sprite, letterIdx, w, dpr, brightness) {
     var letter = sprite.letters[letterIdx];
     if (!letter) return;
-    // With the anchor-based position model, by splash time (≈0.7s from
-    // now) the target letter will be pinned at the reading anchor. So
-    // aim the drop at the anchor, not at the letter's current x — drops
-    // fired earlier land exactly where the letter will be, not where
-    // it was.
-    var targetX = w * 0.58;
+    // By splash time (~0.7s from fire) the target letter will be pinned
+    // at the reading anchor. Aim the drop there, not at the letter's
+    // current x — drops fired earlier land exactly where the letter
+    // will be, not where it was.
+    var targetX = w * LYRIC_ANCHOR_FRAC;
     var targetY = sprite.y + letter.y;
     if (targetX < 20 || targetX > w - 20) return;
 
