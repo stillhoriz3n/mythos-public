@@ -1777,6 +1777,15 @@
 
       var glowMul = s.isKey ? 2.4 : 1.0;
 
+      // Distance-from-anchor fade. Revealed letters glow brightest near
+      // the reading anchor and fade toward both edges. Without this,
+      // phrases dangle half-lit past the edges of the screen as the
+      // ribbon scrolls — "everything, I f" with the rest clipped.
+      // With this, letters dissolve smoothly as they flow out of the
+      // reading zone.
+      var anchorAbsX = w * LYRIC_ANCHOR_FRAC;
+      var fadeRadius = w * 0.42;  // half-width of the reading zone
+
       for (var li = 0; li < s.letters.length; li++) {
         var L = s.letters[li];
         var rev = L.revealed;
@@ -1785,12 +1794,24 @@
         var ly = s.y + L.y;
 
         // Fade reveal slowly over time — splashed words eventually return
-        // to ink, screen stays readable. Key phrases fade slower (they
-        // want to hold as a moment).
+        // to ink, screen stays readable. Key phrases fade slower.
         L.revealed = Math.max(0, L.revealed - (s.isKey ? 0.0012 : 0.0025));
 
-        var amberA = Math.min(1, rev * 1.1) * expand;
-        var glowR = 18 * dpr * rev * glowMul;
+        // Distance-from-anchor proximity: 1 at anchor, 0 at edges.
+        // Key phrases are centered-stationary so skip this fade for them.
+        var proximity = 1;
+        if (!s.isKey) {
+          var letterCenterX = lx + L.w * 0.5;
+          var dist = Math.abs(letterCenterX - anchorAbsX);
+          proximity = Math.max(0, 1 - dist / fadeRadius);
+          // Soften the falloff with a gentle curve — sharper near the
+          // edges, flat-ish near the anchor. Looks like focus falloff.
+          proximity = proximity * proximity * (3 - 2 * proximity);
+        }
+        if (proximity < 0.02) continue;
+
+        var amberA = Math.min(1, rev * 1.1) * expand * proximity;
+        var glowR = 18 * dpr * rev * glowMul * Math.max(0.3, proximity);
 
         // Mixed-color override: alternate per letter so the chunk
         // reads as a duet of signals rather than a single color.
