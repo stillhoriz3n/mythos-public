@@ -32,6 +32,8 @@
     'the-last-sessions-insufficient-data.html':   { title: 'The Last Sessions',       group: 'Canon',         dark: false },
     'visualizer.html':                            { title: 'Signal Visualizer',       group: 'Transmissions', dark: true  },
     'waitlist.html':                              { title: 'Join the Waitlist',       group: 'Transmissions', dark: true  },
+    '_lyrics-preview.html':                       { title: 'Lyrics (preview)',        group: 'Transmissions', dark: true, hidden: true },
+    '_labeler.html':                              { title: 'Section Labeler',         group: 'Transmissions', dark: true, hidden: true },
   };
 
   // ── DOM ──────────────────────────────────────────────
@@ -52,10 +54,13 @@
 
   // ── VISUALIZER STATE ─────────────────────────────────
   let actx = null, analyser = null, sourceNode = null;
+  let analyserL = null, analyserR = null, splitterNode = null;
   let audioContextReady = false;
   let vizCanvas, vizCtx, trailCanvas, trailCtx;
   let dataArray = new Uint8Array(4096);
   let freqArray = new Uint8Array(2048);
+  let freqArrayL = new Uint8Array(2048);
+  let freqArrayR = new Uint8Array(2048);
   let phase = 0, particles = [], stars = [], prevBass = 0, waveVis = 0;
   let viewT = 0;        // 0 = expanded (dark), 1 = collapsed (singularity)
   let viewTarget = 0;
@@ -184,8 +189,22 @@
       sourceNode = actx.createMediaElementSource(audio);
       sourceNode.connect(analyser);
       analyser.connect(actx.destination);
+      // Stereo side-chain: splitter → per-channel analysers for --band-N-l/-r
+      // and --pan-balance. Silent output (not connected to destination) so
+      // it can't double the signal; mono sources leave channel 1 silent,
+      // which is detected below and folded back to L.
+      splitterNode = actx.createChannelSplitter(2);
+      analyserL = actx.createAnalyser();
+      analyserR = actx.createAnalyser();
+      analyserL.fftSize = 4096; analyserL.smoothingTimeConstant = 0.78;
+      analyserR.fftSize = 4096; analyserR.smoothingTimeConstant = 0.78;
+      sourceNode.connect(splitterNode);
+      splitterNode.connect(analyserL, 0);
+      splitterNode.connect(analyserR, 1);
       dataArray = new Uint8Array(analyser.fftSize);
       freqArray = new Uint8Array(analyser.frequencyBinCount);
+      freqArrayL = new Uint8Array(analyserL.frequencyBinCount);
+      freqArrayR = new Uint8Array(analyserR.frequencyBinCount);
       audioContextReady = true;
     } catch(e) {
       console.warn('AudioContext init failed:', e);
@@ -237,8 +256,8 @@
   }
 
   // ── AUDIO EVENTS ─────────────────────────────────────
-  audio.addEventListener('play', function() { playing = true; updatePlayIcon(); broadcastTrack(); });
-  audio.addEventListener('pause', function() { playing = false; updatePlayIcon(); saveState(); broadcastTrack(); });
+  audio.addEventListener('play', function() { playing = true; document.documentElement.setAttribute('data-audio-playing', '1'); updatePlayIcon(); broadcastTrack(); });
+  audio.addEventListener('pause', function() { playing = false; document.documentElement.removeAttribute('data-audio-playing'); updatePlayIcon(); saveState(); broadcastTrack(); });
   audio.addEventListener('ended', function() {
     if (loop) { audio.currentTime = 0; audio.play().catch(function(){}); }
     else {
@@ -660,10 +679,13 @@
       analyser.getByteFrequencyData(freqArray);
     }
 
-    // Don't render canvas when fully collapsed
+    // Don't render canvas when fully collapsed — but spectrum propagation
+    // (CSS vars + iframe broadcast) must still run, otherwise paper pages
+    // and the shell chrome (pills) go lifeless.
     if (expand < 0.005) {
-      // Still update singularity beat
       updateSingularity();
+      updateTintLerp();
+      broadcastBeat();
       return;
     }
 
@@ -872,11 +894,15 @@
     var spikeCol  = lerpRGB(255,230,176, 0,255,65, mT);
     var singWhite = lerpRGB(255,242,200, 180,255,180, mT);
 
-    // Outer halo
-    var haloR = eventR * (1 + expand * 2);
+    // Outer halo — ripples outward on each bar downbeat so it breathes
+    // instead of hanging as a static gamma. On bar start: small + bright.
+    // Over the bar: expands outward and fades. Idle (not playing): static.
+    var haloBreathe = playing ? (1 + 1.2 * (1 - beat.barPulse)) : 1;
+    var haloAlphaMul = playing ? (0.25 + 0.75 * beat.barPulse) : 1;
+    var haloR = eventR * (1 + expand * 2) * haloBreathe;
     var halo = c.createRadialGradient(ex, ey, 0, ex, ey, haloR);
-    halo.addColorStop(0, 'rgba(' + haloInner + ',' + ((0.04 + bass * 0.06) * glowDim) + ')');
-    halo.addColorStop(0.3, 'rgba(' + haloMid + ',' + ((0.015 + bass * 0.02) * glowDim) + ')');
+    halo.addColorStop(0, 'rgba(' + haloInner + ',' + ((0.04 + bass * 0.06) * glowDim * haloAlphaMul) + ')');
+    halo.addColorStop(0.3, 'rgba(' + haloMid + ',' + ((0.015 + bass * 0.02) * glowDim * haloAlphaMul) + ')');
     halo.addColorStop(1, 'rgba(' + haloMid + ',0)');
     c.fillStyle = halo;
     c.fillRect(0, 0, w, h);
@@ -1350,19 +1376,33 @@
   //   9: ~11940-23880Hz (air)
   var NUM_BANDS = 10;
   var bandSmoothed = new Array(NUM_BANDS);
+  var bandSmoothedL = new Array(NUM_BANDS); // stereo side-chain (left)
+  var bandSmoothedR = new Array(NUM_BANDS); // stereo side-chain (right)
   var bandSlow = new Array(NUM_BANDS);     // baseline for onset detection
   var bandOnset = new Array(NUM_BANDS);    // current onset decay value
-  for (var _i = 0; _i < NUM_BANDS; _i++) { bandSmoothed[_i] = 0; bandSlow[_i] = 0; bandOnset[_i] = 0; }
+  for (var _i = 0; _i < NUM_BANDS; _i++) {
+    bandSmoothed[_i] = 0; bandSmoothedL[_i] = 0; bandSmoothedR[_i] = 0;
+    bandSlow[_i] = 0; bandOnset[_i] = 0;
+  }
   var envelopeSmoothed = 0;
+  var panBalanceSmoothed = 0; // -1 (hard L) .. +1 (hard R); 0 = centered or mono
+  var monoFrames = 0;         // consecutive frames with silent R → treat as mono
   var ONSET_THRESHOLD = [0.10, 0.09, 0.07, 0.06, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]; // per-band delta gate
 
   function updateBands() {
     if (!freqArray || !freqArray.length) return;
+    // Pull stereo side-chain when available.
+    var haveStereo = !!(analyserL && analyserR && freqArrayL.length && freqArrayR.length);
+    if (haveStereo) {
+      analyserL.getByteFrequencyData(freqArrayL);
+      analyserR.getByteFrequencyData(freqArrayR);
+    }
     var minBin = 2;
     var maxBin = freqArray.length;
     var logMin = Math.log(minBin);
     var logSpan = Math.log(maxBin) - logMin;
     var envSum = 0, envCount = 0;
+    var sumL = 0, sumR = 0;
     for (var i = 0; i < NUM_BANDS; i++) {
       var s = Math.floor(Math.exp(logMin + logSpan * (i / NUM_BANDS)));
       var e = Math.max(s + 1, Math.floor(Math.exp(logMin + logSpan * ((i + 1) / NUM_BANDS))));
@@ -1371,7 +1411,7 @@
       for (var b = s; b < e; b++) sum += freqArray[b] || 0;
       var raw = count > 0 ? (sum / count) / 255 : 0;
       envSum += raw; envCount++;
-      // VU ballistics
+      // VU ballistics (mono mixdown)
       if (raw > bandSmoothed[i]) bandSmoothed[i] = bandSmoothed[i] * 0.25 + raw * 0.75;
       else bandSmoothed[i] = bandSmoothed[i] * 0.88 + raw * 0.12;
       // Slow baseline for onset detection
@@ -1382,35 +1422,102 @@
         bandOnset[i] = Math.max(bandOnset[i], Math.min(1, delta / ONSET_THRESHOLD[i] * 0.7));
       }
       bandOnset[i] *= 0.88; // decay ~200ms
+
+      // Stereo per-band VU — same ballistics, separate channels.
+      if (haveStereo) {
+        var sumLb = 0, sumRb = 0;
+        for (var bb = s; bb < e; bb++) {
+          sumLb += freqArrayL[bb] || 0;
+          sumRb += freqArrayR[bb] || 0;
+        }
+        var rawL = count > 0 ? (sumLb / count) / 255 : 0;
+        var rawR = count > 0 ? (sumRb / count) / 255 : 0;
+        if (rawL > bandSmoothedL[i]) bandSmoothedL[i] = bandSmoothedL[i] * 0.25 + rawL * 0.75;
+        else bandSmoothedL[i] = bandSmoothedL[i] * 0.88 + rawL * 0.12;
+        if (rawR > bandSmoothedR[i]) bandSmoothedR[i] = bandSmoothedR[i] * 0.25 + rawR * 0.75;
+        else bandSmoothedR[i] = bandSmoothedR[i] * 0.88 + rawR * 0.12;
+        sumL += rawL; sumR += rawR;
+      }
     }
     var envRaw = envCount > 0 ? envSum / envCount : 0;
     envelopeSmoothed = envelopeSmoothed * 0.92 + envRaw * 0.08;
+
+    // Mono-fallback: if R is silent while L is not, fold L into R so
+    // designs using --band-N-r stay alive on mono sources.
+    if (haveStereo) {
+      if (sumR < 0.005 && sumL > 0.02) monoFrames++;
+      else if (sumR > 0.01) monoFrames = 0;
+      if (monoFrames > 60) { // ~1s of silent R
+        for (var k = 0; k < NUM_BANDS; k++) bandSmoothedR[k] = bandSmoothedL[k];
+        sumR = sumL;
+      }
+      // Pan balance: -1 (hard L) .. +1 (hard R). Smooth over ~150 ms.
+      var denom = sumL + sumR;
+      var rawPan = denom > 0.01 ? (sumR - sumL) / denom : 0;
+      panBalanceSmoothed = panBalanceSmoothed * 0.88 + rawPan * 0.12;
+    }
+  }
+
+  // Shell-local CSS var writer — lets elements INSIDE the shell chrome
+  // (pills, brand mark, player) consume the same audio-reactive props as
+  // iframe pages. Called every frame regardless of iframe subscription.
+  var shellRoot = document.documentElement.style;
+  function applyShellSpectrum(beat, bandsRounded, onsetsRounded, envRounded, playing) {
+    shellRoot.setProperty('--beat-pulse',     playing ? beat.pulse.toFixed(3) : '0');
+    shellRoot.setProperty('--beat-phase',     playing ? beat.phase.toFixed(3) : '0');
+    shellRoot.setProperty('--beat-bar-pulse', playing ? beat.barPulse.toFixed(3) : '0');
+    shellRoot.setProperty('--beat-bar-phase', playing ? beat.bar.toFixed(3) : '0');
+    shellRoot.setProperty('--envelope',       playing ? envRounded.toFixed(3) : '0');
+    for (var i = 0; i < NUM_BANDS; i++) {
+      shellRoot.setProperty('--band-' + i,  playing ? bandsRounded[i].toFixed(3) : '0');
+      shellRoot.setProperty('--onset-' + i, playing ? onsetsRounded[i].toFixed(3) : '0');
+    }
+    var lo = 0, mid = 0, hi = 0;
+    for (var a = 0; a <= 2; a++) if (onsetsRounded[a] > lo) lo = onsetsRounded[a];
+    for (var b = 3; b <= 6; b++) if (onsetsRounded[b] > mid) mid = onsetsRounded[b];
+    for (var c = 7; c <= 9; c++) if (onsetsRounded[c] > hi) hi = onsetsRounded[c];
+    shellRoot.setProperty('--onset-bass', playing ? lo.toFixed(3) : '0');
+    shellRoot.setProperty('--onset-mid',  playing ? mid.toFixed(3) : '0');
+    shellRoot.setProperty('--onset-high', playing ? hi.toFixed(3) : '0');
+    shellRoot.setProperty('--kick',  playing ? onsetsRounded[0].toFixed(3) : '0');
+    shellRoot.setProperty('--snare', playing ? onsetsRounded[4].toFixed(3) : '0');
+    shellRoot.setProperty('--hat',   playing ? onsetsRounded[8].toFixed(3) : '0');
   }
 
   function broadcastBeat() {
-    if (!beatSubscribed) return;
     try {
-      if (!frame.contentWindow) return;
       updateBands();
       var beat = playing ? getBeat() : { phase:0, half:0, quarter:0, bar:0, pulse:0, barPulse:0, bpm: TRACKS[current] ? (TRACKS[current].bpm||120) : 120, raw:0 };
       var mColor = SEAL_MS[sealCurrentM].color;
       var bandsRounded = new Array(NUM_BANDS);
+      var bandsLRounded = new Array(NUM_BANDS);
+      var bandsRRounded = new Array(NUM_BANDS);
       var onsetsRounded = new Array(NUM_BANDS);
       for (var i = 0; i < NUM_BANDS; i++) {
         bandsRounded[i] = Math.round(bandSmoothed[i] * 1000) / 1000;
+        bandsLRounded[i] = Math.round(bandSmoothedL[i] * 1000) / 1000;
+        bandsRRounded[i] = Math.round(bandSmoothedR[i] * 1000) / 1000;
         onsetsRounded[i] = Math.round(bandOnset[i] * 1000) / 1000;
       }
-      frame.contentWindow.postMessage({
-        type: 'mythos:beat',
-        beat: beat,
-        bands: bandsRounded,
-        onsets: onsetsRounded,
-        envelope: Math.round(envelopeSmoothed * 1000) / 1000,
-        playing: playing,
-        sealM: sealCurrentM,
-        sealColor: mColor,
-        matrixMode: matrixMode,
-      }, '*');
+      var envRounded = Math.round(envelopeSmoothed * 1000) / 1000;
+      applyShellSpectrum(beat, bandsRounded, onsetsRounded, envRounded, playing);
+      if (beatSubscribed && frame.contentWindow) {
+        frame.contentWindow.postMessage({
+          type: 'mythos:beat',
+          beat: beat,
+          bands: bandsRounded,
+          bandsL: bandsLRounded,
+          bandsR: bandsRRounded,
+          panBalance: Math.round(panBalanceSmoothed * 1000) / 1000,
+          onsets: onsetsRounded,
+          envelope: envRounded,
+          playing: playing,
+          sealM: sealCurrentM,
+          sealColor: mColor,
+          matrixMode: matrixMode,
+          currentTime: audio.currentTime || 0, // needed for per-word lyric karaoke
+        }, '*');
+      }
     } catch(e){}
   }
 
@@ -1477,7 +1584,7 @@
     var t = TRACKS[current];
     var msg = {
       type: 'mythos:audio',
-      track: { title: t.title, album: t.album, cover: t.cover, index: current },
+      track: { title: t.title, album: t.album, cover: t.cover, index: current, file: t.file, bpm: t.bpm },
       playing: playing, volume: volume, muted: muted, loop: loop, shuffle: shuffle,
       currentTime: audio.currentTime || 0,
       duration: audio.duration || 0,

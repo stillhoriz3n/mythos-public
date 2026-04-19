@@ -80,14 +80,47 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
   font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
   color:var(--ink-dim);
 }
+/* Pills react to audio when music plays: each pill rides a different
+   band + onset (bass/mid/treble) and the pill border tracks --envelope.
+   Falls back to the 4s breath keyframe when silent so they never look
+   dead. --pill-level and --pill-onset are set per-pill below. */
 .topnav-right .pill{
   display:inline-flex;align-items:center;gap:8px;
-  padding:4px 10px;border:1px solid var(--rule);border-radius:999px;
+  padding:4px 10px;
+  border:1px solid color-mix(in srgb, var(--rule) 100%, var(--signal-synth) calc(var(--envelope, 0) * 40%));
+  border-radius:999px;
+  transition:border-color 120ms linear;
 }
-.topnav-right .pill .dot{width:5px;height:5px;border-radius:50%;animation:breath 4s ease-in-out infinite}
-.topnav-right .pill .dot.green{background:#4ade80;box-shadow:0 0 6px #4ade80}
-.topnav-right .pill .dot.amber{background:var(--signal-synth);box-shadow:0 0 6px var(--signal-synth);animation-delay:1.3s}
-.topnav-right .pill .dot.blue{background:#93c5fd;box-shadow:0 0 6px #93c5fd;animation-delay:2.6s}
+.topnav-right .pill .dot{
+  width:5px;height:5px;border-radius:50%;
+  animation:breath 4s ease-in-out infinite;
+  --pill-level:0; --pill-onset:0; --pill-color:var(--signal-synth);
+  transform:scale(calc(1 + var(--pill-level) * 0.8 + var(--pill-onset) * 0.9));
+  opacity:calc(0.55 + 0.45 * var(--pill-level) + 0.4 * var(--pill-onset));
+  box-shadow:0 0 calc(6px + 10px * var(--pill-level) + 14px * var(--pill-onset)) var(--pill-color);
+  transition:transform 70ms linear, opacity 70ms linear, box-shadow 70ms linear;
+}
+.topnav-right .pill .dot.green{
+  background:#4ade80; --pill-color:#4ade80;
+  --pill-level:var(--band-1, 0);
+  --pill-onset:var(--kick, 0);
+}
+.topnav-right .pill .dot.amber{
+  background:var(--signal-synth); --pill-color:var(--signal-synth);
+  animation-delay:1.3s;
+  --pill-level:var(--band-4, 0);
+  --pill-onset:var(--snare, 0);
+}
+.topnav-right .pill .dot.blue{
+  background:#93c5fd; --pill-color:#93c5fd;
+  animation-delay:2.6s;
+  --pill-level:var(--band-8, 0);
+  --pill-onset:var(--hat, 0);
+}
+/* Once audio is flowing, suppress the generic breath so the reactive
+   --pill-level / --pill-onset values own the motion entirely. When
+   silent the 4s breath keeps the dots alive. */
+html[data-audio-playing] .topnav-right .pill .dot{animation:none}
 @keyframes breath{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
 .waitlist-cta{
   display:inline-flex;align-items:center;gap:8px;
