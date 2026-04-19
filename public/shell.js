@@ -73,7 +73,6 @@
   // ── MATRIX EASTER EGG STATE ──────────────────────────
   let matrixMode = false;
   let matrixT = 0;       // 0 = cosmos, 1 = fully matrix (smooth transition)
-  let matrixDrops = [];   // rain columns
   let matrixChars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンMYTHOSSubstrate01'.split('');
   let matrixLastAlbum = null;
 
@@ -409,7 +408,6 @@
     vizCanvas.width = trailCanvas.width = window.innerWidth * dpr;
     vizCanvas.height = trailCanvas.height = window.innerHeight * dpr;
     initStars();
-    if (matrixMode) initMatrixDrops();
   }
 
   var STAR_COUNT = 600;
@@ -440,11 +438,11 @@
       // Lower frequencies need higher thresholds (more energy there)
       // Higher frequencies need lower thresholds (less energy)
       var freqRatio = i / PLINKO_COLS;
-      var threshold = freqRatio < 0.1 ? 0.75       // sub-bass: hard to trigger
-                    : freqRatio < 0.25 ? 0.60      // bass
-                    : freqRatio < 0.5 ? 0.45       // mids
-                    : freqRatio < 0.75 ? 0.35      // upper mids
-                    : 0.25;                         // highs: sensitive
+      var threshold = freqRatio < 0.1 ? 0.28       // sub-bass — lots of energy, still needs low gate
+                    : freqRatio < 0.25 ? 0.22      // bass — let it breathe
+                    : freqRatio < 0.5 ? 0.32       // mids — moderate
+                    : freqRatio < 0.75 ? 0.55      // upper mids — tighten up
+                    : 0.65;                         // highs — clamp hard
       plinkoThresholds.push(threshold);
       plinkoSmoothed.push(0);
       plinkoCooldown.push(0);
@@ -490,7 +488,7 @@
           d.chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
         }
         // Cooldown: lower frequencies get longer cooldown (they'd spam otherwise)
-        plinkoCooldown[i] = i < 25 ? 600 : i < 50 ? 400 : 250;
+        plinkoCooldown[i] = i < 25 ? 200 : i < 50 ? 350 : 500;
       }
     }
   }
@@ -624,10 +622,7 @@
     c.clearRect(0, 0, w, h);
 
     // ── Background — cosmos or matrix ──
-    if (matrixT > 0.01) {
-      // Matrix rain (drawn underneath when transitioning, or full when matrixT=1)
-      drawMatrixRain(c, w, h, bass, mid, total);
-    }
+    // Original matrix rain removed — Spectrum Plinko (FFT-driven) replaces it
     if (matrixT < 0.99) {
       // Cosmic ground gradient (fades out as matrix takes over)
       var cosmosAlpha = 1 - matrixT;
@@ -1006,8 +1001,6 @@
     }
     // Broadcast skin to iframe content pages
     broadcastSkin(on);
-    // Re-init rain columns when entering matrix mode
-    if (on) initMatrixDrops();
   }
 
   function broadcastSkin(matrix) {
@@ -1019,96 +1012,6 @@
     } catch(e) {}
   }
 
-  function initMatrixDrops() {
-    matrixDrops = [];
-    if (!vizCanvas) return;
-    var colW = 18 * devicePixelRatio;
-    var cols = Math.ceil(vizCanvas.width / colW);
-    for (var i = 0; i < cols; i++) {
-      matrixDrops.push({
-        x: i * colW,
-        y: Math.random() * -vizCanvas.height,
-        speed: (0.5 + Math.random() * 1.5) * devicePixelRatio,
-        chars: [],
-        len: 8 + Math.floor(Math.random() * 24),
-        lastSwap: 0,
-      });
-      // Pre-fill char array
-      for (var j = 0; j < matrixDrops[i].len; j++) {
-        matrixDrops[i].chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
-      }
-    }
-  }
-
-  function drawMatrixRain(c, w, h, bass, mid, total) {
-    var dpr = devicePixelRatio;
-    var fontSize = 14 * dpr;
-    var colW = 18 * dpr;
-
-    // Background — deep black-green
-    c.fillStyle = 'rgba(13,2,8,' + (0.12 + bass * 0.08) + ')';
-    c.fillRect(0, 0, w, h);
-
-    c.font = fontSize + 'px "JetBrains Mono", monospace';
-    c.textAlign = 'center';
-
-    var now = performance.now();
-
-    for (var i = 0; i < matrixDrops.length; i++) {
-      var drop = matrixDrops[i];
-
-      // Audio-reactive speed boost
-      drop.y += drop.speed * (1 + bass * 0.5);
-
-      // Randomly swap characters for the flicker effect
-      if (now - drop.lastSwap > 80) {
-        var swapIdx = Math.floor(Math.random() * drop.chars.length);
-        drop.chars[swapIdx] = matrixChars[Math.floor(Math.random() * matrixChars.length)];
-        drop.lastSwap = now;
-      }
-
-      // Draw the trail of characters
-      for (var j = 0; j < drop.len; j++) {
-        var charY = drop.y - j * fontSize;
-        if (charY < -fontSize || charY > h + fontSize) continue;
-
-        var age = j / drop.len; // 0 = head, 1 = tail
-
-        if (j === 0) {
-          // Head glyph — bright white-green
-          c.fillStyle = 'rgba(180,255,180,' + (0.9 + mid * 0.1) + ')';
-        } else if (j < 3) {
-          // Near-head — bright green
-          var a = 0.85 - age * 0.3 + total * 0.15;
-          c.fillStyle = 'rgba(0,255,65,' + Math.max(0, a) + ')';
-        } else {
-          // Tail — fading green
-          var a = Math.max(0, (1 - age) * 0.6);
-          c.fillStyle = 'rgba(0,255,65,' + a + ')';
-        }
-
-        c.fillText(drop.chars[j] || '0', drop.x + colW * 0.5, charY);
-      }
-
-      // Reset when fully off screen
-      if (drop.y - drop.len * fontSize > h) {
-        drop.y = Math.random() * -300 * dpr;
-        drop.speed = (0.5 + Math.random() * 1.5) * dpr;
-        drop.len = 8 + Math.floor(Math.random() * 24);
-        drop.chars = [];
-        for (var j = 0; j < drop.len; j++) {
-          drop.chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
-        }
-      }
-    }
-
-    // Audio-reactive horizontal scan line
-    if (bass > 0.3) {
-      var scanY = (now * 0.3 * dpr) % h;
-      c.fillStyle = 'rgba(0,255,65,' + (bass * 0.08) + ')';
-      c.fillRect(0, scanY, w, 2 * dpr);
-    }
-  }
 
   // ── NAVIGATION ───────────────────────────────────────
   function nav(page, opts) {
