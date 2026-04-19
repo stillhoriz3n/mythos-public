@@ -209,6 +209,69 @@ element that should rotate in lockstep with the track:
 <svg class="m-spin-bar" viewBox="0 0 10 10">...</svg>
 ```
 
+### `.m-spectrogram`
+
+Full 10-band reactive spectrum in a single element. JS auto-populates
+10 `<span>` children inside on init; each span reads its own band and
+fills via `scaleY` (or `scaleX` in column orientation).
+
+```html
+<!-- default: 10 vertical bars side-by-side -->
+<div class="m-spectrogram" style="height:60px"></div>
+
+<!-- glowing -->
+<div class="m-spectrogram m-spectrogram--glow" style="height:80px"></div>
+
+<!-- stacked horizontally (each bar grows left→right) -->
+<div class="m-spectrogram" data-spectrogram-orientation="column"
+     style="height:120px;width:24px"></div>
+
+<!-- only bass bands (0..4), bigger bars -->
+<div class="m-spectrogram" data-spectrogram-count="5"
+     data-spectrogram-from="0"></div>
+```
+
+### Reactive typography — `.m-type-*`
+
+Variable-font-powered type that responds to the track. Classes are
+self-contained; mix them with any heading or paragraph.
+
+| Class | Drives | Effect |
+|---|---|---|
+| `.m-type-breathe` | `--envelope` | `font-variation-settings: "wght"` lerps 400→800 with loudness |
+| `.m-type-kick`    | `--kick`     | `letter-spacing` expands briefly on every sub-bass transient |
+| `.m-type-snare`   | `--snare`    | scales 1→0.99 + color-mixes toward `--seal-color` on mid transients |
+| `.m-type-beat`    | `--beat-pulse` | `line-height` breathes on each beat |
+| `.m-type-glow`    | `--presence` (or explicit band) | `text-shadow` scales with chosen band |
+
+Example:
+
+```html
+<h1 class="m-type-breathe m-type-kick">HORIZ3N</h1>
+<p class="m-type-beat">Reads differently when the track plays.</p>
+<h2 class="m-type-glow" data-band-role="bass">BASS.</h2>
+```
+
+Tune kick strength with a local var:
+
+```css
+.hero h1.m-type-kick { --m-kick-strength: 0.08em; }
+```
+
+### Flash overlays — `.m-flash-*`
+
+Full-viewport `mix-blend-mode: screen` layers pinned to the edges
+that flash on a chosen pulse. Pure CSS, no JS.
+
+```html
+<div class="m-flash-kick"></div>   <!-- sub-bass transients -->
+<div class="m-flash-snare"></div>  <!-- mid transients -->
+<div class="m-flash-bar"></div>    <!-- bar downbeats -->
+```
+
+Peak opacities are intentionally subtle (5–8%) so they read as
+atmosphere, not epilepsy. Override with local CSS if you need more.
+
 ---
 
 ## Recipes

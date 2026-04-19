@@ -229,6 +229,27 @@
     });
   }
 
+  // ─ Spectrogram — auto-populate bars inside .m-spectrogram elements ─
+  function setupSpectrograms() {
+    document.querySelectorAll('.m-spectrogram').forEach(function(el) {
+      if (el.dataset.spectrogramReady) return;
+      var count = parseInt(el.getAttribute('data-spectrogram-count'), 10);
+      if (!count || count < 1 || count > 10) count = 10;
+      var from = parseInt(el.getAttribute('data-spectrogram-from'), 10);
+      if (isNaN(from)) from = 0;
+      // Clear any existing children so re-init is safe
+      el.innerHTML = '';
+      for (var i = 0; i < count; i++) {
+        var band = from + i;
+        if (band > 9) band = 9;
+        var span = document.createElement('span');
+        span.style.setProperty('--band-level', 'var(--band-' + band + ', 0)');
+        el.appendChild(span);
+      }
+      el.dataset.spectrogramReady = '1';
+    });
+  }
+
   // ─ Meter utility class — inject shared stylesheet once ─
   function injectMeterStyles() {
     if (document.getElementById('mythos-meters-style')) return;
@@ -244,6 +265,7 @@
     setupTint();
     setupReveal();
     setupBands();
+    setupSpectrograms();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

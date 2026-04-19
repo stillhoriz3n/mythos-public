@@ -93,3 +93,118 @@
 .m-spin-beat {
   animation: m-spin-beat var(--beat-sec, 0.5s) linear infinite;
 }
+
+/* ── Spectrogram — full 10-band bar in one element ────────────────
+   Usage (JS auto-populates 10 bars inside):
+     <div class="m-spectrogram"></div>
+     <div class="m-spectrogram" data-spectrogram-orientation="row"></div>
+     <div class="m-spectrogram m-spectrogram--glow"></div>
+   ──────────────────────────────────────────────────────────────── */
+
+.m-spectrogram {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  min-height: 24px;
+  pointer-events: none;
+}
+.m-spectrogram > span {
+  flex: 1 1 0;
+  display: block;
+  background: var(--seal-color, currentColor);
+  height: 100%;
+  transform-origin: bottom;
+  transform: scaleY(calc(0.04 + 0.96 * var(--band-level, 0)));
+  transition: transform 60ms linear, background 800ms ease;
+  opacity: 0.85;
+}
+/* Column orientation — stacked vertically, bars grow from left */
+.m-spectrogram[data-spectrogram-orientation="column"] {
+  flex-direction: column;
+  align-items: stretch;
+}
+.m-spectrogram[data-spectrogram-orientation="column"] > span {
+  transform-origin: left;
+  transform: scaleX(calc(0.04 + 0.96 * var(--band-level, 0)));
+}
+.m-spectrogram--glow > span {
+  box-shadow: 0 0 calc(2px + 10px * var(--band-level, 0)) var(--seal-color, currentColor);
+}
+
+/* ── Reactive typography primitives ───────────────────────────────
+   Mix into any text element. Use data- attrs to retarget the band.
+
+     <h1 class="m-type-breathe">...</h1>
+     <h1 class="m-type-kick">...</h1>
+     <p class="m-type-glow" data-band-role="presence">...</p>
+
+   Typography classes set an LOCAL --band-level if they don't find
+   one already; pair with data-band or data-band-role to retarget.
+   ──────────────────────────────────────────────────────────────── */
+
+/* Breathe — font-weight lerps with envelope (or whatever --envelope-like
+   is applied). Requires a variable font with a wght axis (Archivo,
+   Fraunces are both wired on this site). */
+.m-type-breathe {
+  font-variation-settings: "wght" calc(400 + var(--envelope, 0) * 400);
+  transition: font-variation-settings 120ms linear;
+  will-change: font-variation-settings;
+}
+
+/* Kick — letter-spacing briefly expands on sub-bass transients */
+.m-type-kick {
+  --m-kick-strength: 0.05em;
+  letter-spacing: calc(var(--kick, 0) * var(--m-kick-strength));
+  transition: letter-spacing 40ms linear;
+  will-change: letter-spacing;
+}
+
+/* Snare — text briefly tightens and brightens on mid transients */
+.m-type-snare {
+  transform: scale(calc(1 - var(--snare, 0) * 0.01));
+  color: color-mix(in oklab, currentColor, var(--seal-color, #fff) calc(var(--snare, 0) * 40%));
+  transition: transform 40ms linear, color 40ms linear;
+  display: inline-block;
+  will-change: transform, color;
+}
+
+/* Beat — line-height breathes with the pulse (paragraph-level) */
+.m-type-beat {
+  line-height: calc(1.5 + var(--beat-pulse, 0) * 0.08);
+  transition: line-height 80ms linear;
+  will-change: line-height;
+}
+
+/* Glow — text-shadow scales with a chosen band (default: presence) */
+.m-type-glow {
+  --m-glow-band: var(--presence, 0);
+  text-shadow:
+    0 0 calc(2px + var(--m-glow-band) * 6px) var(--seal-color, currentColor),
+    0 0 calc(6px + var(--m-glow-band) * 18px) var(--seal-color, currentColor);
+  transition: text-shadow 70ms linear;
+  will-change: text-shadow;
+}
+/* Glow with explicit band: <h1 class="m-type-glow" data-band="0"> */
+.m-type-glow[data-band] { --m-glow-band: var(--band-level, 0); }
+.m-type-glow[data-band-role] { --m-glow-band: var(--band-level, 0); }
+
+/* Full-screen bar/beat strobe overlay helper — convenience wrapper
+   around .m-strobe pinned full-viewport with screen blending. */
+.m-flash-kick,
+.m-flash-snare,
+.m-flash-bar {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: var(--seal-color, currentColor);
+  opacity: 0;
+  transition: opacity 40ms linear;
+  z-index: 2;
+}
+.m-flash-kick  { opacity: calc(var(--kick, 0) * 0.08); }
+.m-flash-snare { opacity: calc(var(--snare, 0) * 0.05); }
+.m-flash-bar   { opacity: calc(var(--beat-bar-pulse, 0) * 0.06); }
