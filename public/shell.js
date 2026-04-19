@@ -781,6 +781,27 @@
     // Departure time from right edge = word.t - LYRIC_LEAD.
     // We want sprite x = w at t = word.t - LYRIC_LEAD, reaching center at
     // word.t, reaching left edge at word.t + LYRIC_TAIL. Linear interp.
+    // Deterministic hit schedule: guarantee every letter gets at least one
+    // aimed drop. Each entry = { fireAt: audioTime, letterIdx, kind }.
+    // kind 'primary' = guaranteed coverage, 'extra' = mid-energy bonus.
+    // Flight-of-rain quirk: drops take ~0.7s to fall, so schedule primary
+    // strikes slightly BEFORE the letter's singing moment so they splash
+    // ON the beat, not after.
+    var flightTime = 0.7;
+    var hits = [];
+    var n = letters.length || 1;
+    for (var li = 0; li < n; li++) {
+      // Letter li sung from (word.t + d*li/n) to (word.t + d*(li+1)/n).
+      // Aim the splash to land at the midpoint of that slice.
+      var sungAt = word.t + (word.d * (li + 0.5) / n);
+      hits.push({
+        fireAt: sungAt - flightTime,
+        letterIdx: li,
+        fired: false,
+        kind: 'primary',
+      });
+    }
+
     lyricState.sprites.push({
       text: text,
       t: word.t,
@@ -790,6 +811,8 @@
       letters: letters,
       totalW: totalW,
       fontPx: fontPx,
+      hits: hits,
+      extrasAccum: 0,                  // fractional mid-extra drops
       // Filled each frame:
       x: 0, y: 0,
       splashEnergy: 0,                 // accumulated across all letters
@@ -856,7 +879,9 @@
   }
 
   // Slow-follower wave sampler. Keeps a low-res buffer that exponentially
-  // tracks the high-pass-removed amber wave. Ribbon y reads from here.
+  // tracks a HEAVILY ATTENUATED copy of the amber wave. The ribbon is a
+  // reading strip — it should breathe like paper, not surf the wave.
+  // Amplitude and clamp both tight.
   function updateLyricWaveBuf(w, h, dpr) {
     var samples = Math.max(8, Math.floor(w / lyricWaveBufStride));
     if (!lyricWaveBuf || lyricWaveBuf.length !== samples) {
@@ -864,18 +889,23 @@
       lyricWaveBuf.fill(h * 0.5);
     }
     var waveY = h * 0.5;
-    // Sample the live dataArray at proportional positions. We use a
-    // relatively gentle amplitude (not the full waveform's amplitude) and
-    // smooth aggressively so words don't bounce with the audio.
-    var ampCap = Math.min(h * 0.18, 160 * dpr);
+    // Reading strip amplitude: ≤4% of viewport height OR 36*dpr px, whichever
+    // is smaller. Clamp to ±2× that so a single big peak can't yank the
+    // ribbon far from center. Result: words stay in a centerish band, gently
+    // undulating, never wandering.
+    var ampCap = Math.min(h * 0.04, 36 * dpr);
+    var yMin = waveY - ampCap * 1.8;
+    var yMax = waveY + ampCap * 1.8;
     for (var i = 0; i < samples; i++) {
       var frac = i / (samples - 1);
       var binIdx = Math.floor(frac * (dataArray.length - 1));
       var sample = (dataArray[binIdx] - 128) / 128; // -1..1
       var env = Math.sin(frac * Math.PI);           // tapered
       var target = waveY + sample * ampCap * env;
-      // Slow exponential follow — ribbon is "calm" compared to the wave.
-      lyricWaveBuf[i] += (target - lyricWaveBuf[i]) * 0.04;
+      // Slow exponential follow — ribbon is calm compared to the wave.
+      lyricWaveBuf[i] += (target - lyricWaveBuf[i]) * 0.035;
+      if (lyricWaveBuf[i] < yMin) lyricWaveBuf[i] = yMin;
+      if (lyricWaveBuf[i] > yMax) lyricWaveBuf[i] = yMax;
     }
   }
 
@@ -891,68 +921,86 @@
 
   // ── RAIN CONDUCTOR — aim drops at singing words ──────
   //
-  // For each currently-singing word (audioTime ∈ [t, t+d]), fire plinko
-  // drops into the columns that span that word's on-screen bbox. Rate is
-  // proportional to vocal-band energy (mids), so the rain "performs" the
-  // vocal. Each conducted drop is aimed at the word's y with a velocity
-  // that lands it on the word within the sung window.
+  // Two layers:
+  //   1. PRIMARY — each sprite has a hit schedule built at spawn time
+  //      (one primary per letter, timed to land on the letter's slice of
+  //      the word's sung duration). Guarantees ~100% letter coverage.
+  //   2. EXTRAS — mid-band energy adds bonus drops aimed at random
+  //      letters in active words, for density + audio-reactivity.
   //
-  var lyricConductorAccum = 0; // fractional drops to fire this frame
+  // Primary fire timing accounts for ~0.7s drop flight: we fire at
+  // (sungAt - 0.7s) so the splash lands on the beat.
+  //
+  function fireAimedDrop(sprite, letterIdx, w, dpr, brightness) {
+    var letter = sprite.letters[letterIdx];
+    if (!letter) return;
+    var targetX = sprite.x + letter.x + letter.w * 0.5;
+    var targetY = sprite.y + letter.y;
+    if (targetX < 20 || targetX > w - 20) return;
+
+    var colW = w / PLINKO_COLS;
+    var col = Math.max(0, Math.min(PLINKO_COLS - 1, Math.floor(targetX / colW)));
+    // Match the scheduler's assumed flight time so drops actually arrive.
+    var fallDist = Math.max(1, targetY);
+    var fallTime = 0.68 + Math.random() * 0.08; // ~flightTime ± jitter
+    var speed = fallDist / (fallTime * 60);
+    var dLen = 5 + Math.floor(Math.random() * 6);
+    var chars = [];
+    for (var k = 0; k < dLen; k++) {
+      chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
+    }
+    plinkoDrops.push({
+      col: col,
+      x: targetX,
+      y: 0,
+      speed: speed,
+      len: dLen,
+      chars: chars,
+      life: 1,
+      brightness: brightness,
+      aimedAt: sprite,
+      aimedLetterIdx: letterIdx,
+      targetY: targetY,
+      splashed: false,
+    });
+  }
+
   function conductRain(audioTime, w, h, dpr, midEnergy, now) {
     if (!lyricState.sprites.length) return;
-    // Desired drops this second — scales with mid energy (vocal range).
-    // Baseline: 18 drops/sec when mids are active during a sung word.
-    var dropsPerSec = 6 + midEnergy * 40;
-    // Only fire drops for words currently in their sing window.
-    var activeSprites = [];
+
     for (var i = 0; i < lyricState.sprites.length; i++) {
       var s = lyricState.sprites[i];
-      if (audioTime >= s.t - 0.05 && audioTime <= s.t + s.d + 0.15) {
-        activeSprites.push(s);
+
+      // ── PRIMARY: fire any hits whose time has arrived ──
+      if (s.hits && s.hits.length) {
+        for (var hi = 0; hi < s.hits.length; hi++) {
+          var h0 = s.hits[hi];
+          if (h0.fired) continue;
+          if (audioTime >= h0.fireAt) {
+            h0.fired = true;
+            // Only fire if the sprite is actually on-screen.
+            var letter = s.letters[h0.letterIdx];
+            if (!letter) continue;
+            var tx = s.x + letter.x + letter.w * 0.5;
+            if (tx > 0 && tx < w) {
+              fireAimedDrop(s, h0.letterIdx, w, dpr, 0.9);
+            }
+          }
+        }
       }
-    }
-    if (!activeSprites.length) return;
 
-    lyricConductorAccum += dropsPerSec / 60; // assume ~60fps
-    while (lyricConductorAccum >= 1) {
-      lyricConductorAccum -= 1;
-      var s = activeSprites[Math.floor(Math.random() * activeSprites.length)];
-      // Pick a random letter inside the word to aim at.
-      if (!s.letters.length) continue;
-      var li = Math.floor(Math.random() * s.letters.length);
-      var letter = s.letters[li];
-      var targetX = s.x + letter.x + letter.w * 0.5;
-      var targetY = s.y + letter.y;
-      if (targetX < 0 || targetX > w) continue;
-
-      // Map to the nearest plinko column for visual consistency with the
-      // FFT rain (same font, same look).
-      var colW = w / PLINKO_COLS;
-      var col = Math.max(0, Math.min(PLINKO_COLS - 1, Math.floor(targetX / colW)));
-
-      // Speed tuned so the drop lands in ~0.5-0.9s — snappy enough to feel
-      // like a strike, slow enough to read as rain.
-      var fallDist = Math.max(1, targetY);
-      var fallTime = 0.55 + Math.random() * 0.3;
-      var speed = fallDist / (fallTime * 60); // px/frame
-      var dLen = 5 + Math.floor(Math.random() * 6);
-      var chars = [];
-      for (var k = 0; k < dLen; k++) {
-        chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
+      // ── EXTRAS: mid-driven bonus drops on active sprites ──
+      // Only during the sung window; extras decorate, primaries guarantee.
+      if (audioTime >= s.t - 0.05 && audioTime <= s.t + s.d + 0.1) {
+        var extraPerSec = midEnergy * 18; // 0..~18 extras/sec when mids pump
+        s.extrasAccum += extraPerSec / 60;
+        while (s.extrasAccum >= 1) {
+          s.extrasAccum -= 1;
+          if (!s.letters.length) continue;
+          var li = Math.floor(Math.random() * s.letters.length);
+          fireAimedDrop(s, li, w, dpr, 0.7 + Math.random() * 0.2);
+        }
       }
-      plinkoDrops.push({
-        col: col,
-        x: targetX,
-        y: 0,
-        speed: speed,
-        len: dLen,
-        chars: chars,
-        life: 1,
-        brightness: 0.85,
-        aimedAt: s,            // mark as lyric-conducted
-        targetY: targetY,
-        splashed: false,
-      });
     }
   }
 
@@ -967,15 +1015,22 @@
       if (d.y < d.targetY) continue;
       d.splashed = true;
       var s = d.aimedAt;
-      // Figure out WHICH letter got hit based on current sprite position.
-      var hitX = d.x - s.x; // local x within sprite
+      // Prefer the explicit letter index the drop was aimed at. Fall back
+      // to spatial lookup only if the index is missing.
       var hitLetter = null;
-      for (var li = 0; li < s.letters.length; li++) {
-        var L = s.letters[li];
-        if (hitX >= L.x - 2 && hitX <= L.x + L.w + 2) { hitLetter = L; break; }
+      if (typeof d.aimedLetterIdx === 'number') {
+        hitLetter = s.letters[d.aimedLetterIdx] || null;
+      }
+      if (!hitLetter) {
+        var hitX = d.x - s.x;
+        for (var li = 0; li < s.letters.length; li++) {
+          var L = s.letters[li];
+          if (hitX >= L.x - 2 && hitX <= L.x + L.w + 2) { hitLetter = L; break; }
+        }
       }
       if (hitLetter) {
-        hitLetter.revealed = Math.min(1, hitLetter.revealed + 0.35 + d.brightness * 0.4);
+        // Saturate reveal faster — primaries should fully light the letter.
+        hitLetter.revealed = Math.min(1, hitLetter.revealed + 0.75 + d.brightness * 0.25);
         s.splashEnergy = Math.min(1, s.splashEnergy + 0.15);
         spawnSplashParticles(d.x, d.targetY, d.brightness, dpr, w, h);
       }
