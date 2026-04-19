@@ -46,9 +46,12 @@ function resize() {
   W = canvas.width = window.innerWidth * dpr;
   H = canvas.height = window.innerHeight * dpr;
   cx = W / 2;
-  // Offset center up to account for shell nav (56px) + player (82px)
-  cy = (H / 2) - (40 * dpr);
-  scale = Math.min(W, H) * 0.0028;
+  // Center in the usable area between shell nav (~56px) and player (~82px)
+  var navH = 56 * dpr;
+  var playerH = 82 * dpr;
+  var usableH = H - navH - playerH;
+  cy = navH + (usableH / 2);
+  scale = Math.min(W, usableH) * 0.0026;
   initStars();
   initRain();
 }
