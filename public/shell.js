@@ -615,7 +615,7 @@
     // ── Beat detection ──
     var bassJump = bass - prevBass;
     if (bassJump > 0.15 && expand > 0.3) {
-      spawnParticles(w * 0.52, h * 0.48, bassJump * 3 * expand, Math.floor((8 + bassJump * 40) * expand));
+      spawnParticles(w * 0.5, h * 0.5, bassJump * 3 * expand, Math.floor((8 + bassJump * 40) * expand));
     }
     prevBass = bass * 0.7 + prevBass * 0.3;
 
@@ -632,7 +632,7 @@
       // Cosmic ground gradient (fades out as matrix takes over)
       var cosmosAlpha = 1 - matrixT;
       c.globalAlpha = cosmosAlpha;
-      var grad = c.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, Math.max(w, h) * 0.7);
+      var grad = c.createRadialGradient(w * 0.5, h * 0.5, 0, w * 0.5, h * 0.5, Math.max(w, h) * 0.7);
       grad.addColorStop(0, '#1f1a2a');
       grad.addColorStop(0.22, '#14121c');
       grad.addColorStop(0.52, '#08070d');
@@ -751,7 +751,7 @@
     }
 
     // ── Hot event (beat-synced) ──
-    var ex = w * 0.52, ey = h * 0.48;
+    var ex = w * 0.5, ey = h * 0.5;
     var beatKick = beat.pulse * 0.3; // 0→0.3 on each beat
     // Scale the event by expand — contracts toward a point as viewT → 1
     var eventR = (40 + bass * 100 + subBass * 35 + beatKick * 40) * dpr * bloomScale * (0.15 + expand * 0.85);
@@ -836,7 +836,7 @@
 
     // ── Signal waveforms (fade with expand) ──
     if (expand > 0.05) {
-      var waveY = h * 0.48;
+      var waveY = h * 0.5;
       var wsx = 0, wex2 = w;
       var ww = wex2 - wsx;
       var pts = 300;
@@ -893,7 +893,7 @@
       for (var i = 0; i < 40; i++) {
         var px = Math.random() * w;
         var spread = (20 + presence * 40) * dpr;
-        var py = h * 0.48 + (Math.random() - 0.5) * spread;
+        var py = h * 0.5 + (Math.random() - 0.5) * spread;
         var pr = (0.3 + Math.random() * 0.8) * dpr;
         c.beginPath(); c.arc(px, py, pr, 0, Math.PI * 2);
         c.fillStyle = matrixT > 0.5
