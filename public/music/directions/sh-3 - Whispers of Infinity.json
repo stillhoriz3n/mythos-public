@@ -1,10 +1,27 @@
 {
   "track": "sh-3 - Whispers of Infinity",
-  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "notes": "The stillHORIZ3N version of Clockwork Infinity. Same structural story, 'torch' instead of 'frequency' in the verse — the SH album is quieter/reflective. Reduced intensity; softer emphasis on all key moments. Still centered on 'whispers of infinity' as the gravity center but as a whisper not a shout.",
   "defaults": {
-    "intensity": 1,
-    "colorBias": "neutral"
+    "intensity": 0.8,
+    "colorBias": "cyan"
   },
-  "chunks": [],
+  "chunks": [
+    { "wordRange": [20, 20], "kind": "hold", "emphasis": 1.3, "color": "cyan", "note": "Quarter — single word held, quieter on SH" },
+
+    { "wordRange": [28, 31], "kind": "key", "emphasis": 1.0, "color": "cyan", "note": "Been carrying the torch — reflective, cooler than rr-1's 'frequency'" },
+
+    { "wordRange": [90, 92], "kind": "key", "emphasis": 1.1, "color": "mixed", "note": "whispers of infinity #1 — softer here" },
+
+    { "wordRange": [113, 186], "kind": "rapidfire", "maxWordsPerChunk": 9, "color": "cyan", "note": "the -ed flurry — preserved, but cooler tone" },
+
+    { "wordRange": [188, 191], "kind": "key", "emphasis": 1.05, "color": "cyan", "note": "I chose the road — setup" },
+    { "wordRange": [192, 198], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "but I cant help where it led — reckoning, warmth returns" },
+
+    { "wordRange": [205, 207], "kind": "key", "emphasis": 1.1, "color": "mixed", "note": "whispers of infinity #2" },
+
+    { "wordRange": [234, 236], "kind": "key", "emphasis": 1.35, "color": "mixed", "note": "whispers of infinity #3 — the centerpiece, biggest on this quieter version" },
+
+    { "wordRange": [252, 255], "kind": "key", "emphasis": 1.15, "color": "cyan", "note": "kick to a drum — softer close than rr-1" }
+  ],
   "moments": []
 }

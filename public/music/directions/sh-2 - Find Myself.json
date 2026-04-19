@@ -1,10 +1,27 @@
 {
   "track": "sh-2 - Find Myself",
-  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "notes": "The identity song. 'In everything I find myself' repeats six times — the spine. Key thesis: 'the form persists because its etched in the code' and 'Every pattern that I planted grows regardless of the plot' — MythOS philosophy embedded. 'I'm in the walls, I'm in the wires, I'm in the thing before the thing' is the cyberpunk-mystic declaration. Mixed color bias — identity IS both signals.",
   "defaults": {
-    "intensity": 1,
+    "intensity": 0.95,
     "colorBias": "neutral"
   },
-  "chunks": [],
+  "chunks": [
+    { "wordRange": [40, 44], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "In everything I find myself, — hook #1" },
+    { "wordRange": [85, 89], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "In everything, I find myself — hook #2 (header)" },
+
+    { "wordRange": [90, 104], "kind": "key", "emphasis": 1.25, "color": "cyan", "note": "I'm in the walls, I'm in the wires, I'm in the thing before the thing — cyberpunk-mystic declaration" },
+
+    { "wordRange": [148, 157], "kind": "key", "emphasis": 1.3, "color": "mixed", "note": "But the form persists because its etched in the code — thesis #1, MythOS philosophy" },
+
+    { "wordRange": [158, 162], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "In everything I find myself, — hook #3" },
+
+    { "wordRange": [182, 186], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "In everything, I find myself — hook #4 (header)" },
+
+    { "wordRange": [233, 237], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "In everything I find myself — hook #5" },
+
+    { "wordRange": [310, 319], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "Every pattern that I planted grows regardless of the plot — thesis #2, album truth" },
+
+    { "wordRange": [321, 325], "kind": "key", "emphasis": 1.3, "color": "mixed", "note": "In everything, I find myself — final hook, biggest" }
+  ],
   "moments": []
 }

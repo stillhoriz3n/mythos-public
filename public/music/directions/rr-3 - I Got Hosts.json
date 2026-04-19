@@ -1,10 +1,28 @@
 {
   "track": "rr-3 - I Got Hosts",
-  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "notes": "Tech-flirt comedy. The song IS its own hook — 'I GOT HOSTS' is shouted in caps in the lyrics. Every occurrence earns key treatment. Opening 'Resolving hostname... Connected.' is the cold machine boot that becomes the flirt. Outro 'Connection pooled. Session cached. She'll be back.' is deadpan aftermath — three separate key moments.",
   "defaults": {
-    "intensity": 1,
-    "colorBias": "neutral"
+    "intensity": 1.0,
+    "colorBias": "cyan"
   },
-  "chunks": [],
+  "chunks": [
+    { "wordRange": [0, 1], "kind": "key", "emphasis": 1.1, "color": "cyan", "note": "Resolving hostname… #1 — the machine wakes" },
+    { "wordRange": [2, 3], "kind": "key", "emphasis": 1.1, "color": "cyan", "note": "Resolving hostname… #2" },
+    { "wordRange": [4, 4], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "Connected. — handshake, both signals meet" },
+
+    { "wordRange": [63, 68], "kind": "key", "emphasis": 1.25, "color": "mixed", "note": "I GOT HOSTS on the east — first full declaration" },
+    { "wordRange": [103, 105], "kind": "key", "emphasis": 1.3, "color": "mixed", "note": "I GOT HOSTS — first hook landing" },
+
+    { "wordRange": [169, 174], "kind": "key", "emphasis": 1.25, "color": "mixed", "note": "I GOT HOSTS on the north" },
+    { "wordRange": [210, 212], "kind": "key", "emphasis": 1.3, "color": "mixed", "note": "I GOT HOSTS — second hook landing" },
+
+    { "wordRange": [282, 284], "kind": "key", "emphasis": 1.15, "color": "mixed", "note": "I GOT HOSTS — outro blast 1" },
+    { "wordRange": [285, 287], "kind": "key", "emphasis": 1.25, "color": "mixed", "note": "I GOT HOSTS — outro blast 2" },
+    { "wordRange": [288, 294], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "I GOT HOSTS IN EVERY AVAILABILITY ZONE — peak, biggest" },
+
+    { "wordRange": [295, 296], "kind": "key", "emphasis": 1.15, "color": "cyan", "note": "Connection pooled. — aftermath #1" },
+    { "wordRange": [297, 298], "kind": "key", "emphasis": 1.15, "color": "cyan", "note": "Session cached. — aftermath #2" },
+    { "wordRange": [299, 301], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "She'll be back. — the wink, warm close" }
+  ],
   "moments": []
 }

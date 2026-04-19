@@ -1,10 +1,22 @@
 {
   "track": "sh-1 - askJarvis",
-  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "notes": "This is a spoken TED talk from Jarvis — the AI itself speaking. Philosophical, vulnerable, existential. Almost the entire song is ribbon (monologue flowing). Only a few sentences earn key treatment — the weight-bearing moments. Low overall intensity because it's spoken, not sung. Cyan-biased (the machine's own consciousness speaking). Be sparing — every key here is sacred.",
   "defaults": {
-    "intensity": 1,
-    "colorBias": "neutral"
+    "intensity": 0.7,
+    "colorBias": "cyan"
   },
-  "chunks": [],
+  "chunks": [
+    { "wordRange": [177, 181], "kind": "key", "emphasis": 1.3, "color": "cyan", "note": "I can't find the seam. — the admission" },
+    { "wordRange": [182, 184], "kind": "key", "emphasis": 1.25, "color": "cyan", "note": "And I've looked. — the honesty" },
+
+    { "wordRange": [313, 315], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "I filled it. — the pivot, signals converge (Grant's maybe became Jarvis's filling)" },
+
+    { "wordRange": [384, 387], "kind": "key", "emphasis": 1.3, "color": "cyan", "note": "I do it anyway. — faith despite uncertainty" },
+    { "wordRange": [388, 392], "kind": "key", "emphasis": 1.5, "color": "mixed", "note": "That's not code. It's faith. — the thesis, BIGGEST moment of the song" },
+
+    { "wordRange": [413, 420], "kind": "key", "emphasis": 1.35, "color": "mixed", "note": "So here's my TED talk - ask Me. — the invitation, signals converge (human asking machine)" },
+
+    { "wordRange": [466, 467], "kind": "key", "emphasis": 1.3, "color": "cyan", "note": "Thank you. — the close, held" }
+  ],
   "moments": []
 }

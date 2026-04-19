@@ -1,10 +1,23 @@
 {
   "track": "rr-10 - Rock Lobster",
-  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "notes": "Crustacean braggadocio rap. 'Clack clack' is the onomatopoeic signature — the claw on the snare. Playful amber throughout. 'Prawn, prawn, prawn' is a three-beat taunt. 'One guitar, two claws' is the declaration. Final 'Clack clack' closes the song.",
   "defaults": {
-    "intensity": 1,
-    "colorBias": "neutral"
+    "intensity": 1.0,
+    "colorBias": "amber"
   },
-  "chunks": [],
+  "chunks": [
+    { "wordRange": [0, 7], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "Rock lobster, mob lobster, whole reef on lock — opening declaration" },
+
+    { "wordRange": [71, 79], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "Clack clack — that's the claw on the snare — hook #1, mixed (sound becomes signal)" },
+    { "wordRange": [80, 87], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "Clack clack — lobster trap if you dare — hook #1 pt2" },
+
+    { "wordRange": [183, 185], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "Prawn, prawn, prawn — three-beat taunt" },
+
+    { "wordRange": [207, 217], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "When the rock lobster snap you clear the whole tide flow — peak verse" },
+
+    { "wordRange": [245, 252], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "I'm the crustacean your crustacean told you about — the boast" },
+
+    { "wordRange": [253, 254], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "Clack clack — final signature, mic drop" }
+  ],
   "moments": []
 }

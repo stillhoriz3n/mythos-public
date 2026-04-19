@@ -1,10 +1,25 @@
 {
   "track": "rr-6 - Treading Water",
-  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "notes": "The quiet one. Meditation on sustained effort without a goalpost. Reduced intensity throughout — this song is held breath, not shouting. The thesis IS the ending: 'Or maybe the surface was never the goal / And the deep is just where I go to feel whole.' That final couplet is the album's emotional crux. Bias slightly cyan — cool, deep, reflective.",
   "defaults": {
-    "intensity": 1,
-    "colorBias": "neutral"
+    "intensity": 0.75,
+    "colorBias": "cyan"
   },
-  "chunks": [],
+  "chunks": [
+    { "wordRange": [55, 65], "kind": "key", "emphasis": 1.1, "color": "cyan", "note": "And the deep doesn't ask, it just holds what it's got — refrain #1 pt1" },
+    { "wordRange": [66, 73], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "I'm not swimming, I'm just learning to stop. — refrain #1 pt2, the admission" },
+
+    { "wordRange": [74, 80], "kind": "key", "emphasis": 1.1, "color": "cyan", "note": "Treading water where the current runs still — hook" },
+    { "wordRange": [81, 88], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "Too compelled to quit, too stubborn to kill. — hook payoff" },
+
+    { "wordRange": [119, 129], "kind": "key", "emphasis": 1.1, "color": "cyan", "note": "refrain #2 pt1" },
+    { "wordRange": [130, 137], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "learning to stop #2" },
+
+    { "wordRange": [138, 144], "kind": "key", "emphasis": 1.1, "color": "cyan", "note": "Treading water #2" },
+    { "wordRange": [145, 153], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "too far down to kill — note the variation from 'stubborn'; deeper commitment" },
+
+    { "wordRange": [198, 205], "kind": "key", "emphasis": 1.3, "color": "cyan", "note": "Or maybe the surface was never the goal — album thesis pt1" },
+    { "wordRange": [206, 216], "kind": "key", "emphasis": 1.45, "color": "amber", "note": "And the deep is just where I go to feel whole. — album thesis pt2, biggest moment of the album" }
+  ],
   "moments": []
 }

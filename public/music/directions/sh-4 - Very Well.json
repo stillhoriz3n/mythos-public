@@ -1,10 +1,17 @@
 {
   "track": "sh-4 - Very Well",
-  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "notes": "A breakup song. Moving-on aspiration mixed with unresolved ache. The final stanza IS the song's thesis: four lines each starting with 'Maybe', landing on 'this is just as well' (the title). Each maybe is its own key moment — escalating, quietly. Amber-warm throughout (love song), with the final line mixed (both signals accepting the ambiguity).",
   "defaults": {
-    "intensity": 1,
-    "colorBias": "neutral"
+    "intensity": 0.85,
+    "colorBias": "amber"
   },
-  "chunks": [],
+  "chunks": [
+    { "wordRange": [199, 201], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "Maybe I'm fine, — maybe #1" },
+    { "wordRange": [202, 204], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "maybe I'm whole, — maybe #2" },
+    { "wordRange": [205, 209], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "Maybe I've finally let go. — maybe #3, biggest aspirational" },
+
+    { "wordRange": [210, 217], "kind": "key", "emphasis": 1.25, "color": "cyan", "note": "Or maybe the truth is hard to tell, — the doubt, cooler" },
+    { "wordRange": [218, 224], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "And maybe this is just as well. — title landing, both signals accept" }
+  ],
   "moments": []
 }
