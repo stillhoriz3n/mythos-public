@@ -123,6 +123,7 @@
   var plinkoSlow = [];       // slow baseline: recent average per column (0-1)
   var plinkoCooldown = [];   // cooldown timer per column in ms
   var plinkoSustainAcc = []; // sustain-trickle accumulator per column (fractional drops)
+  var plinkoPrevSmoothed = []; // prev-frame smoothed energy (for positive-delta gate)
 
   // ── MATRIX EASTER EGG STATE ──────────────────────────
   let matrixMode = false;
@@ -467,15 +468,19 @@
           }
 
           if (chB.isKey) {
-            // Key phrase: reserved spot near the top of the captions
-            // zone (slightly above the ribbon lanes so it reads as
-            // elevated emphasis). NEVER at screen center — the
-            // singularity area is off-limits for lyrics.
+            // Key phrase: reserved spot in the captions zone.
+            // NEVER at screen center — the singularity area is off-limits.
             if (anyOverlap(centerOccupancy, chB.startT, chB.endT)) {
               chB.placement = { kind: 'eclipse' };
             } else {
-              chB.placement = { kind: 'key', yFrac: 0.60 };
+              chB.placement = { kind: 'key', yFrac: 0.75 };
               centerOccupancy.push({ startT: chB.startT, endT: chB.endT });
+              // Also block nearby ribbon bands during the key's window
+              // so a scrolling chunk doesn't visually collide with the
+              // centered key phrase. Key lives at 0.75h, bands 1+2 are
+              // at 0.72/0.78 — block those for the key's duration.
+              bandOccupancy.push({ band: 1, startT: chB.startT, endT: chB.endT });
+              bandOccupancy.push({ band: 2, startT: chB.startT, endT: chB.endT });
             }
             continue;
           }
@@ -926,6 +931,7 @@
     plinkoSlow = [];
     plinkoCooldown = [];
     plinkoSustainAcc = [];
+    plinkoPrevSmoothed = [];
     for (var i = 0; i < PLINKO_COLS; i++) {
       // ONSET thresholds (delta = fast - slow). These gate how much a band
       // must rise above its own recent baseline before a drop fires. Bass
@@ -942,6 +948,7 @@
       plinkoSlow.push(0);
       plinkoCooldown.push(0);
       plinkoSustainAcc.push(0);
+      plinkoPrevSmoothed.push(0);
     }
   }
   initPlinko();
@@ -1005,22 +1012,26 @@
         plinkoCooldown[i] = i < 25 ? 260 : i < 50 ? 160 : 140;
       }
 
-      // ── SUSTAIN TRICKLE ──
-      // Onset detection alone shows only attacks. Held notes — a sustained
-      // chord, a long vocal tone, a synth pad — go invisible. Sustain
-      // trickle fires small, short, dim drops proportional to current
-      // smoothed energy so the "history" of held energy is visible as
-      // falling texture. Rate scales with energy above the noise floor;
-      // below the floor, nothing fires (silence stays silent).
-      var sustainEnergy = plinkoSmoothed[i] - 0.08;
-      if (sustainEnergy > 0) {
-        // Emit rate: up to ~4 trickles/sec at peak sustain. Per-frame
-        // accumulator; floor gate naturally throttles quiet columns.
-        plinkoSustainAcc[i] += sustainEnergy * sustainEnergy * 0.12;
+      // ── SUSTAIN TRICKLE — REACTIVE, NOT CONSTANT ──
+      // v1 fired on sustained LEVEL — any held note poured rain forever.
+      // That read as "intense" instead of "reactive". v2 fires on the
+      // POSITIVE DERIVATIVE of smoothed energy: columns only trickle
+      // when their energy is rising or freshly-sustained. Requires:
+      //   1. smoothed energy above a meaningful floor (not just above noise)
+      //   2. a positive rise this frame (energy is climbing or pulsing)
+      //   3. no onset cooldown active (the onset IS the reaction already)
+      // Coefficient cut ~6x from v1. Result: rain follows the shape of
+      // the music's rising/falling, goes quiet when the music does.
+      var rise = Math.max(0, plinkoSmoothed[i] - plinkoPrevSmoothed[i]);
+      var sustainLevel = plinkoSmoothed[i] - 0.14;
+      if (sustainLevel > 0 && rise > 0 && plinkoCooldown[i] <= 0) {
+        // Rate proportional to (rise × level) — a rising sustained note
+        // leaves a visible trail; a dead-steady hum doesn't.
+        plinkoSustainAcc[i] += rise * sustainLevel * 2.0;
         if (plinkoSustainAcc[i] >= 1) {
           plinkoSustainAcc[i] -= 1;
-          var sBright = Math.min(0.7, sustainEnergy * 1.2);
-          var sLen = 2 + Math.floor(Math.random() * 3);
+          var sBright = Math.min(0.6, sustainLevel * 1.0);
+          var sLen = 2 + Math.floor(Math.random() * 2);
           var sChars = [];
           for (var sj = 0; sj < sLen; sj++) {
             sChars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
@@ -1032,14 +1043,16 @@
             speed: (0.9 + sBright * 1.6) * dpr,
             len: sLen,
             chars: sChars,
-            life: 0.7,               // shorter visible time than onset drops
-            brightness: sBright * 0.55,
-            sustain: true,           // mark so renderer can dim further
+            life: 0.55,
+            brightness: sBright * 0.5,
+            sustain: true,
           });
         }
       } else {
-        plinkoSustainAcc[i] *= 0.9;  // decay when silent
+        // Fast decay so we don't burst on the next frame's first rise.
+        plinkoSustainAcc[i] *= 0.75;
       }
+      plinkoPrevSmoothed[i] = plinkoSmoothed[i];
     }
   }
 
