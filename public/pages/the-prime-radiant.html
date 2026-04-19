@@ -623,6 +623,11 @@ footer {
     root.style.setProperty('--surface', d.palette['--panel'] || '');
     root.style.setProperty('--panel', d.palette['--panel'] || '');
   });
+
+  // Request current skin from shell on load
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'mythos:skin:subscribe' }, '*');
+  }
 </script>
 </body>
 </html>

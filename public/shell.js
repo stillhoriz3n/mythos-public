@@ -1041,6 +1041,9 @@
     else if (d.type === 'mythos:audio:subscribe') {
       broadcastTrack();
     }
+    else if (d.type === 'mythos:skin:subscribe') {
+      broadcastSkin(matrixMode);
+    }
   });
 
   setInterval(function() { if (playing) broadcastTrack(); }, 1000);

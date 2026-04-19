@@ -703,6 +703,10 @@ h1.hero-title .amp{
       s.setAttribute('stop-color', accent);
     });
   });
+  // Request current skin from shell on load
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'mythos:skin:subscribe' }, '*');
+  }
 </script>
 </body>
 </html>
