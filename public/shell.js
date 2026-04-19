@@ -405,21 +405,23 @@
     if (matrixMode) initMatrixDrops();
   }
 
+  var STAR_COUNT = 220;
+  var STAR_DEPTH = 1200;
   function initStars() {
     stars = [];
     if (!vizCanvas) return;
-    var count = 90;
-    for (var i = 0; i < count; i++) {
-      stars.push({
-        x: Math.random() * vizCanvas.width,
-        y: Math.random() * vizCanvas.height,
-        r: 0.3 + Math.random() * 1.5,
-        baseAlpha: 0.15 + Math.random() * 0.6,
-        twinkleSpeed: 0.5 + Math.random() * 2,
-        twinkleOffset: Math.random() * Math.PI * 2,
-        isCyan: Math.random() < 0.15,
-      });
+    for (var i = 0; i < STAR_COUNT; i++) {
+      stars.push(makeStar(Math.random() * STAR_DEPTH));
     }
+  }
+  function makeStar(z) {
+    return {
+      x: (Math.random() - 0.5) * 2,   // -1 to 1, normalized
+      y: (Math.random() - 0.5) * 2,
+      z: z || STAR_DEPTH,
+      isCyan: Math.random() < 0.12,
+      baseAlpha: 0.3 + Math.random() * 0.7,
+    };
   }
 
   function spawnParticles(cx, cy, energy, count) {
@@ -536,26 +538,58 @@
     trailCtx.fillStyle = matrixT > 0.5 ? 'rgba(13,2,8,0.18)' : 'rgba(2,2,4,0.12)';
     trailCtx.fillRect(0, 0, w, h);
 
-    // ── Stars (fade with viewT and matrix transition) ──
+    // ── Stars — forward-flying starfield ──
     var cosmosOpacity = 1 - matrixT;
     var starAlphaScale = expand * cosmosOpacity;
+    var starSpeed = (1.5 + total * 4 + bass * 3) * dpr;
+    var focalLen = Math.min(w, h) * 0.5;
     if (starAlphaScale > 0.01) {
-      var time = performance.now() / 1000;
       for (var si = 0; si < stars.length; si++) {
         var s = stars[si];
-        var twinkle = Math.sin(time * s.twinkleSpeed + s.twinkleOffset);
-        var energyBoost = s.isCyan ? high * 0.4 : mid * 0.3;
-        var alpha = Math.max(0, s.baseAlpha * (0.5 + twinkle * 0.5) + energyBoost) * starAlphaScale;
-        var sr = s.r + (s.isCyan ? high : bass) * 1.5 * dpr;
+        var prevZ = s.z;
+        s.z -= starSpeed;
+        if (s.z <= 1) {
+          stars[si] = makeStar(STAR_DEPTH);
+          continue;
+        }
+
+        // perspective projection
+        var sx = s.x * focalLen / s.z + w * 0.5;
+        var sy = s.y * focalLen / s.z + h * 0.5;
+        var px = s.x * focalLen / prevZ + w * 0.5;
+        var py = s.y * focalLen / prevZ + h * 0.5;
+
+        // size and alpha based on depth
+        var depthRatio = 1 - s.z / STAR_DEPTH;
+        var sr = (0.3 + depthRatio * 2.5) * dpr;
+        var alpha = (s.baseAlpha * depthRatio) * starAlphaScale;
+        if (alpha < 0.01) continue;
+
+        // streak line from previous to current position
+        var streakLen = Math.sqrt((sx - px) * (sx - px) + (sy - py) * (sy - py));
+        if (streakLen > 1.5 * dpr) {
+          c.beginPath();
+          c.moveTo(px, py);
+          c.lineTo(sx, sy);
+          c.strokeStyle = s.isCyan
+            ? 'rgba(78,201,212,' + alpha + ')'
+            : 'rgba(245,238,221,' + alpha + ')';
+          c.lineWidth = sr * 0.6;
+          c.stroke();
+        }
+
+        // star point
         c.beginPath();
-        c.arc(s.x, s.y, sr, 0, Math.PI * 2);
+        c.arc(sx, sy, sr, 0, Math.PI * 2);
         c.fillStyle = s.isCyan
           ? 'rgba(78,201,212,' + alpha + ')'
           : 'rgba(245,238,221,' + alpha + ')';
         c.fill();
-        if (s.r > 1 && alpha > 0.4) {
+
+        // glow on close/bright stars
+        if (depthRatio > 0.7 && alpha > 0.3) {
           c.beginPath();
-          c.arc(s.x, s.y, sr * 3, 0, Math.PI * 2);
+          c.arc(sx, sy, sr * 3, 0, Math.PI * 2);
           c.fillStyle = s.isCyan
             ? 'rgba(78,201,212,' + (alpha * 0.12) + ')'
             : 'rgba(245,238,221,' + (alpha * 0.1) + ')';
