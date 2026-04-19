@@ -196,6 +196,15 @@
 
   .axiom-label { font-weight: 600; }
 
+  /* Each axiom block pulses very subtly on the bar downbeat — paper stays
+     formal, but there's a heartbeat underneath if you watch. */
+  .axiom {
+    transition: box-shadow .6s ease, border-color .6s ease;
+    border-left: 2px solid transparent;
+    padding-left: 10px;
+    box-shadow: inset calc(2px * var(--beat-bar-pulse, 0)) 0 0 var(--seal-color, var(--accent));
+  }
+
   .proof {
     margin: 14px 0 18px;
     text-indent: 0;
@@ -534,5 +543,6 @@
 
 </div>
 
+<script src="_mythos-page.js"></script>
 </body>
 </html>

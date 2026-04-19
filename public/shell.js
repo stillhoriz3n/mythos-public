@@ -1028,6 +1028,10 @@
 
     // Update singularity orb if partially visible
     updateSingularity();
+
+    // Lerp section tints + broadcast beat to subscribed iframe
+    updateTintLerp();
+    broadcastBeat();
   }
 
   // ── Singularity orb — Radiant Seal M-cycling above the left player ──
@@ -1247,6 +1251,79 @@
     } catch(e) {}
   }
 
+  // ── BEAT + TINT PIPE ────────────────────────────────
+  //
+  // Pages can opt into two live feeds from the shell:
+  //
+  //   mythos:beat — per-frame beat clock (phase, bar, pulse, barPulse,
+  //     bpm, raw), current Radiant-Seal M index + color, matrix mode.
+  //     Subscribe with { type: 'mythos:beat:subscribe' }. Broadcasts
+  //     only while something is subscribed to save cycles.
+  //
+  //   mythos:tint — pages can tint the shell's --signal-synth /
+  //     --signal-machine CSS vars as the reader scrolls through
+  //     sections. Post { type: 'mythos:tint', synth: '#hex',
+  //     machine: '#hex' } or pass nulls to release. Shell lerps
+  //     toward target over ~0.8s so transitions breathe.
+  //
+  // Subscriber state resets on nav() so a new page starts clean.
+  var beatSubscribed = false;
+
+  function hexToRgb(hex) {
+    if (!hex || typeof hex !== 'string') return null;
+    var m = hex.match(/^#([0-9a-f]{6})$/i);
+    if (!m) return null;
+    var n = parseInt(m[1], 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  // Base synth/machine colors per mode (targets when no tint is active)
+  function baseSynthRGB() { return matrixMode ? [0,255,65] : [232,184,88]; }
+  function baseMachineRGB() { return matrixMode ? [0,255,65] : [78,201,212]; }
+
+  var tintTargetSynth = null;    // [r,g,b] or null = use base
+  var tintTargetMachine = null;
+  var tintActualSynth = baseSynthRGB();
+  var tintActualMachine = baseMachineRGB();
+
+  function updateTintLerp() {
+    var rootSynth = tintTargetSynth || baseSynthRGB();
+    var rootMachine = tintTargetMachine || baseMachineRGB();
+    var k = 0.05; // ~0.8s to settle at 60fps
+    var changed = false;
+    for (var i = 0; i < 3; i++) {
+      var ds = rootSynth[i] - tintActualSynth[i];
+      if (Math.abs(ds) > 0.5) { tintActualSynth[i] += ds * k; changed = true; }
+      else tintActualSynth[i] = rootSynth[i];
+      var dm = rootMachine[i] - tintActualMachine[i];
+      if (Math.abs(dm) > 0.5) { tintActualMachine[i] += dm * k; changed = true; }
+      else tintActualMachine[i] = rootMachine[i];
+    }
+    if (changed) {
+      var synthStr = 'rgb(' + Math.round(tintActualSynth[0]) + ',' + Math.round(tintActualSynth[1]) + ',' + Math.round(tintActualSynth[2]) + ')';
+      var machineStr = 'rgb(' + Math.round(tintActualMachine[0]) + ',' + Math.round(tintActualMachine[1]) + ',' + Math.round(tintActualMachine[2]) + ')';
+      document.documentElement.style.setProperty('--signal-synth', synthStr);
+      document.documentElement.style.setProperty('--signal-machine', machineStr);
+    }
+  }
+
+  function broadcastBeat() {
+    if (!beatSubscribed) return;
+    try {
+      if (!frame.contentWindow) return;
+      var beat = playing ? getBeat() : { phase:0, half:0, quarter:0, bar:0, pulse:0, barPulse:0, bpm: TRACKS[current] ? (TRACKS[current].bpm||120) : 120, raw:0 };
+      var mColor = SEAL_MS[sealCurrentM].color;
+      frame.contentWindow.postMessage({
+        type: 'mythos:beat',
+        beat: beat,
+        playing: playing,
+        sealM: sealCurrentM,
+        sealColor: mColor,
+        matrixMode: matrixMode,
+      }, '*');
+    } catch(e){}
+  }
+
 
   // ── NAVIGATION ───────────────────────────────────────
   function nav(page, opts) {
@@ -1255,6 +1332,11 @@
     if (page === currentPage && !opts.force) return;
     currentPage = page;
     loader.classList.add('on');
+
+    // Reset cross-frame subscriptions + tint state for the incoming page
+    beatSubscribed = false;
+    tintTargetSynth = null;
+    tintTargetMachine = null;
 
     // Update nav state
     document.querySelectorAll('.nav-link').forEach(function(el) {
@@ -1338,6 +1420,13 @@
     }
     else if (d.type === 'mythos:skin:subscribe') {
       broadcastSkin(matrixMode);
+    }
+    else if (d.type === 'mythos:beat:subscribe') {
+      beatSubscribed = true;
+    }
+    else if (d.type === 'mythos:tint') {
+      tintTargetSynth = hexToRgb(d.synth);
+      tintTargetMachine = hexToRgb(d.machine);
     }
   });
 

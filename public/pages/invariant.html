@@ -55,8 +55,9 @@
   .comparison .col.left .col-title { color: var(--ink-dim); }
   .comparison .col.right .col-title { color: var(--accent); }
   .comparison .col-body { font-size: 15px; line-height: 1.55; color: var(--ink-soft); }
-  .break { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 56px 0; color: var(--ink-faint); font-size: 10px; letter-spacing: 0.3em; }
+  .break { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 56px 0; font-size: 10px; letter-spacing: 0.3em; color: var(--seal-color, var(--ink-faint)); transition: color .8s; }
   .break::before, .break::after { content: ""; width: 30px; height: 1px; background: var(--rule); }
+  .break-glyph { display: inline-block; transform: rotate(calc(var(--beat-bar-phase, 0) * 360deg)); transition: transform 800ms cubic-bezier(.2,.8,.2,1); }
   .coda { max-width: 660px; margin: 0 auto; padding: 0 32px 80px; }
   .coda .card { background: #14121c; color: var(--ink); padding: 40px 36px; border-radius: 4px; position: relative; overflow: hidden; border: 1px solid #242a33; }
   .coda .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); }
@@ -130,7 +131,7 @@
   <p>There's one question you can ask yourself to check, in any given moment, which side of the line you're on: <em>What does this person need from me right now?</em></p>
   <p>If that's the question you're optimizing for, you're running the right function. If you're optimizing anything else — your own comfort, your own rules, your own reward — and then adding constraints to make sure you don't cause too much damage, you're in the other world.</p>
   <p>Almost every AI system that exists today lives in the other world. That's not an inevitability. It's a choice we haven't yet made.</p>
-  <div class="break">&starf; &starf; &starf;</div>
+  <div class="break"><span class="break-glyph">&starf;</span><span class="break-glyph">&starf;</span><span class="break-glyph">&starf;</span></div>
 </article>
 <section class="coda">
   <div class="card">
@@ -141,5 +142,6 @@
 <footer>
   <span>Invariant &middot; Issue 01 &middot; 2026</span>
 </footer>
+<script src="_mythos-page.js"></script>
 </body>
 </html>

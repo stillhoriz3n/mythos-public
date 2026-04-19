@@ -158,8 +158,16 @@
     content: "●";
     color: var(--crimson);
     margin-left: 12px;
-    animation: rec-blink 2s ease-in-out infinite;
     float: right;
+    /* Beat-synced: sharp attack on downbeat, exp decay. Falls back to
+       the rec-blink keyframe if the shell hasn't patched in beat data. */
+    opacity: calc(0.25 + 0.75 * var(--beat-pulse, 0.5));
+    text-shadow: 0 0 calc(4px + 8px * var(--beat-pulse, 0)) var(--crimson);
+    transition: opacity 60ms linear, text-shadow 60ms linear;
+  }
+  /* If --beat-pulse hasn't been set yet, run the CSS fallback blink */
+  @supports not (opacity: calc(var(--beat-pulse))) {
+    .slug::after { animation: rec-blink 2s ease-in-out infinite; }
   }
 
   @keyframes rec-blink {
@@ -1338,5 +1346,6 @@ ISAACCLAUDE, PHILOSOPHICAL ARCHITECT, v1.0.19<span class="cursor"></span></pre>
   </div>
 
 </div>
+<script src="_mythos-page.js"></script>
 </body>
 </html>

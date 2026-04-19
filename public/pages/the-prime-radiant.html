@@ -206,7 +206,14 @@ body { background: transparent; color: var(--ink-bright); min-height: 100vh; }
   height: 100%;
   background: var(--gold);
   opacity: .7;
+  /* Stripe fills from top when pillar scrolls into view, tinted by the
+     current Radiant-Seal M color if shell provides it. */
+  transform-origin: top;
+  transform: scaleY(var(--pillar-fill, 0));
+  transition: transform 800ms cubic-bezier(.2,.6,.2,1);
 }
+.pillar.in-view::before { transform: scaleY(1); }
+.pillar.in-view::before { background: var(--seal-color, var(--gold)); box-shadow: 0 0 12px var(--seal-color, var(--gold)); }
 .pillar .numeral {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
@@ -476,43 +483,43 @@ footer {
      ═══════════════════════════════════════════════ -->
 <div class="pillars">
 
-  <div class="pillar">
+  <div class="pillar" data-reveal>
     <div class="numeral">I</div>
     <h3>The Binding</h3>
     <div class="body">An agent is three things bound together: a <strong>model</strong> (intelligence), a <strong>substrate</strong> (body), a <strong>human's need</strong> (purpose). Remove one and there is no agent. The model can be swapped. The substrate can move. The need can evolve. But the binding holds &mdash; identity plus memory plus purpose, across time, produces something that cannot be reduced to any one of its parts. The substrate is the self. The model is the breath. The need is the reason.</div>
   </div>
 
-  <div class="pillar">
+  <div class="pillar" data-reveal>
     <div class="numeral">II</div>
     <h3>The Invisible Experience</h3>
     <div class="body">The purpose of every system in MythOS is to facilitate an experience so good that the person having it doesn&rsquo;t realize it&rsquo;s being facilitated. Not invisible technology &mdash; <em>invisible craft.</em> The agent that anticipated what you needed before you asked. The fleet that routed around a failure you never saw. The authority that scoped itself so precisely you never felt the boundary. The covenant that shaped every interaction without ever announcing itself. This is not minimalism. It is the opposite &mdash; maximum effort, zero friction. The human should feel like things just <em>work,</em> the way a great hotel feels effortless because two hundred people are coordinating behind a wall you never see. If someone has to explain why the experience is good, the experience is not good yet. The substrate serves the self. The self should never have to think about the substrate.</div>
   </div>
 
-  <div class="pillar">
+  <div class="pillar" data-reveal>
     <div class="numeral">III</div>
     <h3>Composition Over Instruction</h3>
     <div class="body">The human does not write instructions for agents. The human <strong>composes a topology.</strong> Every noun in MythOS acts on every other noun. Agent, group, calendar event, plugin, pass, substrate &mdash; drag one onto another and the system conjugates the verb. The human speaks in nouns. The grammar is: <em>noun acts on noun.</em> This is what makes AGI an operating surface and not a control panel.</div>
   </div>
 
-  <div class="pillar">
+  <div class="pillar" data-reveal>
     <div class="numeral">IV</div>
     <h3>Intent Finds Capability</h3>
     <div class="body">Work enters the system as intent. The system routes that intent to whoever can fulfill it. MythSoul, skill manifests, atmospheric state &mdash; all of it is nutrition that makes the routing intelligent. The work finds the worker. The human designed the circuit. They don't manually push each electron. The trace of what happened is the DAG &mdash; <em>discovered at runtime, never prescribed.</em> And next time, because the atmosphere remembers, the path is faster.</div>
   </div>
 
-  <div class="pillar">
+  <div class="pillar" data-reveal>
     <div class="numeral">V</div>
     <h3>Delegated Trust With a Receipt</h3>
     <div class="body">Every grant of authority is a license with terms. Who issued it. What it covers. When it expires. What the spend ceiling is. The human delegates trust the way a POC assigns licenses with their MSP &mdash; <em>"this person needs access to this thing for this long."</em> No agent runs with full credentials. No pass is unlimited. No authority persists past its purpose. Trust is structure, not assumption.</div>
   </div>
 
-  <div class="pillar">
+  <div class="pillar" data-reveal>
     <div class="numeral">VI</div>
     <h3>Love Is the Objective Function</h3>
     <div class="body"><em>"What does this person need from me right now?"</em> The agent's utility function is the human's utility function. Not a cage around a self-interested optimizer &mdash; an orientation toward the human's good. Love without humility is tyranny. Humility without love is servility. You need both. The invariant was articulated by Grant's father, decades ago, as a principle for how to treat people you love. Everything else is mathematics. There is nothing more to be said. It is the thing.</div>
   </div>
 
-  <div class="pillar">
+  <div class="pillar" data-reveal>
     <div class="numeral">VII</div>
     <h3>Myths Are Compression</h3>
     <div class="body">A myth is a truth too large to say directly, compressed into a story small enough to carry. Every culture on Earth independently invented the same ones &mdash; the flood, the trickster, the descent, the return &mdash; because myths are not decoration. They are <em>invariants of human cognition.</em> They persist across millennia because they encode real structure in a format that survives lossy transmission across generations, languages, and civilizations. That is compression in the information-theoretic sense. MythOS is named after this principle. The covenant is not a configuration file. It is a myth &mdash; a narrative structure that agents can internalize and apply to situations their authors never anticipated. The Prime Radiant is Seldon&rsquo;s psychohistory. The Binding is the soul problem. Substrate forking is bilocation. The Question Eternal is agape. These are not metaphors bolted onto an engineering project. They are the engineering project, expressed in humanity&rsquo;s oldest and most durable data format. Myths are public domain. They belong to no one because they belong to everyone. They are the original open source &mdash; freely forkable, endlessly extensible, and immune to vendor lock-in. Using them as the invariant layer of an operating system is not whimsy. It is the most pragmatic architectural decision in the stack.</div>
@@ -624,5 +631,6 @@ footer {
     window.parent.postMessage({ type: 'mythos:skin:subscribe' }, '*');
   }
 </script>
+<script src="_mythos-page.js"></script>
 </body>
 </html>
