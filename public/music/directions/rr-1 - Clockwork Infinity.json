@@ -1,10 +1,26 @@
 {
   "track": "rr-1 - Clockwork Infinity",
-  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "notes": "A reckoning. The phrase 'whispers of infinity' is the gravity center — it lands four times and each lands harder. 'Quarter' is held alone on purpose. Verse 2 is an -ed-rhyme flurry; keep rhyming lines intact so each -ed lands. The song is amber defiance against the algorithm; warm bias throughout, cyan only on the hook itself (both signals converging).",
   "defaults": {
-    "intensity": 1,
-    "colorBias": "neutral"
+    "intensity": 1.0,
+    "colorBias": "amber"
   },
-  "chunks": [],
+  "chunks": [
+    { "wordRange": [20, 20], "kind": "hold", "emphasis": 1.4, "color": "amber", "note": "Quarter — single word held 2.37s. One word, one moment." },
+
+    { "wordRange": [28, 31], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "Been carrying this frequency — the thesis, isolated for breath" },
+
+    { "wordRange": [90, 92], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "whispers of infinity #1 — both signals converge" },
+
+    { "wordRange": [113, 186], "kind": "rapidfire", "maxWordsPerChunk": 9, "color": "amber", "note": "the -ed flurry — keep each rhyming line intact so head/read/said/misled/bed/thread/bled/fed/dead all land" },
+
+    { "wordRange": [188, 198], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "I chose the road but I cant help where it led — verse 2 payoff, biggest" },
+
+    { "wordRange": [205, 207], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "whispers of infinity #2" },
+
+    { "wordRange": [234, 236], "kind": "key", "emphasis": 1.5, "color": "mixed", "note": "whispers of infinity #3 — after the 31s breath, hugest of all" },
+
+    { "wordRange": [252, 255], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "kick to a drum — the final landing, last words of the song" }
+  ],
   "moments": []
 }
