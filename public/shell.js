@@ -412,8 +412,8 @@
     if (matrixMode) initMatrixDrops();
   }
 
-  var STAR_COUNT = 220;
-  var STAR_DEPTH = 1200;
+  var STAR_COUNT = 180;
+  var STAR_DEPTH = 2000;
   function initStars() {
     stars = [];
     if (!vizCanvas) return;
@@ -423,8 +423,8 @@
   }
   function makeStar(z) {
     return {
-      x: (Math.random() - 0.5) * 2,   // -1 to 1, normalized
-      y: (Math.random() - 0.5) * 2,
+      x: (Math.random() - 0.5) * 4,   // -2 to 2, wide spread
+      y: (Math.random() - 0.5) * 4,
       z: z || STAR_DEPTH,
       isCyan: Math.random() < 0.12,
       baseAlpha: 0.3 + Math.random() * 0.7,
@@ -440,11 +440,11 @@
       // Lower frequencies need higher thresholds (more energy there)
       // Higher frequencies need lower thresholds (less energy)
       var freqRatio = i / PLINKO_COLS;
-      var threshold = freqRatio < 0.1 ? 0.45       // sub-bass: hard to trigger
-                    : freqRatio < 0.25 ? 0.35      // bass
-                    : freqRatio < 0.5 ? 0.25       // mids
-                    : freqRatio < 0.75 ? 0.18      // upper mids
-                    : 0.12;                         // highs: sensitive
+      var threshold = freqRatio < 0.1 ? 0.75       // sub-bass: hard to trigger
+                    : freqRatio < 0.25 ? 0.60      // bass
+                    : freqRatio < 0.5 ? 0.45       // mids
+                    : freqRatio < 0.75 ? 0.35      // upper mids
+                    : 0.25;                         // highs: sensitive
       plinkoThresholds.push(threshold);
       plinkoSmoothed.push(0);
       plinkoCooldown.push(0);
@@ -490,7 +490,7 @@
           d.chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
         }
         // Cooldown: lower frequencies get longer cooldown (they'd spam otherwise)
-        plinkoCooldown[i] = i < 25 ? 300 : i < 50 ? 180 : 100;
+        plinkoCooldown[i] = i < 25 ? 600 : i < 50 ? 400 : 250;
       }
     }
   }
@@ -661,14 +661,14 @@
     // ── Stars — forward-flying starfield ──
     var cosmosOpacity = 1 - matrixT;
     var starAlphaScale = expand * cosmosOpacity;
-    var starSpeed = (1.5 + total * 4 + bass * 3) * dpr;
-    var focalLen = Math.min(w, h) * 0.5;
+    var starSpeed = (0.4 + total * 1.2 + bass * 0.8) * dpr;
+    var focalLen = Math.min(w, h) * 0.35;
     if (starAlphaScale > 0.01) {
       for (var si = 0; si < stars.length; si++) {
         var s = stars[si];
         var prevZ = s.z;
         s.z -= starSpeed;
-        if (s.z <= 1) {
+        if (s.z <= 10) {
           stars[si] = makeStar(STAR_DEPTH);
           continue;
         }
@@ -678,6 +678,9 @@
         var sy = s.y * focalLen / s.z + h * 0.5;
         var px = s.x * focalLen / prevZ + w * 0.5;
         var py = s.y * focalLen / prevZ + h * 0.5;
+
+        // skip if way off screen
+        if (sx < -100 || sx > w + 100 || sy < -100 || sy > h + 100) continue;
 
         // size and alpha based on depth
         var depthRatio = 1 - s.z / STAR_DEPTH;
