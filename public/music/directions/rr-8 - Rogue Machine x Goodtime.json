@@ -1,0 +1,10 @@
+{
+  "track": "rr-8 - Rogue Machine x Goodtime",
+  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "defaults": {
+    "intensity": 1,
+    "colorBias": "neutral"
+  },
+  "chunks": [],
+  "moments": []
+}

@@ -1,0 +1,10 @@
+{
+  "track": "rr-11 - Orange Chicken",
+  "notes": "Composer notes here. Read the .analysis.md alongside this file. Empty chunks[] = full auto.",
+  "defaults": {
+    "intensity": 1,
+    "colorBias": "neutral"
+  },
+  "chunks": [],
+  "moments": []
+}

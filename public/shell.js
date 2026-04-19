@@ -177,24 +177,153 @@
   // Lyrics live at music/lyrics/<stem>.json. Stem = audio file basename
   // minus .mp3. Fetched once per track change; failure is quiet (tracks
   // without lyrics just don't ribbon).
+  // ── Direction-file application ─────────────────────
+  // A direction.json is the COMPOSITION LAYER on top of the auto
+  // chunker. Each entry in direction.chunks[] specifies a word range
+  // (indices into the flat word timeline) and a kind. We rewrite the
+  // auto-chunks within those ranges to produce the authored grouping:
+  //
+  //   kind "key"          — single chunk over the whole range, isKey=true
+  //   kind "hold"         — single chunk (same as key but no repetition
+  //                         lookup; for sustained single words)
+  //   kind "rapidfire"    — break into tight sub-chunks of maxWordsPerChunk
+  //   kind "ribbon"       — single chunk over the range, forced non-key
+  //   kind "eclipse"      — single chunk forced to eclipse flash
+  //   kind "couplet-pair" — single chunk; scheduler tries preferBands
+  //
+  // Fields "emphasis" and "color" carry through the placement for the
+  // renderer to honor. Fields "preferBands" route the scheduler.
+  function applyDirectionChunks(autoChunks, allWords, directives) {
+    if (!directives || !directives.length) return autoChunks;
+
+    // Build a mask: for each word index, which directive (if any) owns it.
+    var ownership = new Array(allWords.length);
+    for (var di = 0; di < directives.length; di++) {
+      var d = directives[di];
+      if (!d || !d.wordRange || d.wordRange.length !== 2) continue;
+      var a = Math.max(0, d.wordRange[0] | 0);
+      var b = Math.min(allWords.length - 1, d.wordRange[1] | 0);
+      if (b < a) continue;
+      for (var wi = a; wi <= b; wi++) ownership[wi] = di;
+    }
+
+    // Build new chunk list by walking words in order. For each maximal
+    // run with the same ownership (undefined = auto, or same directive
+    // index), emit chunks per the directive's kind rules. Auto runs
+    // pass through by rebuilding from autoChunks.
+
+    // Index map: word → auto-chunk index (so we can copy through
+    // auto-chunker decisions for unowned spans).
+    var wordIndex = 0;
+    var wordToAutoChunk = new Array(allWords.length);
+    for (var aci = 0; aci < autoChunks.length; aci++) {
+      var ac = autoChunks[aci];
+      for (var aw = 0; aw < ac.words.length; aw++) {
+        wordToAutoChunk[wordIndex++] = aci;
+      }
+    }
+
+    function finalizeChunk(words, extra) {
+      var first = words[0], last = words[words.length - 1];
+      var c = {
+        words: words,
+        chars: words.map(function(w){return w.w;}).join(' ').length,
+        t: first.t,
+        tEnd: last.t + last.d,
+        text: words.map(function(w){return w.w;}).join(' '),
+      };
+      c.startT = c.t - LYRIC_LEAD;
+      c.endT = c.tEnd + LYRIC_TAIL;
+      if (extra) for (var k in extra) c[k] = extra[k];
+      return c;
+    }
+
+    var out = [];
+    var i = 0;
+    while (i < allWords.length) {
+      var owner = ownership[i];
+      if (owner === undefined) {
+        // Unowned — pass-through from auto chunks. Find the auto chunk
+        // that contains word i and copy words until another directive
+        // claims them.
+        var j = i;
+        while (j < allWords.length && ownership[j] === undefined) j++;
+        // Split the unowned span along existing auto-chunk boundaries.
+        var spanStart = i;
+        while (spanStart < j) {
+          var autoIdx = wordToAutoChunk[spanStart];
+          var spanEnd = spanStart;
+          while (spanEnd + 1 < j && wordToAutoChunk[spanEnd + 1] === autoIdx) spanEnd++;
+          var sliceWords = allWords.slice(spanStart, spanEnd + 1);
+          out.push(finalizeChunk(sliceWords));
+          spanStart = spanEnd + 1;
+        }
+        i = j;
+        continue;
+      }
+
+      // Owned — gather the full owned range.
+      var rangeStart = i;
+      while (i < allWords.length && ownership[i] === owner) i++;
+      var rangeEnd = i - 1; // inclusive
+      var d2 = directives[owner];
+      var ownedWords = allWords.slice(rangeStart, rangeEnd + 1);
+      var kind = d2.kind || 'ribbon';
+      var common = {
+        directedKind: kind,
+        directedEmphasis: typeof d2.emphasis === 'number' ? d2.emphasis : 1.0,
+        directedColor: d2.color || null,
+        directedPreferBands: d2.preferBands || null,
+        directedNote: d2.note || null,
+      };
+
+      if (kind === 'rapidfire') {
+        var maxW = d2.maxWordsPerChunk || 2;
+        for (var r = 0; r < ownedWords.length; r += maxW) {
+          var slice = ownedWords.slice(r, r + maxW);
+          out.push(finalizeChunk(slice, common));
+        }
+      } else {
+        // key, hold, ribbon, eclipse, couplet-pair → one chunk.
+        out.push(finalizeChunk(ownedWords, common));
+      }
+    }
+
+    return out;
+  }
+
   function loadLyricsForTrack(file) {
     if (lyricState.trackFile === file) return;
     lyricState.trackFile = file;
     lyricState.chunks = null;
     lyricState.sprites = [];
     lyricState.chunkCursor = 0;
+    lyricState.direction = null;
     if (!file) return;
     var token = ++lyricState.loadToken;
     var stem = file.replace(/^.*\//, '').replace(/\.mp3$/i, '');
-    var url = 'music/lyrics/' + encodeURIComponent(stem) + '.json';
-    fetch(url).then(function(r){ if (!r.ok) throw 0; return r.json(); })
-      .then(function(json) {
+    var lyricsUrl = 'music/lyrics/' + encodeURIComponent(stem) + '.json';
+    var directionUrl = 'music/directions/' + encodeURIComponent(stem) + '.json';
+
+    // Fetch lyrics and direction in parallel. Direction is optional —
+    // 404 just means "auto-compose this track." Lyrics fetch drives the
+    // pipeline; direction is awaited alongside and applied if present.
+    var lyricsPromise = fetch(lyricsUrl).then(function(r){ if (!r.ok) throw 0; return r.json(); });
+    var directionPromise = fetch(directionUrl)
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .catch(function(){ return null; });
+
+    Promise.all([lyricsPromise, directionPromise])
+      .then(function(results) {
         if (token !== lyricState.loadToken) return;
+        var json = results[0];
+        var direction = results[1];
+        lyricState.direction = direction;
+
         var raw = json && json.lines ? json.lines : null;
         if (!raw) return;
-        // Flatten all words from all lines into a single timeline (line
-        // groupings in the JSON are transcriber decisions, not layout
-        // decisions — we rechunk based on timing + length).
+        // Flatten into a single timeline. Keep the JSON-line index so
+        // authors can reference "line 3 of the lyric" when composing.
         var allWords = [];
         for (var li = 0; li < raw.length; li++) {
           var ln = raw[li];
@@ -202,7 +331,7 @@
           for (var wi = 0; wi < ln.words.length; wi++) {
             var w = ln.words[wi];
             if (!w || !w.w) continue;
-            allWords.push({ t: +w.t, d: +w.d, w: w.w });
+            allWords.push({ t: +w.t, d: +w.d, w: w.w, srcLine: li });
           }
         }
         allWords.sort(function(a,b){ return a.t - b.t; });
@@ -256,6 +385,15 @@
           c0.endT = c0.tEnd + LYRIC_TAIL;
         }
 
+        // ── Direction overlay (Phase 1) ──
+        // If a direction.json was loaded, let it rewrite the chunker
+        // output for specified word ranges. This is the composition
+        // hook: the engine auto-chunks the whole song, then the author
+        // edits ranges by hand.
+        if (direction && Array.isArray(direction.chunks)) {
+          chunks = applyDirectionChunks(chunks, allWords, direction.chunks);
+        }
+
         // ── Key phrase detection ──
         // A chunk is a KEY phrase if either:
         //   (A) repeated verbatim ≥ 3 times in the song (hooks/choruses)
@@ -271,14 +409,24 @@
         }
         for (var ci4 = 0; ci4 < chunks.length; ci4++) {
           var cN = chunks[ci4];
-          var repeated = textCounts[cN._ntext] >= 3 && cN._ntext.length > 2;
-          var prevEnd = ci4 > 0 ? chunks[ci4 - 1].tEnd : -Infinity;
-          var nextStart = ci4 < chunks.length - 1 ? chunks[ci4 + 1].t : Infinity;
-          var prevGap = cN.t - prevEnd;
-          var nextGap = nextStart - cN.tEnd;
-          var isolated = prevGap >= 1.5 && nextGap >= 1.5
-            && cN.words.length >= 2 && cN.words.length <= 6;
-          cN.isKey = repeated || isolated;
+          // Direction overrides auto-detection entirely. If the author
+          // marked this chunk as 'key', it's a key; marked 'ribbon', it
+          // stays ribbon (auto-key suppressed); anything else (hold,
+          // rapidfire, couplet-pair) leaves auto-detection to decide.
+          if (cN.directedKind === 'key') {
+            cN.isKey = true;
+          } else if (cN.directedKind === 'ribbon' || cN.directedKind === 'eclipse') {
+            cN.isKey = false;
+          } else {
+            var repeated = textCounts[cN._ntext] >= 3 && cN._ntext.length > 2;
+            var prevEnd = ci4 > 0 ? chunks[ci4 - 1].tEnd : -Infinity;
+            var nextStart = ci4 < chunks.length - 1 ? chunks[ci4 + 1].t : Infinity;
+            var prevGap = cN.t - prevEnd;
+            var nextGap = nextStart - cN.tEnd;
+            var isolated = prevGap >= 1.5 && nextGap >= 1.5
+              && cN.words.length >= 2 && cN.words.length <= 6;
+            cN.isKey = repeated || isolated;
+          }
         }
 
         // ── Spatial scheduler ──
@@ -305,10 +453,17 @@
 
         for (var ci5 = 0; ci5 < chunks.length; ci5++) {
           var chB = chunks[ci5];
+
+          // Direction can force-eclipse a chunk. Rare override — use
+          // when you want a line to explicitly flash centered italic.
+          if (chB.directedKind === 'eclipse') {
+            chB.placement = { kind: 'eclipse' };
+            continue;
+          }
+
           if (chB.isKey) {
             // Key phrase: reserve center. If center overlaps another key,
-            // fall back to eclipse (extremely rare — two hook lines
-            // overlapping in time).
+            // fall back to eclipse.
             if (anyOverlap(centerOccupancy, chB.startT, chB.endT)) {
               chB.placement = { kind: 'eclipse' };
             } else {
@@ -318,31 +473,64 @@
             continue;
           }
 
-          // Try bands in a rotating preference order so we don't always
-          // start searching from band 0.
+          // Try bands. If direction specifies preferBands, try those
+          // first in order; otherwise rotate.
+          var tryOrder;
+          if (chB.directedPreferBands && chB.directedPreferBands.length) {
+            tryOrder = chB.directedPreferBands.slice();
+            // Append remaining bands as fallback.
+            for (var bRem = 0; bRem < LYRIC_BANDS_N; bRem++) {
+              if (tryOrder.indexOf(bRem) < 0) tryOrder.push(bRem);
+            }
+          } else {
+            tryOrder = [];
+            for (var bi = 0; bi < LYRIC_BANDS_N; bi++) {
+              tryOrder.push((bi + preferRot) % LYRIC_BANDS_N);
+            }
+          }
+
           var free = [];
-          for (var bi = 0; bi < LYRIC_BANDS_N; bi++) {
-            var band = (bi + preferRot) % LYRIC_BANDS_N;
+          for (var ti = 0; ti < tryOrder.length; ti++) {
+            var band = tryOrder[ti];
+            if (band < 0 || band >= LYRIC_BANDS_N) continue;
             if (!anyOverlap(bandOccupancy, chB.startT, chB.endT, band)) {
               free.push(band);
             }
           }
           if (free.length === 0) {
-            // All 6 bands busy — eclipse fallback.
             chB.placement = { kind: 'eclipse' };
           } else {
-            // Prefer band closest to the center-of-action (for visual
-            // balance) among the free ones. With 6 bands, bands 2 and 3
-            // are closest to center; choose nearest-to-center from free.
-            var pick = free[0];
-            var pickDist = Math.abs(LYRIC_BANDS_Y[pick] - 0.5);
-            for (var fi = 1; fi < free.length; fi++) {
-              var d = Math.abs(LYRIC_BANDS_Y[free[fi]] - 0.5);
-              if (d < pickDist) { pick = free[fi]; pickDist = d; }
+            // If direction gave a preferred order, respect it (first free
+            // wins). Otherwise pick closest-to-center for visual balance.
+            var pick;
+            if (chB.directedPreferBands && chB.directedPreferBands.length) {
+              pick = free[0];
+            } else {
+              pick = free[0];
+              var pickDist = Math.abs(LYRIC_BANDS_Y[pick] - 0.5);
+              for (var fi = 1; fi < free.length; fi++) {
+                var d = Math.abs(LYRIC_BANDS_Y[free[fi]] - 0.5);
+                if (d < pickDist) { pick = free[fi]; pickDist = d; }
+              }
             }
-            chB.placement = { kind: 'ribbon', band: pick, yFrac: LYRIC_BANDS_Y[pick] };
+            chB.placement = {
+              kind: 'ribbon',
+              band: pick,
+              yFrac: LYRIC_BANDS_Y[pick],
+              emphasis: chB.directedEmphasis || 1.0,
+              colorOverride: chB.directedColor || null,
+            };
             bandOccupancy.push({ band: pick, startT: chB.startT, endT: chB.endT });
             preferRot++;
+          }
+        }
+
+        // Carry emphasis/color onto key-kind placements too.
+        for (var ck = 0; ck < chunks.length; ck++) {
+          var ckC = chunks[ck];
+          if (ckC.placement && ckC.placement.kind === 'key') {
+            ckC.placement.emphasis = ckC.directedEmphasis || 1.0;
+            ckC.placement.colorOverride = ckC.directedColor || null;
           }
         }
 
@@ -921,10 +1109,13 @@
   // sprites — they're rendered directly by drawEclipses().
   function spawnChunkSprite(chunk, c, dpr, w, h) {
     var isKey = chunk.placement.kind === 'key';
-    // Key phrases are ~2.4× regular size and have a tighter maxW cap
-    // so they read centered-big on any viewport. Ribbon chunks keep
-    // the original auto-fit behavior.
-    var baseFontPx = (isKey ? LYRIC_FONT_PX * 2.4 : LYRIC_FONT_PX) * dpr;
+    // Emphasis: authored 0..2 multiplier on size (default 1). Clamp to
+    // [0.6, 2.0] so authors can't accidentally size a chunk to nothing
+    // or a monster.
+    var emphasis = chunk.placement.emphasis || 1.0;
+    emphasis = Math.max(0.6, Math.min(2.0, emphasis));
+    // Key phrases are ~2.4× regular size and have a tighter maxW cap.
+    var baseFontPx = (isKey ? LYRIC_FONT_PX * 2.4 : LYRIC_FONT_PX) * dpr * emphasis;
     var prevFont = c.font;
     var prevAlign = c.textAlign;
     c.font = '500 ' + baseFontPx + 'px ' + LYRIC_FONT;
@@ -1487,19 +1678,28 @@
       c.font = (s.isKey ? '600 ' : '500 ') + s.fontPx + 'px ' + LYRIC_FONT;
 
       // Color selection.
-      //   KEY phrase → dark deep-amber with a bright outer glow. The
-      //     dark fill reads against the light rain + starfield; the
-      //     glow makes it unmissable when reveal is high.
+      //   Authored color override (direction.json "color") takes first.
+      //   KEY phrase → dark deep-amber with a bright outer glow.
       //   Ribbon top bands (0-2) → amber (synth, warm).
       //   Ribbon bottom bands (3-5) → cyan (machine, cool).
       //   Matrix mode folds everything to green.
       var glowRGB, fillRGB;
+      var colorOverride = s.placement && s.placement.colorOverride;
       if (mT > 0.5) {
         glowRGB = '120,255,140';
         fillRGB = '180,255,180';
       } else if (s.isKey) {
-        glowRGB = '255,200,120';   // warm bright halo
-        fillRGB = '60,35,18';      // deep dark amber — "the dark heart"
+        glowRGB = '255,200,120';
+        fillRGB = '60,35,18';
+      } else if (colorOverride === 'cyan') {
+        glowRGB = '78,201,212';
+        fillRGB = '188,238,245';
+      } else if (colorOverride === 'amber') {
+        glowRGB = '232,184,88';
+        fillRGB = '255,232,188';
+      } else if (colorOverride === 'mixed') {
+        // Alternate amber/cyan per letter for authored emphasis.
+        glowRGB = null; fillRGB = null; // handled per-letter below
       } else if (typeof s.bandIdx === 'number' && bandIsCyan(s.bandIdx)) {
         glowRGB = '78,201,212';
         fillRGB = '188,238,245';
@@ -1525,9 +1725,17 @@
         var amberA = Math.min(1, rev * 1.1) * expand;
         var glowR = 18 * dpr * rev * glowMul;
 
-        c.shadowColor = 'rgba(' + glowRGB + ',' + (amberA * 0.85) + ')';
+        // Mixed-color override: alternate per letter so the chunk
+        // reads as a duet of signals rather than a single color.
+        var lGlow = glowRGB, lFill = fillRGB;
+        if (!lGlow && colorOverride === 'mixed') {
+          if (li & 1) { lGlow = '78,201,212'; lFill = '188,238,245'; }
+          else        { lGlow = '232,184,88'; lFill = '255,232,188'; }
+        }
+
+        c.shadowColor = 'rgba(' + lGlow + ',' + (amberA * 0.85) + ')';
         c.shadowBlur = glowR;
-        c.fillStyle = 'rgba(' + fillRGB + ',' + (amberA * (s.isKey ? 1 : 0.95)) + ')';
+        c.fillStyle = 'rgba(' + lFill + ',' + (amberA * (s.isKey ? 1 : 0.95)) + ')';
         c.fillText(L.ch, lx, ly);
         c.shadowBlur = 0;
       }
