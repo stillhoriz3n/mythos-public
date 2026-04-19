@@ -152,9 +152,8 @@
     trackFile: null,
     loadToken: 0,
     lines: null,          // [{ t, text, words: [{t,d,w}] }]
-    sprites: [],          // active word sprites (see enqueueWordSprite)
-    wordCursor: 0,        // next word index to spawn
-    flatWords: null,      // flat word array, ordered by t
+    sprites: [],          // active LINE sprites — one per lyric line
+    lineCursor: 0,        // next line index to spawn
   };
 
   // Slow-follower of the amber wave — ribbon rides this so text reads calm
@@ -177,8 +176,7 @@
     lyricState.trackFile = file;
     lyricState.lines = null;
     lyricState.sprites = [];
-    lyricState.wordCursor = 0;
-    lyricState.flatWords = null;
+    lyricState.lineCursor = 0;
     if (!file) return;
     var token = ++lyricState.loadToken;
     var stem = file.replace(/^.*\//, '').replace(/\.mp3$/i, '');
@@ -186,17 +184,25 @@
     fetch(url).then(function(r){ if (!r.ok) throw 0; return r.json(); })
       .then(function(json) {
         if (token !== lyricState.loadToken) return;
-        lyricState.lines = json && json.lines ? json.lines : null;
-        if (lyricState.lines) {
-          var flat = [];
-          lyricState.lines.forEach(function(line) {
-            (line.words || []).forEach(function(w) {
-              flat.push({ t: +w.t, d: +w.d, w: w.w });
-            });
+        var raw = json && json.lines ? json.lines : null;
+        if (!raw) return;
+        // Normalize: each line must have t + words[]. Sort defensively.
+        var lines = [];
+        for (var li = 0; li < raw.length; li++) {
+          var ln = raw[li];
+          if (!ln || !ln.words || !ln.words.length) continue;
+          var words = ln.words.map(function(w){ return { t:+w.t, d:+w.d, w: w.w || '' }; });
+          words.sort(function(a,b){ return a.t - b.t; });
+          var last = words[words.length - 1];
+          lines.push({
+            t: +ln.t,
+            tEnd: last.t + last.d,
+            text: ln.text || words.map(function(w){return w.w;}).join(' '),
+            words: words,
           });
-          flat.sort(function(a,b){ return a.t - b.t; });
-          lyricState.flatWords = flat;
         }
+        lines.sort(function(a,b){ return a.t - b.t; });
+        lyricState.lines = lines;
       }).catch(function(){ /* quiet */ });
   }
 
@@ -333,7 +339,7 @@
   audio.addEventListener('seeked', function() {
     // Flush ribbon state; updateLyricSprites will rebuild cursor next frame.
     lyricState.sprites = [];
-    lyricState.wordCursor = 0;
+    lyricState.lineCursor = 0;
   });
   audio.addEventListener('ended', function() {
     if (loop) { audio.currentTime = 0; audio.play().catch(function(){}); }
@@ -744,116 +750,122 @@
   // letter) and cached on the sprite. The sprite's (x, y) updates each
   // frame; letter offsets are constant.
   //
-  var LYRIC_LEAD = 3.5;       // seconds before sung time the word appears on right
-  var LYRIC_TAIL = 2.5;       // seconds after sung time the word persists on left
-  var LYRIC_FONT_PX = 26;     // base size in CSS pixels (multiplied by dpr inside)
+  var LYRIC_LEAD = 3.5;       // seconds before line's first word the line appears on right
+  var LYRIC_TAIL = 2.5;       // seconds after line's last word the line persists on left
+  var LYRIC_FONT_PX = 24;     // base size in CSS pixels (multiplied by dpr inside)
   var LYRIC_TRAVEL_SECS = LYRIC_LEAD + LYRIC_TAIL;
+  // Ribbon font: JetBrains Mono. Monospace = deterministic measurement
+  // regardless of web-font load timing (Fraunces was measuring with
+  // fallback metrics, causing inter-letter overlap).
+  var LYRIC_FONT = '"JetBrains Mono", monospace';
 
-  function spawnLyricSprite(word, now, c, dpr, w, h) {
-    // Measure glyph widths so splash hit-tests are accurate.
+  // Layout a whole lyric LINE as one sprite. Words within the line are
+  // laid out left-to-right with a single-space gap; each letter carries
+  // its owning word index + its sung time so the conductor can fire
+  // letter-timed drops for the word being sung right now.
+  function spawnLineSprite(line, c, dpr, w, h) {
     var fontPx = LYRIC_FONT_PX * dpr;
     var prevFont = c.font;
     var prevAlign = c.textAlign;
-    c.font = '500 ' + fontPx + 'px "Fraunces", "Archivo", serif';
+    c.font = '500 ' + fontPx + 'px ' + LYRIC_FONT;
     c.textAlign = 'left';
+    var spaceW = c.measureText(' ').width;
+
     var letters = [];
     var xOff = 0;
-    var text = word.w || '';
-    for (var i = 0; i < text.length; i++) {
-      var ch = text[i];
-      var m = c.measureText(ch);
-      letters.push({
-        ch: ch,
-        x: xOff,
-        y: 0,
-        w: m.width,
-        h: fontPx,
-        revealed: 0,  // 0 = invisible, 1 = fully revealed
-      });
-      xOff += m.width;
+    for (var wi = 0; wi < line.words.length; wi++) {
+      var word = line.words[wi];
+      var text = word.w || '';
+      // Per-letter sung-time slice within this word.
+      var n = text.length || 1;
+      for (var ci = 0; ci < text.length; ci++) {
+        var ch = text[ci];
+        var m = c.measureText(ch);
+        var sungAt = word.t + (word.d * (ci + 0.5) / n);
+        letters.push({
+          ch: ch,
+          x: xOff,
+          y: 0,
+          w: m.width,
+          h: fontPx,
+          wordIdx: wi,
+          sungAt: sungAt,
+          revealed: 0,
+        });
+        xOff += m.width;
+      }
+      // Gap to next word (not the last).
+      if (wi < line.words.length - 1) xOff += spaceW;
     }
-    // Small space between words in the ribbon — not part of the word, but
-    // we reserve it in the hit bbox so nothing else fires on the gap.
     var totalW = xOff;
+
     c.font = prevFont;
     c.textAlign = prevAlign;
 
-    // Departure time from right edge = word.t - LYRIC_LEAD.
-    // We want sprite x = w at t = word.t - LYRIC_LEAD, reaching center at
-    // word.t, reaching left edge at word.t + LYRIC_TAIL. Linear interp.
-    // Deterministic hit schedule: guarantee every letter gets at least one
-    // aimed drop. Each entry = { fireAt: audioTime, letterIdx, kind }.
-    // kind 'primary' = guaranteed coverage, 'extra' = mid-energy bonus.
-    // Flight-of-rain quirk: drops take ~0.7s to fall, so schedule primary
-    // strikes slightly BEFORE the letter's singing moment so they splash
-    // ON the beat, not after.
+    // Flight ≈ 0.7s. Primary strike per letter: fire at sungAt - flightTime.
     var flightTime = 0.7;
     var hits = [];
-    var n = letters.length || 1;
-    for (var li = 0; li < n; li++) {
-      // Letter li sung from (word.t + d*li/n) to (word.t + d*(li+1)/n).
-      // Aim the splash to land at the midpoint of that slice.
-      var sungAt = word.t + (word.d * (li + 0.5) / n);
+    for (var li = 0; li < letters.length; li++) {
       hits.push({
-        fireAt: sungAt - flightTime,
+        fireAt: letters[li].sungAt - flightTime,
         letterIdx: li,
         fired: false,
         kind: 'primary',
       });
     }
+    hits.sort(function(a,b){ return a.fireAt - b.fireAt; });
 
+    // Sprite travel window: from (firstWord.t - LEAD) to (lastWord.tEnd + TAIL).
+    // Travel uses the same global TRAVEL_SECS so velocity is identical for
+    // every line — they just spawn at different times.
     lyricState.sprites.push({
-      text: text,
-      t: word.t,
-      d: word.d,
-      startT: word.t - LYRIC_LEAD,     // audio time when sprite enters right edge
-      endT:   word.t + LYRIC_TAIL,     // audio time when sprite exits left edge
+      text: line.text,
+      t: line.t,
+      tEnd: line.tEnd,
+      startT: line.t - LYRIC_LEAD,
+      endT:   line.tEnd + LYRIC_TAIL,
       letters: letters,
       totalW: totalW,
       fontPx: fontPx,
       hits: hits,
-      extrasAccum: 0,                  // fractional mid-extra drops
-      // Filled each frame:
+      extrasAccum: 0,
       x: 0, y: 0,
-      splashEnergy: 0,                 // accumulated across all letters
+      splashEnergy: 0,
     });
   }
 
   function updateLyricSprites(audioTime, c, w, h, dpr) {
-    if (!lyricState.flatWords || !lyricState.flatWords.length) return;
+    if (!lyricState.lines || !lyricState.lines.length) return;
 
-    // First-run / big-seek: fast-forward cursor past words whose ribbon
-    // window already ended, so we don't spawn and immediately retire
-    // thousands of them when the user starts mid-song.
-    if (lyricState.wordCursor === 0 && lyricState.sprites.length === 0) {
-      for (var fi = 0; fi < lyricState.flatWords.length; fi++) {
-        if (lyricState.flatWords[fi].t + LYRIC_TAIL >= audioTime - 0.5) {
-          lyricState.wordCursor = fi;
+    // First-run / big-seek: fast-forward cursor past lines whose ribbon
+    // window already ended, so we don't spawn thousands of stale sprites.
+    if (lyricState.lineCursor === 0 && lyricState.sprites.length === 0) {
+      for (var fi = 0; fi < lyricState.lines.length; fi++) {
+        if (lyricState.lines[fi].tEnd + LYRIC_TAIL >= audioTime - 0.5) {
+          lyricState.lineCursor = fi;
           break;
         }
       }
     }
 
-    // Spawn any words that have entered their LEAD window.
-    while (lyricState.wordCursor < lyricState.flatWords.length) {
-      var next = lyricState.flatWords[lyricState.wordCursor];
+    // Spawn any lines that have entered their LEAD window.
+    while (lyricState.lineCursor < lyricState.lines.length) {
+      var next = lyricState.lines[lyricState.lineCursor];
       if (audioTime >= next.t - LYRIC_LEAD - 0.1) {
-        spawnLyricSprite(next, audioTime, c, dpr, w, h);
-        lyricState.wordCursor++;
+        spawnLineSprite(next, c, dpr, w, h);
+        lyricState.lineCursor++;
       } else break;
     }
 
-    // Handle seeks backward: if audio jumped back, rebuild cursor + flush.
+    // Seek backward handler.
     if (lyricState.sprites.length > 0) {
       var first = lyricState.sprites[0];
       if (audioTime < first.startT - 0.5) {
-        // Seeked backward past all live sprites — reset.
         lyricState.sprites = [];
-        lyricState.wordCursor = 0;
-        // Fast-forward cursor to the first word whose window we're in/before.
-        for (var i = 0; i < lyricState.flatWords.length; i++) {
-          if (lyricState.flatWords[i].t >= audioTime - LYRIC_TAIL) {
-            lyricState.wordCursor = i;
+        lyricState.lineCursor = 0;
+        for (var i = 0; i < lyricState.lines.length; i++) {
+          if (lyricState.lines[i].tEnd + LYRIC_TAIL >= audioTime - 0.5) {
+            lyricState.lineCursor = i;
             break;
           }
         }
@@ -861,18 +873,20 @@
     }
 
     // Update positions + retire.
-    var vx = w / LYRIC_TRAVEL_SECS; // px/sec leftward
+    // Travel model: each line's sprite starts at the right edge when
+    // audioTime == line.startT, and has fully exited the left edge at
+    // audioTime == line.endT. Velocity varies per-line (longer lines
+    // occupy the screen for longer spans), which actually matches
+    // reading: slow lines read slow, fast lines read fast.
     for (var i = lyricState.sprites.length - 1; i >= 0; i--) {
       var s = lyricState.sprites[i];
       if (audioTime > s.endT + 0.3) {
         lyricState.sprites.splice(i, 1);
         continue;
       }
-      // Where in (startT, endT) are we?
-      var u = (audioTime - s.startT) / LYRIC_TRAVEL_SECS; // 0 at spawn, 1 at exit
-      // x: right edge at u=0, left edge -totalW at u=1.
-      s.x = w - u * (w + s.totalW);
-      // y: sampled from lyricWaveBuf at the center of the word.
+      var span = s.endT - s.startT;
+      var u = (audioTime - s.startT) / span;    // 0 at spawn, 1 at exit
+      s.x = w - u * (w + s.totalW);             // right edge → past left
       var cx = s.x + s.totalW * 0.5;
       s.y = sampleLyricWave(cx, w, h);
     }
@@ -965,6 +979,26 @@
     });
   }
 
+  // Pick a letter index whose sungAt is near audioTime (within ±0.5s if
+  // possible, else the closest). Keeps extras riding the current word.
+  function pickNearbyLetter(sprite, audioTime) {
+    var best = 0, bestDist = Infinity;
+    for (var i = 0; i < sprite.letters.length; i++) {
+      var dist = Math.abs(sprite.letters[i].sungAt - audioTime);
+      if (dist < bestDist) { bestDist = dist; best = i; }
+      if (dist < 0.3) {
+        // Good enough — pick among the close ones uniformly.
+        var near = [];
+        for (var j = i; j < sprite.letters.length; j++) {
+          if (Math.abs(sprite.letters[j].sungAt - audioTime) < 0.5) near.push(j);
+          else if (sprite.letters[j].sungAt > audioTime + 0.5) break;
+        }
+        if (near.length) return near[Math.floor(Math.random() * near.length)];
+      }
+    }
+    return best;
+  }
+
   function conductRain(audioTime, w, h, dpr, midEnergy, now) {
     if (!lyricState.sprites.length) return;
 
@@ -990,14 +1024,18 @@
       }
 
       // ── EXTRAS: mid-driven bonus drops on active sprites ──
-      // Only during the sung window; extras decorate, primaries guarantee.
-      if (audioTime >= s.t - 0.05 && audioTime <= s.t + s.d + 0.1) {
-        var extraPerSec = midEnergy * 18; // 0..~18 extras/sec when mids pump
+      // While the LINE is being sung, decorate whichever letter(s) belong
+      // to the currently-singing word(s). Primaries still guarantee one
+      // strike per letter; extras pile on when mids pump.
+      if (audioTime >= s.t - 0.05 && audioTime <= s.tEnd + 0.1) {
+        var extraPerSec = midEnergy * 14;
         s.extrasAccum += extraPerSec / 60;
         while (s.extrasAccum >= 1) {
           s.extrasAccum -= 1;
           if (!s.letters.length) continue;
-          var li = Math.floor(Math.random() * s.letters.length);
+          // Prefer letters whose sungAt is near audioTime — keeps extras
+          // "on the word being sung" rather than spraying the whole line.
+          var li = pickNearbyLetter(s, audioTime);
           fireAimedDrop(s, li, w, dpr, 0.7 + Math.random() * 0.2);
         }
       }
@@ -1124,7 +1162,7 @@
     for (var i = 0; i < lyricState.sprites.length; i++) {
       var s = lyricState.sprites[i];
       if (s.x + s.totalW < -20 || s.x > w + 20) continue;
-      c.font = '500 ' + s.fontPx + 'px "Fraunces", "Archivo", serif';
+      c.font = '500 ' + s.fontPx + 'px ' + LYRIC_FONT;
 
       // Iterate letters: invisible at reveal=0, glowing amber at reveal=1.
       for (var li = 0; li < s.letters.length; li++) {
@@ -1244,7 +1282,7 @@
     // Slow-follow wave buffer → sprite layout → aim drops at sung words.
     // Must run BEFORE updatePlinko so splash detection has current drop
     // positions AFTER plinko integrates.
-    if (playing && expand > 0.05 && lyricState.flatWords) {
+    if (playing && expand > 0.05 && lyricState.lines) {
       var audioTime = audio.currentTime || 0;
       updateLyricWaveBuf(w, h, dpr);
       updateLyricSprites(audioTime, c, w, h, dpr);
