@@ -760,7 +760,7 @@
   var LYRIC_FONT = '"JetBrains Mono", monospace';
   // Reading anchor: fraction of viewport width where the currently-sung
   // letter is pinned. 0 = left, 1 = right. Tune this to taste.
-  var LYRIC_ANCHOR_FRAC = 0.76;
+  var LYRIC_ANCHOR_FRAC = 0.86;
 
   // Layout a whole lyric LINE as one sprite. Words within the line are
   // laid out left-to-right with a single-space gap; each letter carries
