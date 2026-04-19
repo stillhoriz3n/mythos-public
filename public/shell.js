@@ -63,12 +63,54 @@
   let singularityEl;
   let vizStarted = false;
 
-  // ── SPECTRUM PLINKO STATE ─────────────────────────────
+  // ── SPECTRUM PLINKO — FFT-driven falling character rain ────────────
+  //
+  // How it works:
+  //   100 columns span the screen left-to-right. Each column maps to a
+  //   slice of the FFT frequency spectrum (bottom 60% of bins). Every
+  //   frame, each column's average energy is compared against a per-band
+  //   threshold. If energy > threshold AND cooldown has expired, a new
+  //   character drop spawns at the top of that column and falls.
+  //
+  // Tuning guide (the three knobs):
+  //
+  //   1. THRESHOLDS (initPlinko) — how much energy a frequency band needs
+  //      before a drop spawns. Lower = more rain, higher = less rain.
+  //      Bass naturally has WAY more FFT energy than highs, so bass
+  //      thresholds must be set relatively high and high thresholds
+  //      relatively low to get even visual density across the spectrum.
+  //      Current values tuned 2026-04-18:
+  //        sub-bass (<10%): 0.28 | bass (10-25%): 0.22
+  //        mids (25-50%):   0.32 | upper mids (50-75%): 0.55
+  //        highs (>75%):    0.65
+  //      If bass is too quiet, lower the first two. If highs are a wall
+  //      of green, raise the last two.
+  //
+  //   2. COOLDOWNS (updatePlinko) — minimum ms between spawns per column.
+  //      Prevents machine-gun spam. Bass has short cooldown (200ms) so
+  //      kicks land visually. Highs have long cooldown (500ms) since
+  //      they'd otherwise fire constantly.
+  //        col 0-24 (bass): 200ms | col 25-49 (mids): 350ms
+  //        col 50-99 (highs): 500ms
+  //
+  //   3. SMOOTHING (updatePlinko) — plinkoSmoothed[i] = old * 0.7 + new * 0.3
+  //      Higher old weight = more sluggish/smooth. Lower = more twitchy.
+  //      0.7/0.3 is a good balance. Don't go below 0.5/0.5 or it jitters.
+  //
+  // Visual tuning:
+  //   - Drop speed: (1.5 + brightness * 2.5 + random) * dpr
+  //   - Drop length: 3-13 characters depending on brightness
+  //   - Drop life: starts at 1.0, decays at 0.003/frame (~5.5 sec lifespan)
+  //   - Colors: matrix mode = green, cosmos mode = subdued amber (no glow)
+  //
+  // Called from the main drawViz loop: updatePlinko() then drawPlinko()
+  // Only runs when playing && expand > 0.05
+  //
   var PLINKO_COLS = 100;
   var plinkoDrops = [];    // active falling drops
-  var plinkoThresholds = []; // per-column adaptive thresholds
-  var plinkoSmoothed = [];   // smoothed FFT energy per column
-  var plinkoCooldown = [];   // cooldown timer per column (prevents spam)
+  var plinkoThresholds = []; // per-column energy gate (0-1)
+  var plinkoSmoothed = [];   // smoothed FFT energy per column (0-1)
+  var plinkoCooldown = [];   // cooldown timer per column in ms
 
   // ── MATRIX EASTER EGG STATE ──────────────────────────
   let matrixMode = false;
