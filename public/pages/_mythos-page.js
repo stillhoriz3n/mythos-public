@@ -38,6 +38,12 @@
     root.setProperty('--beat-bar-phase', playing ? b.bar.toFixed(3) : '0');
     root.setProperty('--beat-bpm', b.bpm);
     if (d.sealColor) root.setProperty('--seal-color', d.sealColor);
+    // 10-band VU levels — any [data-band="N"] element inherits via --band-level
+    if (d.bands) {
+      for (var i = 0; i < d.bands.length; i++) {
+        root.setProperty('--band-' + i, playing ? d.bands[i].toFixed(3) : '0');
+      }
+    }
   });
 
   if (window.parent && window.parent !== window) {
@@ -84,7 +90,27 @@
     items.forEach(function(r) { io.observe(r); });
   }
 
-  function init() { setupTint(); setupReveal(); }
+  // ─ VU meters — [data-band="N"] binds --band-level to --band-N ─
+  // Supports data-band="N" (single band) or data-band="N-M" (avg of range).
+  function setupBands() {
+    var items = document.querySelectorAll('[data-band]');
+    items.forEach(function(el) {
+      var spec = el.getAttribute('data-band');
+      if (!spec) return;
+      var parts = spec.split('-');
+      if (parts.length === 1) {
+        el.style.setProperty('--band-level', 'var(--band-' + parts[0].trim() + ', 0)');
+      } else {
+        // Range: average of bands. Use calc((a + b + ...) / n).
+        var terms = [];
+        var lo = parseInt(parts[0], 10), hi = parseInt(parts[1], 10);
+        for (var n = lo; n <= hi; n++) terms.push('var(--band-' + n + ', 0)');
+        el.style.setProperty('--band-level', 'calc((' + terms.join(' + ') + ') / ' + terms.length + ')');
+      }
+    });
+  }
+
+  function init() { setupTint(); setupReveal(); setupBands(); }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

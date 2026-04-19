@@ -458,7 +458,7 @@
     initStars();
   }
 
-  var STAR_COUNT = 600;
+  var STAR_COUNT = 1800;
   var STAR_DEPTH = 2000;
   function initStars() {
     stars = [];
@@ -468,9 +468,17 @@
     }
   }
   function makeStar(z) {
+    // Spread sized so stars uniformly fill the viewport at the far plane.
+    // Projection: sx = x * focalLen / z; at z = STAR_DEPTH, target |sx| ~ 0.65 * w
+    // so edges get a little overfill and the field doesn't vignette into a cone.
+    var w = vizCanvas ? vizCanvas.width : 1920;
+    var h = vizCanvas ? vizCanvas.height : 1080;
+    var focalLen = Math.min(w, h) * 0.35;
+    var xMax = (w * 0.65) * STAR_DEPTH / focalLen;
+    var yMax = (h * 0.65) * STAR_DEPTH / focalLen;
     return {
-      x: (Math.random() - 0.5) * 6,   // -3 to 3, very wide spread
-      y: (Math.random() - 0.5) * 6,
+      x: (Math.random() - 0.5) * 2 * xMax,
+      y: (Math.random() - 0.5) * 2 * yMax,
       z: z || STAR_DEPTH,
       isCyan: Math.random() < 0.15,
       baseAlpha: 0.5 + Math.random() * 0.5,
@@ -1307,15 +1315,46 @@
     }
   }
 
+  // ── 10 log-spaced frequency bands for CSS-driven VU meters ─────────
+  // Bands span bin 2 → end of FFT logarithmically, ~1-octave each. Each
+  // band uses VU ballistics: fast attack (needle jumps with peaks),
+  // slow release (settles back like an analog meter). Page elements
+  // with data-band="N" bind their CSS --band-level to --band-N.
+  var NUM_BANDS = 10;
+  var bandSmoothed = new Array(NUM_BANDS); for (var _i = 0; _i < NUM_BANDS; _i++) bandSmoothed[_i] = 0;
+
+  function updateBands() {
+    if (!freqArray || !freqArray.length) return;
+    var minBin = 2;
+    var maxBin = freqArray.length;
+    var logMin = Math.log(minBin);
+    var logSpan = Math.log(maxBin) - logMin;
+    for (var i = 0; i < NUM_BANDS; i++) {
+      var s = Math.floor(Math.exp(logMin + logSpan * (i / NUM_BANDS)));
+      var e = Math.max(s + 1, Math.floor(Math.exp(logMin + logSpan * ((i + 1) / NUM_BANDS))));
+      if (e > freqArray.length) e = freqArray.length;
+      var sum = 0, count = e - s;
+      for (var b = s; b < e; b++) sum += freqArray[b] || 0;
+      var raw = count > 0 ? (sum / count) / 255 : 0;
+      // VU ballistics: fast attack, slow release
+      if (raw > bandSmoothed[i]) bandSmoothed[i] = bandSmoothed[i] * 0.25 + raw * 0.75;
+      else bandSmoothed[i] = bandSmoothed[i] * 0.88 + raw * 0.12;
+    }
+  }
+
   function broadcastBeat() {
     if (!beatSubscribed) return;
     try {
       if (!frame.contentWindow) return;
+      updateBands();
       var beat = playing ? getBeat() : { phase:0, half:0, quarter:0, bar:0, pulse:0, barPulse:0, bpm: TRACKS[current] ? (TRACKS[current].bpm||120) : 120, raw:0 };
       var mColor = SEAL_MS[sealCurrentM].color;
+      var bandsRounded = new Array(NUM_BANDS);
+      for (var i = 0; i < NUM_BANDS; i++) bandsRounded[i] = Math.round(bandSmoothed[i] * 1000) / 1000;
       frame.contentWindow.postMessage({
         type: 'mythos:beat',
         beat: beat,
+        bands: bandsRounded,
         playing: playing,
         sealM: sealCurrentM,
         sealColor: mColor,

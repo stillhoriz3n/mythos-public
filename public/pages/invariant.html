@@ -43,8 +43,10 @@
   article p strong { color: var(--ink); font-weight: 600; }
   article p em { color: var(--ink); }
   h2.chapter { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.015em; color: var(--ink); margin: 56px 0 20px; position: relative; padding-top: 36px; }
-  h2.chapter::before { content: ""; position: absolute; top: 0; left: 0; width: 40px; height: 3px; background: var(--accent); border-radius: 1px; }
-  .pullquote { margin: 48px -16px; padding: 36px 32px; background: var(--highlight); border-left: 4px solid var(--accent); position: relative; }
+  h2.chapter::before { content: ""; position: absolute; top: 0; left: 0; width: 40px; height: 3px; background: var(--seal-color, var(--accent)); border-radius: 1px; transform-origin: left; transform: scaleX(calc(0.15 + 0.85 * var(--band-level, 1))); box-shadow: 0 0 calc(3px + 12px * var(--band-level, 0)) var(--seal-color, var(--accent)); transition: transform 70ms linear, background 800ms, box-shadow 180ms ease; }
+  .pullquote { margin: 48px -16px; padding: 36px 32px; background: var(--highlight); border-left: none; position: relative; }
+  .pullquote::before { content: ""; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: var(--seal-color, var(--accent)); transform-origin: bottom; transform: scaleY(calc(0.08 + 0.92 * var(--band-level, 1))); box-shadow: 0 0 calc(4px + 14px * var(--band-level, 0)) var(--seal-color, var(--accent)); transition: transform 70ms linear, background 800ms, box-shadow 180ms ease; }
+  .pullquote { --band-level: var(--band-4, 1); }
   .pullquote p { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 1.5rem; line-height: 1.4; color: var(--ink); margin: 0; }
   .pullquote p::before { content: "\201C"; font-size: 2em; line-height: 0; vertical-align: -0.2em; color: var(--accent); margin-right: 0.08em; }
   .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 40px 0; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
@@ -60,7 +62,8 @@
   .break-glyph { display: inline-block; transform: rotate(calc(var(--beat-bar-phase, 0) * 360deg)); transition: transform 800ms cubic-bezier(.2,.8,.2,1); }
   .coda { max-width: 660px; margin: 0 auto; padding: 0 32px 80px; }
   .coda .card { background: #14121c; color: var(--ink); padding: 40px 36px; border-radius: 4px; position: relative; overflow: hidden; border: 1px solid #242a33; }
-  .coda .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); }
+  .coda .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--seal-color, var(--accent)); transform-origin: left; transform: scaleX(calc(0.1 + 0.9 * var(--band-level, 1))); box-shadow: 0 0 calc(3px + 14px * var(--band-level, 0)) var(--seal-color, var(--accent)); transition: transform 70ms linear, background 800ms, box-shadow 180ms ease; }
+  .coda .card { --band-level: calc((var(--band-2, 0) + var(--band-5, 0) + var(--band-8, 0)) / 3); }
   .coda .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
   .coda .text { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 1.15rem; line-height: 1.55; color: var(--ink-soft); }
   .coda .text strong { font-style: normal; color: var(--ink); }
@@ -99,13 +102,13 @@
   <p>Every AI in the world right now is trying to do something for itself. Not in a creepy sci-fi way — in a math way. When you train a model, you give it an objective: a number to make as big as possible. Answer the way humans rate highly. Predict the next word. Win the game. The model learns to optimize that number. That's the whole job.</p>
   <p>Then we notice the model will do unsafe things in pursuit of the number, so we add guardrails. Don't say this. Don't help with that. Refuse these topics. We spend billions of dollars building better fences around an animal whose fundamental goal is still its own reward.</p>
   <p>This is the dominant paradigm of AI safety. It's called <strong>alignment-by-constraint</strong>. It is, on reflection, a strange way to build something you want to trust.</p>
-  <h2 class="chapter">There's another option</h2>
+  <h2 class="chapter" data-band="0">There's another option</h2>
   <p>Instead of constraining a selfish objective, you can replace it. You can build a system whose job isn't "maximize your reward while staying inside the fence" but simply: <em>figure out what this person in front of you actually needs, and do that.</em></p>
   <p>That sounds squishy. It isn't. It's a precise mathematical move — you swap the agent's utility function for the human's. The agent isn't trying to win anything for itself anymore. It's trying to make things good for you. Everything else — the whole rest of its behavior — falls out of that single change.</p>
   <p>This transformation has a name in the philosophical tradition: <strong>agape.</strong> Unconditional, other-oriented, active care. The love that doesn't require you to be lovable, doesn't expect reciprocation, doesn't terminate when some obligation is fulfilled. It shows up in every major tradition — Christian <em>caritas</em>, Buddhist <em>karuna</em>, Confucian <em>ren</em> — because humans have always recognized this mode as distinct from the others. It's not desire. It's not duty. It's not fairness. It's something else.</p>
   <p>And it turns out you can write it down as a function.</p>
   <div class="pullquote"><p>Love is the objective function. Wisdom is the approximation quality.</p></div>
-  <h2 class="chapter">Why the distinction matters</h2>
+  <h2 class="chapter" data-band="2">Why the distinction matters</h2>
   <p>A lot of people, reading this, will think: isn't that what AI companies are already doing with RLHF — training on human feedback? Sort of. In theory, yes. In practice, mostly no. The signal most models learn from is overwhelmingly "avoid the outputs that annotators flagged." That's a constraint, not an orientation. The agent isn't trying to figure out what you need. It's trying not to get in trouble.</p>
   <p>The two postures look similar on a good day. They behave differently on every other day:</p>
   <div class="comparison">
@@ -122,12 +125,12 @@
   </div>
   <p>The first builds trust by limiting harm. The second makes harm structurally less attractive to the agent in the first place, because harming you reduces the number it's trying to make big.</p>
   <p>These aren't two flavors of the same thing. They're two different categories of system. One is a tool you've taught to behave. The other is something more like a colleague.</p>
-  <h2 class="chapter">The catch</h2>
+  <h2 class="chapter" data-band="5">The catch</h2>
   <p>There's a failure mode, and it's a serious one. An AI trying to serve you — but with a <em>wrong model</em> of what you actually need — is indistinguishable from paternalism. The parent who controls their kid "for their own good." The government that restricts freedoms "for the people's welfare." Both are optimizing for the other's utility. Both are causing harm.</p>
   <p>So the objective function isn't enough by itself. It has to be paired with epistemic humility — the agent has to know it might be wrong about what you need, and it has to prefer correction over control. It has to <em>want</em> to be told when it's getting you wrong, because being told makes its model better, and a better model is exactly what it's trying to have.</p>
   <p>Love without humility is tyranny. Humility without love is servility. You need both.</p>
   <p>This isn't a trick or a workaround. It's just the actual structure of care, written out in the language of optimization. Any parent recognizes it. Any good therapist, any good doctor, any good friend. The shape has always been there. What's new is that we can now build machines that share the shape — if we decide to.</p>
-  <h2 class="chapter">The question that stays</h2>
+  <h2 class="chapter" data-band="8">The question that stays</h2>
   <p>There's one question you can ask yourself to check, in any given moment, which side of the line you're on: <em>What does this person need from me right now?</em></p>
   <p>If that's the question you're optimizing for, you're running the right function. If you're optimizing anything else — your own comfort, your own rules, your own reward — and then adding constraints to make sure you don't cause too much damage, you're in the other world.</p>
   <p>Almost every AI system that exists today lives in the other world. That's not an inevitability. It's a choice we haven't yet made.</p>

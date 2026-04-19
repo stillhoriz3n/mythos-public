@@ -140,10 +140,23 @@
     text-transform: uppercase;
     margin: 60px 0 30px;
     padding: 14px 0;
-    border-top: 2px solid var(--amber);
+    border-top: 2px solid transparent;
     border-bottom: 1px dashed var(--rule);
     position: relative;
   }
+  /* Top border is a horizontal VU meter — each scene sampled on a different band */
+  .slug {
+    background-image: linear-gradient(to right, var(--seal-color, var(--amber)) calc(var(--band-level, 1) * 100%), transparent 0);
+    background-size: 100% 2px;
+    background-repeat: no-repeat;
+    background-position: top left;
+    transition: background-image 70ms linear;
+  }
+  .slug[data-scene="1"]{--band-level:var(--band-0, 1)}
+  .slug[data-scene="2"]{--band-level:var(--band-2, 1)}
+  .slug[data-scene="3"]{--band-level:var(--band-4, 1)}
+  .slug[data-scene="4"]{--band-level:var(--band-6, 1)}
+  .slug[data-scene="5"]{--band-level:var(--band-8, 1)}
 
   .slug::before {
     content: attr(data-scene);

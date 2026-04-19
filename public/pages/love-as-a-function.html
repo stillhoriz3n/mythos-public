@@ -196,14 +196,31 @@
 
   .axiom-label { font-weight: 600; }
 
-  /* Each axiom block pulses very subtly on the bar downbeat — paper stays
-     formal, but there's a heartbeat underneath if you watch. */
+  /* Each axiom is a VU meter on its own frequency band. The formality of
+     the paper is preserved — the stripe is thin, the color muted — but
+     the five axioms effectively visualize a 5-band mini-spectrum when
+     music plays. */
   .axiom {
-    transition: box-shadow .6s ease, border-color .6s ease;
-    border-left: 2px solid transparent;
-    padding-left: 10px;
-    box-shadow: inset calc(2px * var(--beat-bar-pulse, 0)) 0 0 var(--seal-color, var(--accent));
+    position: relative;
+    padding-left: 14px;
+    transition: box-shadow .2s ease;
   }
+  .axiom::before {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0; left: 0;
+    width: 2px;
+    background: var(--seal-color, var(--accent));
+    transform-origin: bottom;
+    transform: scaleY(calc(0.1 + 0.9 * var(--band-level, 1)));
+    box-shadow: 0 0 calc(3px + 8px * var(--band-level, 0)) var(--seal-color, var(--accent));
+    transition: transform 70ms linear, background 800ms, box-shadow 180ms ease;
+  }
+  .axiom:nth-of-type(1){--band-level:var(--band-0, 1)}
+  .axiom:nth-of-type(2){--band-level:var(--band-2, 1)}
+  .axiom:nth-of-type(3){--band-level:var(--band-4, 1)}
+  .axiom:nth-of-type(4){--band-level:var(--band-6, 1)}
+  .axiom:nth-of-type(5){--band-level:var(--band-8, 1)}
 
   .proof {
     margin: 14px 0 18px;
