@@ -612,6 +612,16 @@ footer {
     for (var key in d.palette) {
       root.style.setProperty(key, d.palette[key]);
     }
+    // Map shell palette keys to this page's custom variable names
+    root.style.setProperty('--gold', d.palette['--signal-synth'] || '');
+    root.style.setProperty('--gold-bright', d.palette['--signal-synth-bright'] || '');
+    root.style.setProperty('--gold-dim', d.palette['--ink-dim'] || '');
+    root.style.setProperty('--gold-faint', (d.palette['--signal-synth'] || '#e8b858') + '10');
+    root.style.setProperty('--cyan', d.palette['--signal-machine'] || '');
+    root.style.setProperty('--void', d.palette['--stage-void'] || '');
+    root.style.setProperty('--deep', d.palette['--stage-deep'] || '');
+    root.style.setProperty('--surface', d.palette['--panel'] || '');
+    root.style.setProperty('--panel', d.palette['--panel'] || '');
   });
 </script>
 </body>
