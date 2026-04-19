@@ -118,7 +118,7 @@ h1.hero-title .amp{
   height:min(70vh,680px);
   display:flex;align-items:center;justify-content:center;
 }
-.hot-event{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.hot-event{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--signal-synth)}
 .hot-event svg{width:100%;height:100%;max-width:680px}
 
 .orbit-readout{
@@ -247,7 +247,7 @@ h1.hero-title .amp{
   align-items:baseline;
   transition:background .2s;
 }
-.layer-row:hover{background:rgba(232,184,88,.025)}
+.layer-row:hover{background:color-mix(in srgb, var(--signal-synth) 2.5%, transparent)}
 .layer-row:last-child{border-bottom:1px solid var(--rule-soft)}
 .layer-row .n{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--ink-faint)}
 .layer-row h3{
@@ -327,8 +327,8 @@ h1.hero-title .amp{
 /* Feature card */
 .doc-card.feature{
   grid-column:span 12;
-  background:radial-gradient(ellipse at 25% 15%,rgba(232,184,88,.1) 0%,rgba(31,26,42,.4) 45%,rgba(8,7,13,.8) 100%);
-  border-color:rgba(232,184,88,.3);
+  background:radial-gradient(ellipse at 25% 15%,color-mix(in srgb, var(--signal-synth) 10%, transparent) 0%,rgba(31,26,42,.4) 45%,rgba(8,7,13,.8) 100%);
+  border-color:color-mix(in srgb, var(--signal-synth) 30%, transparent);
   min-height:320px;
   display:grid;grid-template-columns:1.3fr 1fr;gap:60px;
   align-items:center;
@@ -343,6 +343,7 @@ h1.hero-title .amp{
   display:flex;align-items:center;justify-content:center;
   height:100%;min-height:220px;
   position:relative;
+  color:var(--signal-synth);
 }
 
 /* Card spans */
@@ -480,7 +481,7 @@ h1.hero-title .amp{
           <circle cx="340" cy="340" r="120" fill="url(#core)" opacity=".85"/>
           <circle cx="340" cy="340" r="44" fill="url(#core)" opacity=".9"/>
           <!-- Prime Radiant emblem scaled up -->
-          <g transform="translate(270 280) scale(2)" fill="none" stroke="#e8b858" stroke-linecap="round" stroke-linejoin="round">
+          <g transform="translate(270 280) scale(2)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.2" opacity=".95"/>
             <line x1="35" y1="2" x2="35" y2="22" stroke-width=".8" opacity=".65"/>
             <line x1="10" y1="16" x2="35" y2="22" stroke-width=".8" opacity=".65"/>
@@ -489,13 +490,13 @@ h1.hero-title .amp{
             <line x1="10" y1="44" x2="35" y2="38" stroke-width=".8" opacity=".55"/>
             <line x1="60" y1="44" x2="35" y2="38" stroke-width=".8" opacity=".55"/>
             <line x1="35" y1="22" x2="35" y2="38" stroke-width=".6" opacity=".45"/>
-            <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".8" opacity=".85" fill="#e8b858" fill-opacity=".1"/>
+            <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".8" opacity=".85" fill="currentColor" fill-opacity=".1"/>
             <line x1="35" y1="16" x2="35" y2="44" stroke-width=".5" opacity=".5"/>
             <line x1="23" y1="23" x2="47" y2="37" stroke-width=".5" opacity=".4"/>
             <line x1="47" y1="23" x2="23" y2="37" stroke-width=".5" opacity=".4"/>
           </g>
           <circle cx="340" cy="340" r="3" fill="#ffffff"/>
-          <circle cx="340" cy="340" r="6.5" fill="#fff2c8" opacity=".85"/>
+          <circle cx="340" cy="340" r="6.5" fill="currentColor" opacity=".85"/>
         </svg>
       </div>
     </div>
@@ -605,7 +606,7 @@ h1.hero-title .amp{
               </radialGradient>
             </defs>
             <circle cx="120" cy="120" r="120" fill="url(#f-bloom)"/>
-            <g transform="translate(85 90)" fill="none" stroke="#e8b858" stroke-linecap="round" stroke-linejoin="round">
+            <g transform="translate(85 90)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.4" opacity=".95"/>
               <line x1="35" y1="2" x2="35" y2="22" stroke-width=".9" opacity=".75"/>
               <line x1="10" y1="16" x2="35" y2="22" stroke-width=".9" opacity=".75"/>
@@ -613,8 +614,8 @@ h1.hero-title .amp{
               <line x1="35" y1="58" x2="35" y2="38" stroke-width=".9" opacity=".65"/>
               <line x1="10" y1="44" x2="35" y2="38" stroke-width=".9" opacity=".65"/>
               <line x1="60" y1="44" x2="35" y2="38" stroke-width=".9" opacity=".65"/>
-              <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".9" opacity=".85" fill="#e8b858" fill-opacity=".1"/>
-              <circle cx="35" cy="30" r="1.8" fill="#ffe6a0"/>
+              <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".9" opacity=".85" fill="currentColor" fill-opacity=".1"/>
+              <circle cx="35" cy="30" r="1.8" fill="currentColor"/>
             </g>
           </svg>
         </div>
@@ -693,6 +694,14 @@ h1.hero-title .amp{
     for (var key in d.palette) {
       root.style.setProperty(key, d.palette[key]);
     }
+    // Update SVG gradient stops (can't use currentColor)
+    var accent = d.palette['--signal-synth'] || '#e8b858';
+    document.querySelectorAll('stop[stop-color="#e8b858"], stop[stop-color="#d9a441"]').forEach(function(s) {
+      s.setAttribute('stop-color', accent);
+    });
+    document.querySelectorAll('stop[stop-color="#fff2c8"], stop[stop-color="#ffdf8a"], stop[stop-color="#ffe6a0"]').forEach(function(s) {
+      s.setAttribute('stop-color', accent);
+    });
   });
 </script>
 </body>
