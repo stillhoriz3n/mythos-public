@@ -989,8 +989,8 @@
           var sample = (dataArray[idx] - 128) / 128;
           var env = Math.sin((i / pts) * Math.PI);
           var envEdge = Math.pow(env, 0.8);
-          var drift = Math.sin(phase * phaseMul + i * freqMul + phaseOff) * 14 * dpr * expand;
-          var y = waveY + yOff * dpr + sample * amplitude * dpr * envEdge * expand + drift;
+          var drift = Math.sin(phase * phaseMul + i * freqMul + phaseOff) * 14 * dpr * bloomScale * expand;
+          var y = waveY + yOff * dpr + sample * amplitude * dpr * bloomScale * envEdge * expand + drift;
           xPts.push(x);
           yPts.push(y);
         }
