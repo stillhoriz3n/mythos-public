@@ -210,12 +210,20 @@
         // ── Chunker ──
         // Break into reading chunks. Break when:
         //   - gap to next word > GAP_HARD (natural pause)
-        //   - chunk has >= SOFT_WORDS words and gap > GAP_SOFT
+        //   - gap > GAP_STALL with ≥ STALL_WORDS words (would stall the
+        //     ribbon visibly — letter pins at anchor and waits)
+        //   - chunk has ≥ SOFT_WORDS words AND gap > GAP_SOFT
         //   - chunk char count + next word would exceed MAX_CHARS
-        var GAP_HARD = 0.45;
+        // GAP_STALL is the key knob: any gap this long makes the
+        // anchor-model ribbon feel broken (it pauses motionless waiting
+        // for the next sung letter). Break there so a new chunk comes in
+        // fresh.
+        var GAP_HARD = 0.50;
+        var GAP_STALL = 0.35;
+        var STALL_WORDS = 2;
         var GAP_SOFT = 0.18;
         var SOFT_WORDS = 6;
-        var MAX_CHARS = 44;
+        var MAX_CHARS = 56;
         var chunks = [];
         var cur = null;
         for (var i = 0; i < allWords.length; i++) {
@@ -225,6 +233,7 @@
           var chunkChars = cur ? cur.chars + 1 + wRec.w.length : wRec.w.length;
           var shouldBreak = !cur
             || gap > GAP_HARD
+            || (cur.words.length >= STALL_WORDS && gap > GAP_STALL)
             || (cur.words.length >= SOFT_WORDS && gap > GAP_SOFT)
             || chunkChars > MAX_CHARS;
           if (shouldBreak) {
@@ -840,6 +849,11 @@
           c.fillStyle = j === 0
             ? 'rgba(180,255,180,' + Math.min(1, alpha * 1.5) + ')'
             : 'rgba(0,255,65,' + alpha + ')';
+        } else if (d.forceCyan) {
+          // Cyan-accent drops (key-phrase rain mix).
+          c.fillStyle = j === 0
+            ? 'rgba(210,245,250,' + Math.min(1, alpha * 1.3) + ')'
+            : 'rgba(78,201,212,' + (alpha * 0.6) + ')';
         } else {
           // Cosmos mode — amber/bone
           c.fillStyle = j === 0
@@ -1147,13 +1161,29 @@
   function fireAimedDrop(sprite, letterIdx, w, dpr, brightness) {
     var letter = sprite.letters[letterIdx];
     if (!letter) return;
-    // By splash time (~0.7s from fire) the target letter will be pinned
-    // at the reading anchor. Aim the drop there, not at the letter's
-    // current x — drops fired earlier land exactly where the letter
-    // will be, not where it was.
-    var targetX = w * LYRIC_ANCHOR_FRAC;
-    var targetY = sprite.y + letter.y;
+
+    // Two targeting models:
+    //   SCROLLING (ribbon): by splash time (~0.7s from fire) the letter
+    //     will be pinned at the reading anchor, so aim there regardless
+    //     of letter's current position.
+    //   STATIONARY (key phrases): the sprite doesn't move, so aim at
+    //     the letter's actual screen x. Spreading drops across the
+    //     letters' real positions prevents the "wall of rain in one
+    //     column" look that hardcoded-anchor aim produced for keys.
+    var targetX, targetY;
+    if (sprite.isKey) {
+      targetX = sprite.x + letter.x + letter.w * 0.5;
+      targetY = sprite.y + letter.y;
+    } else {
+      targetX = w * LYRIC_ANCHOR_FRAC;
+      targetY = sprite.y + letter.y;
+    }
     if (targetX < 20 || targetX > w - 20) return;
+
+    // Rain char-pool color mix for key phrases: 60% amber matrixChars,
+    // 40% cyan accent drops (different char shapes from a cyan subset).
+    // This breaks up the "single-color wall" on hook phrases.
+    var cyanDrop = sprite.isKey && Math.random() < 0.40;
 
     var colW = w / PLINKO_COLS;
     var col = Math.max(0, Math.min(PLINKO_COLS - 1, Math.floor(targetX / colW)));
@@ -1178,6 +1208,7 @@
       aimedLetterIdx: letterIdx,
       targetY: targetY,
       splashed: false,
+      forceCyan: cyanDrop,
     });
   }
 
@@ -1274,7 +1305,12 @@
         s.splashEnergy = Math.min(1, s.splashEnergy + 0.15);
         // Color derives from the sprite's y-band (top half = amber,
         // bottom half = cyan). Key phrases default to amber (warm hook).
-        var splashIsCyan = !s.isKey && typeof s.bandIdx === 'number' && bandIsCyan(s.bandIdx);
+        // Splash color inherits from the drop's own identity first
+        // (key-phrase rain mixes amber + cyan, so respect that), else
+        // from the sprite's y-band (top=amber, bottom=cyan).
+        var splashIsCyan;
+        if (s.isKey) splashIsCyan = !!d.forceCyan;
+        else splashIsCyan = typeof s.bandIdx === 'number' && bandIsCyan(s.bandIdx);
         spawnSplashParticles(d.x, d.targetY, d.brightness, dpr, w, h, splashIsCyan);
       }
     }
