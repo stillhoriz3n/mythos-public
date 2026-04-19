@@ -208,3 +208,105 @@
 .m-flash-kick  { opacity: calc(var(--kick, 0) * 0.08); }
 .m-flash-snare { opacity: calc(var(--snare, 0) * 0.05); }
 .m-flash-bar   { opacity: calc(var(--beat-bar-pulse, 0) * 0.06); }
+
+/* ── Lyrics ──────────────────────────────────────────────────────
+   Auto-renders per-word karaoke lyrics. The consumer (_mythos-page.js)
+   fetches the per-track JSON, injects spans, and toggles classes as
+   audio.currentTime advances.
+
+     <div class="m-lyrics"></div>
+     <div class="m-lyrics" data-lyrics-lines="3"></div>   (windowed: 3 lines)
+
+   CSS custom properties on each word:
+     --word-progress   0..1   — 0 = not yet reached, 1 = just sung
+     --word-t          seconds, as a number
+   Class toggles:
+     .is-past .is-current .is-future   (on word spans)
+     .is-active                        (on line divs)
+   ──────────────────────────────────────────────────────────── */
+
+.m-lyrics {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 96;
+  font-weight: 400;
+  font-size: clamp(22px, 3.2vw, 48px);
+  line-height: 1.35;
+  color: var(--ink-dim, #8a8574);
+  text-align: center;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  position: relative;
+  min-height: 5em;
+  /* Carrier for the fade mask on windowed mode */
+  mask-image: linear-gradient(to bottom, transparent 0, black 20%, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 20%, black 80%, transparent 100%);
+}
+
+.m-lyrics .m-lyrics-line {
+  padding: 0.3em 1em;
+  opacity: 0.35;
+  transition: opacity 320ms ease, transform 320ms ease;
+  transform: scale(0.96);
+  transform-origin: center;
+  will-change: opacity, transform;
+}
+.m-lyrics .m-lyrics-line.is-active {
+  opacity: 1;
+  transform: scale(1.02);
+}
+.m-lyrics .m-lyrics-line.is-past {
+  opacity: 0.22;
+}
+.m-lyrics .m-lyrics-line.is-future {
+  opacity: 0.42;
+}
+
+.m-lyrics .m-lyrics-word {
+  display: inline-block;
+  padding: 0 0.08em;
+  color: inherit;
+  transition: color 120ms ease, text-shadow 80ms ease;
+  /* Per-word karaoke sweep */
+  background-image: linear-gradient(
+    to right,
+    var(--seal-color, #e8b858) 0,
+    var(--seal-color, #e8b858) calc(var(--word-progress, 0) * 100%),
+    currentColor calc(var(--word-progress, 0) * 100%),
+    currentColor 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.m-lyrics .m-lyrics-word.is-past {
+  color: var(--ink-soft, #b5b0a3);
+  -webkit-text-fill-color: var(--ink-soft, #b5b0a3);
+  background-image: none;
+}
+.m-lyrics .m-lyrics-word.is-future {
+  color: var(--ink-dim, #8a8574);
+  -webkit-text-fill-color: var(--ink-dim, #8a8574);
+  background-image: none;
+}
+.m-lyrics .m-lyrics-word.is-current {
+  text-shadow:
+    0 0 6px color-mix(in oklab, var(--seal-color, #e8b858) 45%, transparent),
+    0 0 20px color-mix(in oklab, var(--seal-color, #e8b858) 20%, transparent);
+}
+
+/* Windowed mode: absolute-position lines inside the viewport, translate
+   so the active line sits in the middle. Set --m-lyrics-translate from
+   JS per frame. */
+.m-lyrics[data-lyrics-window] {
+  height: calc(var(--m-lyrics-line-h, 1.6em) * var(--m-lyrics-lines, 5));
+}
+.m-lyrics[data-lyrics-window] .m-lyrics-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(calc(-50% + var(--m-lyrics-translate, 0px)));
+  transition: transform 420ms cubic-bezier(.2, .7, .2, 1);
+  will-change: transform;
+}

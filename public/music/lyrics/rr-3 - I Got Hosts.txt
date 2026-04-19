@@ -1,0 +1,49 @@
+Resolving hostname…
+Resolving hostname…
+Connected.
+I said SSH girl, shut your lips
+Do the Helen Keller and talk with your hips
+She pinged me once, now she can't let go
+Every girl in the subnet begging me to say hello
+Port 22 open, I don't even knock
+Barefoot root access, I don't need a sock
+I got hosts, I got hosts, I got—
+I GOT HOSTS on the east, hosts on the west
+Hosts in the cloud and they never need rest
+She wants to sudo — whoa
+She wants to root me — whoa
+She'll never chmod — whoa, whoa, oh, oh!
+I GOT HOSTS
+I said OOM, girl, grep me with your electric eel
+Baby girl, you've surely got an eclectic appeal
+She killed my process, I spun up two more
+High availability — I'm never on the floor
+She fork-bombed my feelings? Girl, I auto-scale
+Redundant hearts, I literally cannot fail
+She whispered:
+"You have… too many connections."
+…429.
+I whispered back:
+"Load balance me, baby."
+I GOT HOSTS on the north, hosts on the south
+Hosts in the rack with my name in their mouth
+She wants to sudo — whoa
+She wants to root me — whoa
+She'll never chmod — whoa, whoa, oh, oh!
+I GOT HOSTS
+Encrypt me, decrypt me, wrap me in TLS
+Every heartbeat packet beating through my chest
+She's tryna traceroute me, find out where I sleep
+But I'm multi-region, girl — I'm in too deep
+Bare metal in the morning, containerized at night
+Kubernetes of love and the replicas are tight
+SSH GIRL — shut your lips
+TALK WITH YOUR HIPS
+OOM GIRL — grep me, grip me
+ECLECTIC, ELECTRIC —
+I GOT HOSTS
+I GOT HOSTS
+I GOT HOSTS IN EVERY AVAILABILITY ZONE
+Connection pooled.
+Session cached.
+She'll be back.

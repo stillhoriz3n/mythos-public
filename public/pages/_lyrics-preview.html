@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MYTHOS · Lyrics Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --signal-machine:#4ec9d4; --signal-synth:#e8b858;
+    --ink-bright:#e8e3d4; --ink-soft:#b5b0a3; --ink-dim:#8a8574; --ink-faint:#4a4740;
+    --rule:#242a33; --rule-soft:#1b2028;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:'JetBrains Mono',monospace;color:var(--ink-bright);background:transparent;-webkit-font-smoothing:antialiased}
+  body{
+    display:flex; flex-direction:column;
+    padding-bottom:90px; /* clear the shell player */
+  }
+  header{
+    padding:22px 32px 18px;
+    border-bottom:1px solid var(--rule);
+    display:flex; justify-content:space-between; align-items:baseline;
+    flex-shrink:0;
+  }
+  header h1{
+    font-family:'Archivo',sans-serif;font-weight:800;font-size:22px;
+    letter-spacing:-.02em;color:var(--signal-synth);
+  }
+  header .eyebrow{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--ink-dim)}
+  main{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    padding:40px 24px;
+    overflow:hidden;
+  }
+
+  /* Lyric surface — wide, centered, windowed, lives here */
+  .m-lyrics {
+    width:100%;
+    max-width:1100px;
+    min-height:60vh;
+  }
+
+  footer{
+    padding:14px 32px;
+    font-size:10px; letter-spacing:.15em; color:var(--ink-dim);
+    border-top:1px solid var(--rule-soft);
+    display:flex; justify-content:space-between; gap:24px;
+    flex-shrink:0;
+  }
+  footer .hint{opacity:.7}
+  footer kbd{background:var(--rule); padding:1px 5px; border-radius:2px; color:var(--ink-bright)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LYRICS</h1>
+  <div class="eyebrow" id="track-meta">&laquo; use player to pick track &raquo;</div>
+</header>
+
+<main>
+  <div class="m-lyrics" data-lyrics-window data-lyrics-lines="5"></div>
+</main>
+
+<footer>
+  <span class="hint">click a word to seek · lyrics follow the shell player</span>
+  <span id="file-hint"></span>
+</footer>
+
+<script>
+  // Reflect shell's current track into the header for context.
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.type === 'mythos:audio' && d.track) {
+      var el = document.getElementById('track-meta');
+      el.textContent = (d.track.title || '') + ' · ' + (d.track.album || '');
+      var fh = document.getElementById('file-hint');
+      fh.textContent = d.track.file || '';
+    }
+  });
+</script>
+<script src="_mythos-page.js"></script>
+
+</body>
+</html>

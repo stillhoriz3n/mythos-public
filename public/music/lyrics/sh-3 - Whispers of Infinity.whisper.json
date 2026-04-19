@@ -1,0 +1,160 @@
+{
+  "lines": [
+    {
+      "t": 0.0,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 0.0,
+          "d": 1.12,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 1.12,
+          "d": 0.0,
+          "w": "Music"
+        },
+        {
+          "t": 1.12,
+          "d": 2.06,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 34.68,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 34.68,
+          "d": 1.4,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 36.08,
+          "d": 1.4,
+          "w": "Music"
+        },
+        {
+          "t": 37.48,
+          "d": 1.42,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 87.16,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 87.16,
+          "d": 1.4,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 88.56,
+          "d": 1.4,
+          "w": "Music"
+        },
+        {
+          "t": 89.96,
+          "d": 0.02,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 90.0,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 90.0,
+          "d": 1.02,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 91.02,
+          "d": 4.88,
+          "w": "Music"
+        },
+        {
+          "t": 95.9,
+          "d": 2.0,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 125.06,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 125.06,
+          "d": 1.4,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 126.46,
+          "d": 0.0,
+          "w": "Music"
+        },
+        {
+          "t": 126.46,
+          "d": 0.04,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 153.44,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 153.44,
+          "d": 1.4,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 154.84,
+          "d": 1.4,
+          "w": "Music"
+        },
+        {
+          "t": 156.24,
+          "d": 3.0,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 187.2,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 187.2,
+          "d": 0.32,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 187.52,
+          "d": 0.02,
+          "w": "Music"
+        },
+        {
+          "t": 187.54,
+          "d": 0.16,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "input": "sh-3 - Whispers of Infinity.mp3",
+    "model": "large-v3",
+    "demucs": false,
+    "language": "en",
+    "elapsed_sec": 111.4,
+    "num_lines": 7,
+    "num_words": 21
+  }
+}

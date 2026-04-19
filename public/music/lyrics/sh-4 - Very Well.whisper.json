@@ -1,0 +1,192 @@
+{
+  "lines": [
+    {
+      "t": 0.0,
+      "text": "\ud83c\udfb5",
+      "words": [
+        {
+          "t": 0.0,
+          "d": 1.36,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 30.0,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 30.0,
+          "d": 0.0,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 30.0,
+          "d": 0.34,
+          "w": "Music"
+        },
+        {
+          "t": 30.34,
+          "d": 2.52,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 60.0,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 60.0,
+          "d": 0.0,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 60.0,
+          "d": 1.44,
+          "w": "Music"
+        },
+        {
+          "t": 61.44,
+          "d": 0.62,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 93.52,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 93.52,
+          "d": 1.4,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 94.92,
+          "d": 1.12,
+          "w": "Music"
+        },
+        {
+          "t": 96.04,
+          "d": 0.02,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 147.16,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 147.16,
+          "d": 1.4,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 148.56,
+          "d": 1.4,
+          "w": "Music"
+        },
+        {
+          "t": 149.96,
+          "d": 0.02,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 150.0,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 150.0,
+          "d": 0.5,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 150.5,
+          "d": 0.92,
+          "w": "Music"
+        },
+        {
+          "t": 151.42,
+          "d": 2.48,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 180.0,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 180.0,
+          "d": 0.38,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 180.38,
+          "d": 0.96,
+          "w": "Music"
+        },
+        {
+          "t": 181.34,
+          "d": 1.16,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 213.62,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 213.62,
+          "d": 1.4,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 215.02,
+          "d": 0.0,
+          "w": "Music"
+        },
+        {
+          "t": 215.02,
+          "d": 0.08,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    },
+    {
+      "t": 240.56,
+      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "words": [
+        {
+          "t": 240.56,
+          "d": 1.4,
+          "w": "\ud83c\udfb5"
+        },
+        {
+          "t": 241.96,
+          "d": 0.0,
+          "w": "Music"
+        },
+        {
+          "t": 241.96,
+          "d": 6.52,
+          "w": "\ud83c\udfb5"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "input": "sh-4 - Very Well.mp3",
+    "model": "large-v3",
+    "demucs": false,
+    "language": "en",
+    "elapsed_sec": 142.0,
+    "num_lines": 9,
+    "num_words": 25
+  }
+}

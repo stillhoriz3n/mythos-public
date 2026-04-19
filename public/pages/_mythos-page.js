@@ -20,6 +20,9 @@
 //
 //   Frequency bands (0..1, VU-ballistic):
 //     --band-0 .. --band-9
+//     --band-0-l .. --band-9-l   (left channel only)
+//     --band-0-r .. --band-9-r   (right channel only)
+//     --pan-balance              -1 (hard L) .. +1 (hard R); 0 = centered
 //
 //   Named band aliases (convenience):
 //     --sub-bass    = band 0
@@ -104,6 +107,19 @@
         root.setProperty('--band-' + i, playing ? d.bands[i].toFixed(3) : '0');
       }
     }
+    if (d.bandsL) {
+      for (var i = 0; i < d.bandsL.length; i++) {
+        root.setProperty('--band-' + i + '-l', playing ? d.bandsL[i].toFixed(3) : '0');
+      }
+    }
+    if (d.bandsR) {
+      for (var i = 0; i < d.bandsR.length; i++) {
+        root.setProperty('--band-' + i + '-r', playing ? d.bandsR[i].toFixed(3) : '0');
+      }
+    }
+    if (typeof d.panBalance === 'number') {
+      root.setProperty('--pan-balance', playing ? d.panBalance.toFixed(3) : '0');
+    }
     if (d.onsets) {
       for (var i = 0; i < d.onsets.length; i++) {
         root.setProperty('--onset-' + i, playing ? d.onsets[i].toFixed(3) : '0');
@@ -119,6 +135,10 @@
       root.setProperty('--kick',  playing ? d.onsets[0].toFixed(3) : '0');
       root.setProperty('--snare', playing ? d.onsets[4].toFixed(3) : '0');
       root.setProperty('--hat',   playing ? d.onsets[8].toFixed(3) : '0');
+    }
+    // Per-word lyric cursor (broadcast currentTime is authoritative)
+    if (typeof d.currentTime === 'number' && lyricsState.containers.length) {
+      updateLyricsCursor(d.currentTime, playing);
     }
   }
 
@@ -229,6 +249,201 @@
     });
   }
 
+  // ─ Lyrics — per-word karaoke consumer ─
+  //
+  // For any <div class="m-lyrics"> on the page: fetch the lyrics JSON
+  // for the currently-playing track from ../music/lyrics/<stem>.json,
+  // render it, and update word classes + --word-progress each frame
+  // from the shell's broadcast currentTime.
+  //
+  var lyricsState = {
+    containers: [],      // DOM roots
+    trackFile: null,     // e.g. "music/sh-1 - askJarvis.mp3"
+    data: null,          // { lines: [ { t, words: [...] } ] }
+    flatWords: [],       // flat index for fast cursor
+    flatLineIdx: [],     // parallel line index for each flat word
+    currentWordIdx: -1,
+    currentLineIdx: -1,
+    loadToken: 0,        // guards against stale fetches on track change
+  };
+
+  function fileStem(file) {
+    if (!file) return null;
+    var name = file.split('/').pop();        // "sh-1 - askJarvis.mp3"
+    return name.replace(/\.[^.]+$/, '');     // "sh-1 - askJarvis"
+  }
+
+  function lyricsPath(file) {
+    var stem = fileStem(file);
+    if (!stem) return null;
+    // Pages live at pages/*.html; lyrics live at music/lyrics/*.json
+    return '../music/lyrics/' + encodeURIComponent(stem) + '.json';
+  }
+
+  function buildLyricsDom(container) {
+    var windowed = container.hasAttribute('data-lyrics-window');
+    var track = document.createElement('div');
+    track.className = 'm-lyrics-track';
+    container.innerHTML = '';
+    if (windowed) container.appendChild(track);
+    var host = windowed ? track : container;
+
+    if (!lyricsState.data || !lyricsState.data.lines || !lyricsState.data.lines.length) {
+      var empty = document.createElement('div');
+      empty.className = 'm-lyrics-line is-future';
+      empty.textContent = '— no lyrics —';
+      host.appendChild(empty);
+      return;
+    }
+
+    lyricsState.flatWords = [];
+    lyricsState.flatLineIdx = [];
+    lyricsState.data.lines.forEach(function(line, li) {
+      var ldiv = document.createElement('div');
+      ldiv.className = 'm-lyrics-line';
+      ldiv.dataset.lineIdx = li;
+      (line.words || []).forEach(function(w, wi) {
+        var span = document.createElement('span');
+        span.className = 'm-lyrics-word is-future';
+        span.textContent = w.w;
+        span.dataset.t = w.t;
+        span.dataset.d = w.d;
+        span.dataset.flat = lyricsState.flatWords.length;
+        span.style.setProperty('--word-t', w.t);
+        ldiv.appendChild(span);
+        ldiv.appendChild(document.createTextNode(' '));
+        lyricsState.flatWords.push({ t: +w.t, d: +w.d, el: span });
+        lyricsState.flatLineIdx.push(li);
+      });
+      host.appendChild(ldiv);
+    });
+
+    // Publish line height for windowed transform math
+    var first = host.querySelector('.m-lyrics-line');
+    if (first && windowed) {
+      container.style.setProperty('--m-lyrics-line-h',
+        first.getBoundingClientRect().height + 'px');
+    }
+    // Seek-on-click
+    host.querySelectorAll('.m-lyrics-word').forEach(function(span){
+      span.addEventListener('click', function(){
+        if (!window.parent || window.parent === window) return;
+        window.parent.postMessage({
+          type: 'mythos:audio:cmd', cmd: 'seek', time: +span.dataset.t,
+        }, '*');
+      });
+    });
+  }
+
+  function loadLyricsForTrack(file) {
+    if (lyricsState.trackFile === file) return;
+    lyricsState.trackFile = file;
+    var token = ++lyricsState.loadToken;
+    var url = lyricsPath(file);
+    if (!url) { lyricsState.data = null; lyricsState.containers.forEach(buildLyricsDom); return; }
+    fetch(url).then(function(r){
+      if (!r.ok) throw new Error('no-lyrics');
+      return r.json();
+    }).then(function(json){
+      if (token !== lyricsState.loadToken) return;
+      lyricsState.data = json;
+      lyricsState.currentWordIdx = -1;
+      lyricsState.currentLineIdx = -1;
+      lyricsState.containers.forEach(buildLyricsDom);
+    }).catch(function(){
+      if (token !== lyricsState.loadToken) return;
+      lyricsState.data = null;
+      lyricsState.containers.forEach(buildLyricsDom);
+    });
+  }
+
+  function updateLyricsCursor(t, playing) {
+    if (!lyricsState.flatWords.length) return;
+    // Find the active word: greatest i where flatWords[i].t <= t
+    // Use a linear scan from current position (usually advances 0-1 words per frame).
+    var words = lyricsState.flatWords;
+    var idx = lyricsState.currentWordIdx;
+    // Reverse if we seeked backward
+    if (idx >= 0 && words[idx].t > t) idx = -1;
+    while (idx + 1 < words.length && words[idx + 1].t <= t) idx++;
+    // End of last word's duration means it's "past" not "current"
+    var activeEnd = idx >= 0 ? words[idx].t + words[idx].d : 0;
+    var isCurrent = idx >= 0 && t >= words[idx].t && t <= activeEnd + 0.05;
+
+    // Per-word progress for the current word (0..1 karaoke sweep)
+    if (idx >= 0) {
+      var w = words[idx];
+      var p = w.d > 0 ? Math.max(0, Math.min(1, (t - w.t) / w.d)) : (isCurrent ? 1 : 0);
+      w.el.style.setProperty('--word-progress', p.toFixed(3));
+    }
+
+    if (idx !== lyricsState.currentWordIdx) {
+      // Demote old
+      if (lyricsState.currentWordIdx >= 0 && words[lyricsState.currentWordIdx]) {
+        var prev = words[lyricsState.currentWordIdx].el;
+        prev.classList.remove('is-current');
+        prev.classList.add('is-past');
+        prev.style.setProperty('--word-progress', '1');
+      }
+      // Promote new
+      if (idx >= 0) {
+        words[idx].el.classList.remove('is-future');
+        words[idx].el.classList.add('is-current');
+      }
+      lyricsState.currentWordIdx = idx;
+
+      // Line focus
+      var newLine = idx >= 0 ? lyricsState.flatLineIdx[idx] : -1;
+      if (newLine !== lyricsState.currentLineIdx) {
+        lyricsState.containers.forEach(function(c){
+          c.querySelectorAll('.m-lyrics-line').forEach(function(ld, li){
+            ld.classList.toggle('is-active', li === newLine);
+            ld.classList.toggle('is-past',   li < newLine);
+            ld.classList.toggle('is-future', li > newLine);
+          });
+          // Windowed scroll — translate the active line to centre
+          if (c.hasAttribute('data-lyrics-window')) {
+            var lineH = parseFloat(getComputedStyle(c).getPropertyValue('--m-lyrics-line-h')) || 0;
+            if (lineH && newLine >= 0) {
+              var offset = -(newLine + 0.5) * lineH;
+              c.style.setProperty('--m-lyrics-translate', offset + 'px');
+            }
+          }
+        });
+        lyricsState.currentLineIdx = newLine;
+      }
+    } else if (!isCurrent && idx >= 0) {
+      // Current word's duration elapsed; demote
+      var el = words[idx].el;
+      if (el.classList.contains('is-current')) {
+        el.classList.remove('is-current');
+        el.classList.add('is-past');
+        el.style.setProperty('--word-progress', '1');
+      }
+    }
+  }
+
+  function setupLyrics() {
+    lyricsState.containers = Array.prototype.slice.call(
+      document.querySelectorAll('.m-lyrics'));
+    if (!lyricsState.containers.length) return;
+    // Ask the shell to send us the current track so we can fetch lyrics.
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'mythos:audio:subscribe' }, '*');
+    }
+    // Render an empty state until we know the track
+    lyricsState.containers.forEach(buildLyricsDom);
+  }
+
+  // Extend the message handler for mythos:audio so lyrics auto-follow track changes.
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if (!d || typeof d !== 'object') return;
+    if (d.type === 'mythos:audio' && d.track && d.track.file) {
+      if (lyricsState.containers.length) loadLyricsForTrack(d.track.file);
+    }
+  });
+
   // ─ Spectrogram — auto-populate bars inside .m-spectrogram elements ─
   function setupSpectrograms() {
     document.querySelectorAll('.m-spectrogram').forEach(function(el) {
@@ -266,6 +481,7 @@
     setupReveal();
     setupBands();
     setupSpectrograms();
+    setupLyrics();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

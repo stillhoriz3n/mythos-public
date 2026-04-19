@@ -51,12 +51,13 @@
     .credit .secondary{font-size:9px}
   }
   @media(max-width:480px){
-    .ui{padding:14px 16px;bottom:110px}
-    .ui-bottom{flex-direction:column;align-items:flex-start;gap:10px}
-    .title-block h1{font-size:22px;line-height:1.0}
-    .track-info .now-playing{font-size:8px;margin-bottom:4px}
-    .track-info .track-name{font-size:14px}
-    .track-info .album-name{font-size:12px}
+    .ui{padding:14px 16px;bottom:140px}
+    /* On phones the shell player already shows the track + album in the
+       bottom bar, so the visualizer's big album title + duplicate track
+       panel just bleeds into the player. Hide the decorative title and
+       the duplicate track-info block entirely; keep only the HORIZ3N
+       credit up top. */
+    .ui-bottom{display:none}
     .credit .primary{font-size:11px}
     .credit .secondary{font-size:8px}
     .emblem{width:24px;height:20px}

@@ -129,6 +129,77 @@
   let matrixChars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンMYTHOSSubstrate01'.split('');
   let matrixLastAlbum = null;
 
+  // ── LYRIC RIBBON — invisible lyrics revealed by conducted rain ─────
+  //
+  // The word-timed lyric JSON (whisper-aligned to canonical text) drives
+  // a right-to-left ribbon along a slow-following copy of the amber wave.
+  // Words are INVISIBLE by default. A conductor layer fires plinko drops
+  // aimed at currently-singing words; drops that splash a word's glyphs
+  // raise per-letter reveal energy. Revealed glyphs emit amber light +
+  // spawn splash particles; a fraction of splash particles get promoted
+  // into the star-field, accelerating toward the camera.
+  //
+  // Design constraints (2026-04-19):
+  //   - Trust whisper-merged timings (word.t, word.d) exactly — no fuzzy
+  //     search at render time.
+  //   - Smooth ribbon y, don't track the raw wave (words would be seasick).
+  //   - Per-glyph reveal, measured once per word at enqueue time (no
+  //     per-frame font measurement).
+  //   - Rain aimed at words during their sing window; rate proportional to
+  //     instantaneous mid-band energy (vocal range).
+  //
+  var lyricState = {
+    trackFile: null,
+    loadToken: 0,
+    lines: null,          // [{ t, text, words: [{t,d,w}] }]
+    sprites: [],          // active word sprites (see enqueueWordSprite)
+    wordCursor: 0,        // next word index to spawn
+    flatWords: null,      // flat word array, ordered by t
+  };
+
+  // Slow-follower of the amber wave — ribbon rides this so text reads calm
+  // even when the raw waveform is frantic. One sample per 40 horizontal
+  // pixels; each sample exponentially tracks the current wave value there.
+  var lyricWaveBuf = null;  // Float32Array
+  var lyricWaveBufStride = 40; // one sample every N canvas px
+
+  // Splash particles (distinct from the existing `particles` array so we
+  // can cheaply promote a fraction of them into `stars` without polluting
+  // general-purpose particle behavior).
+  var splashParticles = [];
+
+  // ── Lyric loader ────────────────────────────────────
+  // Lyrics live at music/lyrics/<stem>.json. Stem = audio file basename
+  // minus .mp3. Fetched once per track change; failure is quiet (tracks
+  // without lyrics just don't ribbon).
+  function loadLyricsForTrack(file) {
+    if (lyricState.trackFile === file) return;
+    lyricState.trackFile = file;
+    lyricState.lines = null;
+    lyricState.sprites = [];
+    lyricState.wordCursor = 0;
+    lyricState.flatWords = null;
+    if (!file) return;
+    var token = ++lyricState.loadToken;
+    var stem = file.replace(/^.*\//, '').replace(/\.mp3$/i, '');
+    var url = 'music/lyrics/' + encodeURIComponent(stem) + '.json';
+    fetch(url).then(function(r){ if (!r.ok) throw 0; return r.json(); })
+      .then(function(json) {
+        if (token !== lyricState.loadToken) return;
+        lyricState.lines = json && json.lines ? json.lines : null;
+        if (lyricState.lines) {
+          var flat = [];
+          lyricState.lines.forEach(function(line) {
+            (line.words || []).forEach(function(w) {
+              flat.push({ t: +w.t, d: +w.d, w: w.w });
+            });
+          });
+          flat.sort(function(a,b){ return a.t - b.t; });
+          lyricState.flatWords = flat;
+        }
+      }).catch(function(){ /* quiet */ });
+  }
+
   // ── BEAT CLOCK ───────────────────────────────────────
   // beatPhase: 0→1 sawtooth synced to track BPM (0 = downbeat, 1 = next beat)
   // beatPulse: 0→1 exponential decay that fires on each beat (for visual kicks)
@@ -225,6 +296,7 @@
     renderQueue();
     saveState();
     broadcastTrack();
+    loadLyricsForTrack(t.file);
 
     // ── Matrix Easter egg: activate on stillHORIZ3N ──
     var albumId = t.cover;
@@ -258,6 +330,11 @@
   // ── AUDIO EVENTS ─────────────────────────────────────
   audio.addEventListener('play', function() { playing = true; document.documentElement.setAttribute('data-audio-playing', '1'); updatePlayIcon(); broadcastTrack(); });
   audio.addEventListener('pause', function() { playing = false; document.documentElement.removeAttribute('data-audio-playing'); updatePlayIcon(); saveState(); broadcastTrack(); });
+  audio.addEventListener('seeked', function() {
+    // Flush ribbon state; updateLyricSprites will rebuild cursor next frame.
+    lyricState.sprites = [];
+    lyricState.wordCursor = 0;
+  });
   audio.addEventListener('ended', function() {
     if (loop) { audio.currentTime = 0; audio.play().catch(function(){}); }
     else {
@@ -655,6 +732,377 @@
     return s / (end - from);
   }
 
+  // ── LYRIC RIBBON: spawn / layout / render ─────────────
+  //
+  // The ribbon scrolls right-to-left at a constant pixel velocity. Each
+  // word is given a LEAD of LYRIC_LEAD seconds (spawned at the right edge
+  // that many seconds before its sung time), reaches center-stage at its
+  // sung time, and trails off the left edge LYRIC_TAIL seconds after.
+  // Velocity px/sec = screenWidth / (LEAD + TAIL).
+  //
+  // Per-glyph layout is measured at spawn time (one canvas.measureText per
+  // letter) and cached on the sprite. The sprite's (x, y) updates each
+  // frame; letter offsets are constant.
+  //
+  var LYRIC_LEAD = 3.5;       // seconds before sung time the word appears on right
+  var LYRIC_TAIL = 2.5;       // seconds after sung time the word persists on left
+  var LYRIC_FONT_PX = 26;     // base size in CSS pixels (multiplied by dpr inside)
+  var LYRIC_TRAVEL_SECS = LYRIC_LEAD + LYRIC_TAIL;
+
+  function spawnLyricSprite(word, now, c, dpr, w, h) {
+    // Measure glyph widths so splash hit-tests are accurate.
+    var fontPx = LYRIC_FONT_PX * dpr;
+    var prevFont = c.font;
+    var prevAlign = c.textAlign;
+    c.font = '500 ' + fontPx + 'px "Fraunces", "Archivo", serif';
+    c.textAlign = 'left';
+    var letters = [];
+    var xOff = 0;
+    var text = word.w || '';
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      var m = c.measureText(ch);
+      letters.push({
+        ch: ch,
+        x: xOff,
+        y: 0,
+        w: m.width,
+        h: fontPx,
+        revealed: 0,  // 0 = invisible, 1 = fully revealed
+      });
+      xOff += m.width;
+    }
+    // Small space between words in the ribbon — not part of the word, but
+    // we reserve it in the hit bbox so nothing else fires on the gap.
+    var totalW = xOff;
+    c.font = prevFont;
+    c.textAlign = prevAlign;
+
+    // Departure time from right edge = word.t - LYRIC_LEAD.
+    // We want sprite x = w at t = word.t - LYRIC_LEAD, reaching center at
+    // word.t, reaching left edge at word.t + LYRIC_TAIL. Linear interp.
+    lyricState.sprites.push({
+      text: text,
+      t: word.t,
+      d: word.d,
+      startT: word.t - LYRIC_LEAD,     // audio time when sprite enters right edge
+      endT:   word.t + LYRIC_TAIL,     // audio time when sprite exits left edge
+      letters: letters,
+      totalW: totalW,
+      fontPx: fontPx,
+      // Filled each frame:
+      x: 0, y: 0,
+      splashEnergy: 0,                 // accumulated across all letters
+    });
+  }
+
+  function updateLyricSprites(audioTime, c, w, h, dpr) {
+    if (!lyricState.flatWords || !lyricState.flatWords.length) return;
+
+    // First-run / big-seek: fast-forward cursor past words whose ribbon
+    // window already ended, so we don't spawn and immediately retire
+    // thousands of them when the user starts mid-song.
+    if (lyricState.wordCursor === 0 && lyricState.sprites.length === 0) {
+      for (var fi = 0; fi < lyricState.flatWords.length; fi++) {
+        if (lyricState.flatWords[fi].t + LYRIC_TAIL >= audioTime - 0.5) {
+          lyricState.wordCursor = fi;
+          break;
+        }
+      }
+    }
+
+    // Spawn any words that have entered their LEAD window.
+    while (lyricState.wordCursor < lyricState.flatWords.length) {
+      var next = lyricState.flatWords[lyricState.wordCursor];
+      if (audioTime >= next.t - LYRIC_LEAD - 0.1) {
+        spawnLyricSprite(next, audioTime, c, dpr, w, h);
+        lyricState.wordCursor++;
+      } else break;
+    }
+
+    // Handle seeks backward: if audio jumped back, rebuild cursor + flush.
+    if (lyricState.sprites.length > 0) {
+      var first = lyricState.sprites[0];
+      if (audioTime < first.startT - 0.5) {
+        // Seeked backward past all live sprites — reset.
+        lyricState.sprites = [];
+        lyricState.wordCursor = 0;
+        // Fast-forward cursor to the first word whose window we're in/before.
+        for (var i = 0; i < lyricState.flatWords.length; i++) {
+          if (lyricState.flatWords[i].t >= audioTime - LYRIC_TAIL) {
+            lyricState.wordCursor = i;
+            break;
+          }
+        }
+      }
+    }
+
+    // Update positions + retire.
+    var vx = w / LYRIC_TRAVEL_SECS; // px/sec leftward
+    for (var i = lyricState.sprites.length - 1; i >= 0; i--) {
+      var s = lyricState.sprites[i];
+      if (audioTime > s.endT + 0.3) {
+        lyricState.sprites.splice(i, 1);
+        continue;
+      }
+      // Where in (startT, endT) are we?
+      var u = (audioTime - s.startT) / LYRIC_TRAVEL_SECS; // 0 at spawn, 1 at exit
+      // x: right edge at u=0, left edge -totalW at u=1.
+      s.x = w - u * (w + s.totalW);
+      // y: sampled from lyricWaveBuf at the center of the word.
+      var cx = s.x + s.totalW * 0.5;
+      s.y = sampleLyricWave(cx, w, h);
+    }
+  }
+
+  // Slow-follower wave sampler. Keeps a low-res buffer that exponentially
+  // tracks the high-pass-removed amber wave. Ribbon y reads from here.
+  function updateLyricWaveBuf(w, h, dpr) {
+    var samples = Math.max(8, Math.floor(w / lyricWaveBufStride));
+    if (!lyricWaveBuf || lyricWaveBuf.length !== samples) {
+      lyricWaveBuf = new Float32Array(samples);
+      lyricWaveBuf.fill(h * 0.5);
+    }
+    var waveY = h * 0.5;
+    // Sample the live dataArray at proportional positions. We use a
+    // relatively gentle amplitude (not the full waveform's amplitude) and
+    // smooth aggressively so words don't bounce with the audio.
+    var ampCap = Math.min(h * 0.18, 160 * dpr);
+    for (var i = 0; i < samples; i++) {
+      var frac = i / (samples - 1);
+      var binIdx = Math.floor(frac * (dataArray.length - 1));
+      var sample = (dataArray[binIdx] - 128) / 128; // -1..1
+      var env = Math.sin(frac * Math.PI);           // tapered
+      var target = waveY + sample * ampCap * env;
+      // Slow exponential follow — ribbon is "calm" compared to the wave.
+      lyricWaveBuf[i] += (target - lyricWaveBuf[i]) * 0.04;
+    }
+  }
+
+  function sampleLyricWave(px, w, h) {
+    if (!lyricWaveBuf || !lyricWaveBuf.length) return h * 0.5;
+    var frac = Math.max(0, Math.min(1, px / w));
+    var idxF = frac * (lyricWaveBuf.length - 1);
+    var i0 = Math.floor(idxF);
+    var i1 = Math.min(lyricWaveBuf.length - 1, i0 + 1);
+    var f = idxF - i0;
+    return lyricWaveBuf[i0] * (1 - f) + lyricWaveBuf[i1] * f;
+  }
+
+  // ── RAIN CONDUCTOR — aim drops at singing words ──────
+  //
+  // For each currently-singing word (audioTime ∈ [t, t+d]), fire plinko
+  // drops into the columns that span that word's on-screen bbox. Rate is
+  // proportional to vocal-band energy (mids), so the rain "performs" the
+  // vocal. Each conducted drop is aimed at the word's y with a velocity
+  // that lands it on the word within the sung window.
+  //
+  var lyricConductorAccum = 0; // fractional drops to fire this frame
+  function conductRain(audioTime, w, h, dpr, midEnergy, now) {
+    if (!lyricState.sprites.length) return;
+    // Desired drops this second — scales with mid energy (vocal range).
+    // Baseline: 18 drops/sec when mids are active during a sung word.
+    var dropsPerSec = 6 + midEnergy * 40;
+    // Only fire drops for words currently in their sing window.
+    var activeSprites = [];
+    for (var i = 0; i < lyricState.sprites.length; i++) {
+      var s = lyricState.sprites[i];
+      if (audioTime >= s.t - 0.05 && audioTime <= s.t + s.d + 0.15) {
+        activeSprites.push(s);
+      }
+    }
+    if (!activeSprites.length) return;
+
+    lyricConductorAccum += dropsPerSec / 60; // assume ~60fps
+    while (lyricConductorAccum >= 1) {
+      lyricConductorAccum -= 1;
+      var s = activeSprites[Math.floor(Math.random() * activeSprites.length)];
+      // Pick a random letter inside the word to aim at.
+      if (!s.letters.length) continue;
+      var li = Math.floor(Math.random() * s.letters.length);
+      var letter = s.letters[li];
+      var targetX = s.x + letter.x + letter.w * 0.5;
+      var targetY = s.y + letter.y;
+      if (targetX < 0 || targetX > w) continue;
+
+      // Map to the nearest plinko column for visual consistency with the
+      // FFT rain (same font, same look).
+      var colW = w / PLINKO_COLS;
+      var col = Math.max(0, Math.min(PLINKO_COLS - 1, Math.floor(targetX / colW)));
+
+      // Speed tuned so the drop lands in ~0.5-0.9s — snappy enough to feel
+      // like a strike, slow enough to read as rain.
+      var fallDist = Math.max(1, targetY);
+      var fallTime = 0.55 + Math.random() * 0.3;
+      var speed = fallDist / (fallTime * 60); // px/frame
+      var dLen = 5 + Math.floor(Math.random() * 6);
+      var chars = [];
+      for (var k = 0; k < dLen; k++) {
+        chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
+      }
+      plinkoDrops.push({
+        col: col,
+        x: targetX,
+        y: 0,
+        speed: speed,
+        len: dLen,
+        chars: chars,
+        life: 1,
+        brightness: 0.85,
+        aimedAt: s,            // mark as lyric-conducted
+        targetY: targetY,
+        splashed: false,
+      });
+    }
+  }
+
+  // ── SPLASH DETECTION ─────────────────────────────────
+  // Called once per frame from the render loop. For any drop marked as
+  // lyric-conducted that has crossed its targetY, splash its aimed sprite.
+  function processSplashes(c, w, h, dpr) {
+    if (!plinkoDrops.length) return;
+    for (var i = 0; i < plinkoDrops.length; i++) {
+      var d = plinkoDrops[i];
+      if (!d.aimedAt || d.splashed) continue;
+      if (d.y < d.targetY) continue;
+      d.splashed = true;
+      var s = d.aimedAt;
+      // Figure out WHICH letter got hit based on current sprite position.
+      var hitX = d.x - s.x; // local x within sprite
+      var hitLetter = null;
+      for (var li = 0; li < s.letters.length; li++) {
+        var L = s.letters[li];
+        if (hitX >= L.x - 2 && hitX <= L.x + L.w + 2) { hitLetter = L; break; }
+      }
+      if (hitLetter) {
+        hitLetter.revealed = Math.min(1, hitLetter.revealed + 0.35 + d.brightness * 0.4);
+        s.splashEnergy = Math.min(1, s.splashEnergy + 0.15);
+        spawnSplashParticles(d.x, d.targetY, d.brightness, dpr, w, h);
+      }
+    }
+  }
+
+  // ── SPLASH PARTICLES + STAR PROMOTION ────────────────
+  function spawnSplashParticles(cx, cy, energy, dpr, w, h) {
+    var count = 10 + Math.floor(energy * 16);
+    for (var i = 0; i < count; i++) {
+      // Initial burst outward + slight upward bias (splash)
+      var angle = -Math.PI + (Math.random() - 0.5) * Math.PI * 0.7; // mostly upward/horizontal
+      if (Math.random() < 0.35) angle = Math.random() * Math.PI * 2; // some omnidirectional
+      var speed = (2 + Math.random() * 5) * dpr * (0.6 + energy);
+      splashParticles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        gravity: 0.15 * dpr,
+        life: 1,
+        decay: 0.01 + Math.random() * 0.015,
+        r: (0.9 + Math.random() * 1.6) * dpr,
+        promoted: false,
+        // Some particles will be promoted to stars when their life hits
+        // this threshold. Bigger = hang around as ink longer before warping.
+        promoteAt: 0.55 + Math.random() * 0.25,
+        promoteChance: 0.35,
+      });
+    }
+  }
+
+  function drawAndPromoteSplashParticles(c, w, h, dpr) {
+    if (!splashParticles.length) return;
+    var mT = matrixT;
+    for (var i = splashParticles.length - 1; i >= 0; i--) {
+      var p = splashParticles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += p.gravity;
+      p.vx *= 0.97;
+      p.life -= p.decay;
+
+      if (p.life <= 0) { splashParticles.splice(i, 1); continue; }
+
+      // Promotion to star: once per particle, some fraction get warped
+      // into the starfield and zoom toward the camera. Works by inserting
+      // a new star at the screen-space (p.x, p.y) with an appropriate z,
+      // such that projection lands at that screen coord.
+      if (!p.promoted && p.life < p.promoteAt) {
+        p.promoted = true;
+        if (Math.random() < p.promoteChance) {
+          // Back-solve for star world coords given screen pos + chosen z.
+          var focalLen = Math.min(w, h) * 0.35;
+          var startZ = STAR_DEPTH * (0.45 + Math.random() * 0.25);
+          var worldX = (p.x - w * 0.5) * startZ / focalLen;
+          var worldY = (p.y - h * 0.5) * startZ / focalLen;
+          stars.push({
+            x: worldX,
+            y: worldY,
+            z: startZ,
+            isCyan: Math.random() < 0.25,
+            baseAlpha: 0.7 + Math.random() * 0.3,
+          });
+          // End this particle when it converts.
+          splashParticles.splice(i, 1);
+          continue;
+        }
+      }
+
+      c.beginPath();
+      c.arc(p.x, p.y, p.r * Math.max(0.3, p.life), 0, Math.PI * 2);
+      if (mT > 0.5) {
+        c.fillStyle = 'rgba(180,255,180,' + (p.life * 0.9) + ')';
+      } else {
+        c.fillStyle = 'rgba(255,232,180,' + (p.life * 0.85) + ')';
+      }
+      c.fill();
+    }
+  }
+
+  // ── LYRIC RIBBON RENDER ──────────────────────────────
+  function drawLyricRibbon(c, w, h, dpr, expand) {
+    if (!lyricState.sprites.length) return;
+    var prevFont = c.font;
+    var prevAlign = c.textAlign;
+    var prevBaseline = c.textBaseline;
+    c.textAlign = 'left';
+    c.textBaseline = 'middle';
+    var mT = matrixT;
+
+    for (var i = 0; i < lyricState.sprites.length; i++) {
+      var s = lyricState.sprites[i];
+      if (s.x + s.totalW < -20 || s.x > w + 20) continue;
+      c.font = '500 ' + s.fontPx + 'px "Fraunces", "Archivo", serif';
+
+      // Iterate letters: invisible at reveal=0, glowing amber at reveal=1.
+      for (var li = 0; li < s.letters.length; li++) {
+        var L = s.letters[li];
+        var rev = L.revealed;
+        if (rev <= 0.01) continue;
+        var lx = s.x + L.x;
+        var ly = s.y + L.y;
+
+        // Fade reveal slowly over time so a splashed word eventually
+        // returns to ink (poetic + keeps the screen from filling).
+        L.revealed = Math.max(0, L.revealed - 0.0025);
+
+        var amberA = Math.min(1, rev * 1.1) * expand;
+        var glowR = 18 * dpr * rev;
+
+        // Amber glow pass
+        c.shadowColor = mT > 0.5
+          ? 'rgba(120,255,140,' + (amberA * 0.85) + ')'
+          : 'rgba(232,184,88,' + (amberA * 0.85) + ')';
+        c.shadowBlur = glowR;
+        c.fillStyle = mT > 0.5
+          ? 'rgba(180,255,180,' + (amberA * 0.95) + ')'
+          : 'rgba(255,232,188,' + (amberA * 0.95) + ')';
+        c.fillText(L.ch, lx, ly);
+        c.shadowBlur = 0;
+      }
+    }
+    c.font = prevFont;
+    c.textAlign = prevAlign;
+    c.textBaseline = prevBaseline;
+  }
+
   // ── DRAW LOOP ────────────────────────────────────────
   function drawViz() {
     requestAnimationFrame(drawViz);
@@ -737,10 +1185,26 @@
       c.globalAlpha = 1;
     }
 
+    // ── Lyric ribbon prep + rain conductor ──
+    // Slow-follow wave buffer → sprite layout → aim drops at sung words.
+    // Must run BEFORE updatePlinko so splash detection has current drop
+    // positions AFTER plinko integrates.
+    if (playing && expand > 0.05 && lyricState.flatWords) {
+      var audioTime = audio.currentTime || 0;
+      updateLyricWaveBuf(w, h, dpr);
+      updateLyricSprites(audioTime, c, w, h, dpr);
+      conductRain(audioTime, w, h, dpr, mid, performance.now());
+    }
+
     // ── Spectrum Plinko ──
+    // drawPlinko integrates d.y += d.speed each frame; splash detection
+    // must run AFTER integration (so aimed drops are caught the frame
+    // they cross targetY) but BEFORE the next frame's integration, so we
+    // call it right after drawPlinko.
     if (playing && expand > 0.05) {
       updatePlinko(freqArray, w, h, dpr);
       drawPlinko(c, w, h);
+      processSplashes(c, w, h, dpr);
     }
 
     // ── Trails ──
@@ -961,6 +1425,14 @@
       }
       c.fill();
     }
+
+    // ── Lyric ribbon (revealed glyphs) + splash particles ──
+    // Drawn under the signal waveforms so the amber wave kisses the
+    // ribbon visually. Only visible when playing + lyrics loaded.
+    if (expand > 0.05 && lyricState.sprites.length) {
+      drawLyricRibbon(c, w, h, dpr, expand);
+    }
+    drawAndPromoteSplashParticles(c, w, h, dpr);
 
     // ── Signal waveforms ──
     // These are *signal* — they visualize playing audio. When nothing is

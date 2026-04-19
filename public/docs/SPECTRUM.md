@@ -97,6 +97,25 @@ release (settles back over ~400 ms).
 Use `--band-0` through `--band-9` or the named aliases — they point at
 the same values.
 
+### Stereo (per-channel bands + pan balance)
+
+For a ChannelSplitter-driven side-chain that exposes left and right
+independently. Same VU ballistics as the mono mixdown; suitable for
+stereo VU meters, ping-pong visuals, or anything that wants to know
+which side is pushing air.
+
+| Variable | Range | Meaning |
+|---|---|---|
+| `--band-0-l` .. `--band-9-l` | 0→1 | left-channel band energy |
+| `--band-0-r` .. `--band-9-r` | 0→1 | right-channel band energy |
+| `--pan-balance` | −1 → +1 | energy-weighted L/R balance (−1 = hard L, 0 = centered/mono, +1 = hard R) |
+
+**Mono fallback.** When the right channel has been silent for ~1 s
+while the left is not, the shell folds the left band values into the
+right ones and holds `--pan-balance` near 0. Mono sources therefore
+degrade to duplicated bands (not half-silent meters), and stereo
+designs stay alive on mono content.
+
 ### Onset pulses
 
 Per-band rising-edge detectors (delta = fast follower − slow baseline).
@@ -231,6 +250,46 @@ fills via `scaleY` (or `scaleX` in column orientation).
      data-spectrogram-from="0"></div>
 ```
 
+### `.m-lyrics`
+
+Per-word karaoke. The consumer fetches
+`../music/lyrics/<track-stem>.json` when the shell broadcasts a track,
+injects per-word spans, and updates a cursor every frame from the
+broadcast `currentTime`.
+
+```html
+<!-- all lines stacked, fade mask top/bottom -->
+<div class="m-lyrics"></div>
+
+<!-- windowed: active line always centred, neighbours scroll in -->
+<div class="m-lyrics" data-lyrics-window data-lyrics-lines="5"></div>
+```
+
+Word spans carry three states + a progress variable:
+
+- `.is-past` — already sung (dim)
+- `.is-current` — currently being sung; `--word-progress` 0→1 drives a
+  left-to-right gradient sweep inside the glyph
+- `.is-future` — not yet reached
+
+Click any word to seek to that word's time (the consumer posts
+`mythos:audio:cmd` / `cmd: 'seek'` back to the shell).
+
+**JSON shape** (produced by `scripts/bin/transcribe-lyrics.py`, stored
+under `public/music/lyrics/<stem>.json`):
+
+```json
+{
+  "lines": [
+    { "t": 12.34, "text": "...", "words": [ { "t": 12.34, "d": 0.18, "w": "..." } ] }
+  ],
+  "meta": { "input": "...", "model": "large-v3", "demucs": true, "num_words": 400 }
+}
+```
+
+Lines missing the JSON degrade silently to a `— no lyrics —`
+placeholder; the page stays visually quiet.
+
 ### Reactive typography — `.m-type-*`
 
 Variable-font-powered type that responds to the track. Classes are
@@ -327,6 +386,34 @@ h1 {
 ```css
 .hero h1 {
   font-variation-settings: "wght" calc(400 + var(--envelope, 0) * 400);
+}
+```
+
+### A two-column stereo VU meter
+
+```html
+<div class="stereo-vu">
+  <div class="left"  style="--b: var(--band-1-l, 0)"></div>
+  <div class="right" style="--b: var(--band-1-r, 0)"></div>
+</div>
+```
+
+```css
+.stereo-vu { display: flex; gap: 4px; height: 80px; }
+.stereo-vu > div {
+  width: 8px;
+  background: var(--seal-color, gold);
+  transform-origin: bottom;
+  transform: scaleY(calc(0.08 + var(--b, 0) * 0.92));
+}
+```
+
+### Content that leans with the mix
+
+```css
+.hero {
+  /* pan-balance is -1..+1; 50% is centered */
+  background-position: calc(50% + var(--pan-balance, 0) * 15%) 50%;
 }
 ```
 
