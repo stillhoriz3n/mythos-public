@@ -156,11 +156,12 @@
     lineCursor: 0,        // next line index to spawn
   };
 
-  // Slow-follower of the amber wave — ribbon rides this so text reads calm
-  // even when the raw waveform is frantic. One sample per 40 horizontal
-  // pixels; each sample exponentially tracks the current wave value there.
-  var lyricWaveBuf = null;  // Float32Array
-  var lyricWaveBufStride = 40; // one sample every N canvas px
+  // Two-strip ribbon: alternating amber + cyan reading strips. Each strip
+  // has its own slow-follow wave buffer anchored at a different y center.
+  // stripIdx 0 = amber (upper), stripIdx 1 = cyan (lower).
+  var lyricWaveBufs = [null, null]; // Float32Array[2]
+  var lyricWaveBufStride = 40;      // one sample every N canvas px
+  var LYRIC_STRIP_OFFSET = 0.09;    // strip y centers = h*(0.5 ± offset)
 
   // Splash particles (distinct from the existing `particles` array so we
   // can cheaply promote a fraction of them into `stars` without polluting
@@ -763,13 +764,30 @@
   // laid out left-to-right with a single-space gap; each letter carries
   // its owning word index + its sung time so the conductor can fire
   // letter-timed drops for the word being sung right now.
-  function spawnLineSprite(line, c, dpr, w, h) {
-    var fontPx = LYRIC_FONT_PX * dpr;
+  // stripIdx: 0 = amber (upper), 1 = cyan (lower). Alternates per line.
+  function spawnLineSprite(line, c, dpr, w, h, stripIdx) {
+    // Auto-scale: on narrow viewports, ensure the line fits ~90% of width
+    // so there's always at least a short in-viewport reading window.
+    var baseFontPx = LYRIC_FONT_PX * dpr;
     var prevFont = c.font;
     var prevAlign = c.textAlign;
+    // Measure at base size first.
+    c.font = '500 ' + baseFontPx + 'px ' + LYRIC_FONT;
+    var spaceW = c.measureText(' ').width;
+    var measureTotal = 0;
+    for (var mi = 0; mi < line.words.length; mi++) {
+      measureTotal += c.measureText(line.words[mi].w || '').width;
+      if (mi < line.words.length - 1) measureTotal += spaceW;
+    }
+    var fontPx = baseFontPx;
+    var maxW = w * 0.9;
+    if (measureTotal > maxW && measureTotal > 0) {
+      fontPx = Math.max(baseFontPx * 0.55, baseFontPx * (maxW / measureTotal));
+    }
+    // Re-measure at final size for accurate letter positions.
     c.font = '500 ' + fontPx + 'px ' + LYRIC_FONT;
     c.textAlign = 'left';
-    var spaceW = c.measureText(' ').width;
+    spaceW = c.measureText(' ').width;
 
     var letters = [];
     var xOff = 0;
@@ -794,7 +812,6 @@
         });
         xOff += m.width;
       }
-      // Gap to next word (not the last).
       if (wi < line.words.length - 1) xOff += spaceW;
     }
     var totalW = xOff;
@@ -827,6 +844,7 @@
       letters: letters,
       totalW: totalW,
       fontPx: fontPx,
+      stripIdx: stripIdx | 0,
       hits: hits,
       extrasAccum: 0,
       x: 0, y: 0,
@@ -849,10 +867,11 @@
     }
 
     // Spawn any lines that have entered their LEAD window.
+    // Alternate strips: even-indexed lines go amber (strip 0), odd go cyan.
     while (lyricState.lineCursor < lyricState.lines.length) {
       var next = lyricState.lines[lyricState.lineCursor];
       if (audioTime >= next.t - LYRIC_LEAD - 0.1) {
-        spawnLineSprite(next, c, dpr, w, h);
+        spawnLineSprite(next, c, dpr, w, h, lyricState.lineCursor & 1);
         lyricState.lineCursor++;
       } else break;
     }
@@ -888,49 +907,56 @@
       var u = (audioTime - s.startT) / span;    // 0 at spawn, 1 at exit
       s.x = w - u * (w + s.totalW);             // right edge → past left
       var cx = s.x + s.totalW * 0.5;
-      s.y = sampleLyricWave(cx, w, h);
+      s.y = sampleLyricWave(cx, w, h, s.stripIdx);
     }
   }
 
-  // Slow-follower wave sampler. Keeps a low-res buffer that exponentially
-  // tracks a HEAVILY ATTENUATED copy of the amber wave. The ribbon is a
-  // reading strip — it should breathe like paper, not surf the wave.
-  // Amplitude and clamp both tight.
+  // Slow-follower wave samplers. Two strips, each heavily-attenuated copy
+  // of the amber wave anchored at a y center offset from middle. Reading
+  // strips breathe like paper — tight amplitude + clamp so they don't surf.
   function updateLyricWaveBuf(w, h, dpr) {
     var samples = Math.max(8, Math.floor(w / lyricWaveBufStride));
-    if (!lyricWaveBuf || lyricWaveBuf.length !== samples) {
-      lyricWaveBuf = new Float32Array(samples);
-      lyricWaveBuf.fill(h * 0.5);
+    for (var strip = 0; strip < 2; strip++) {
+      if (!lyricWaveBufs[strip] || lyricWaveBufs[strip].length !== samples) {
+        lyricWaveBufs[strip] = new Float32Array(samples);
+        var initY = h * (0.5 + (strip === 0 ? -LYRIC_STRIP_OFFSET : LYRIC_STRIP_OFFSET));
+        lyricWaveBufs[strip].fill(initY);
+      }
     }
-    var waveY = h * 0.5;
-    // Reading strip amplitude: ≤4% of viewport height OR 36*dpr px, whichever
-    // is smaller. Clamp to ±2× that so a single big peak can't yank the
-    // ribbon far from center. Result: words stay in a centerish band, gently
-    // undulating, never wandering.
-    var ampCap = Math.min(h * 0.04, 36 * dpr);
-    var yMin = waveY - ampCap * 1.8;
-    var yMax = waveY + ampCap * 1.8;
-    for (var i = 0; i < samples; i++) {
-      var frac = i / (samples - 1);
-      var binIdx = Math.floor(frac * (dataArray.length - 1));
-      var sample = (dataArray[binIdx] - 128) / 128; // -1..1
-      var env = Math.sin(frac * Math.PI);           // tapered
-      var target = waveY + sample * ampCap * env;
-      // Slow exponential follow — ribbon is calm compared to the wave.
-      lyricWaveBuf[i] += (target - lyricWaveBuf[i]) * 0.035;
-      if (lyricWaveBuf[i] < yMin) lyricWaveBuf[i] = yMin;
-      if (lyricWaveBuf[i] > yMax) lyricWaveBuf[i] = yMax;
+    var ampCap = Math.min(h * 0.035, 30 * dpr);
+    for (var strip = 0; strip < 2; strip++) {
+      var buf = lyricWaveBufs[strip];
+      var anchorY = h * (0.5 + (strip === 0 ? -LYRIC_STRIP_OFFSET : LYRIC_STRIP_OFFSET));
+      var yMin = anchorY - ampCap * 1.6;
+      var yMax = anchorY + ampCap * 1.6;
+      // Strips phase-shift slightly: cyan reads a time-offset sample so
+      // the two strips don't undulate identically (feels more alive).
+      var phaseShift = strip === 1 ? 0.35 : 0;
+      for (var i = 0; i < samples; i++) {
+        var frac = i / (samples - 1);
+        var shifted = Math.max(0, Math.min(1, frac + phaseShift * 0.08));
+        var binIdx = Math.floor(shifted * (dataArray.length - 1));
+        var sample = (dataArray[binIdx] - 128) / 128;
+        var env = Math.sin(frac * Math.PI);
+        var target = anchorY + sample * ampCap * env;
+        buf[i] += (target - buf[i]) * 0.035;
+        if (buf[i] < yMin) buf[i] = yMin;
+        if (buf[i] > yMax) buf[i] = yMax;
+      }
     }
   }
 
-  function sampleLyricWave(px, w, h) {
-    if (!lyricWaveBuf || !lyricWaveBuf.length) return h * 0.5;
+  function sampleLyricWave(px, w, h, stripIdx) {
+    var buf = lyricWaveBufs[stripIdx || 0];
+    if (!buf || !buf.length) {
+      return h * (0.5 + ((stripIdx || 0) === 0 ? -LYRIC_STRIP_OFFSET : LYRIC_STRIP_OFFSET));
+    }
     var frac = Math.max(0, Math.min(1, px / w));
-    var idxF = frac * (lyricWaveBuf.length - 1);
+    var idxF = frac * (buf.length - 1);
     var i0 = Math.floor(idxF);
-    var i1 = Math.min(lyricWaveBuf.length - 1, i0 + 1);
+    var i1 = Math.min(buf.length - 1, i0 + 1);
     var f = idxF - i0;
-    return lyricWaveBuf[i0] * (1 - f) + lyricWaveBuf[i1] * f;
+    return buf[i0] * (1 - f) + buf[i1] * f;
   }
 
   // ── RAIN CONDUCTOR — aim drops at singing words ──────
@@ -1070,18 +1096,19 @@
         // Saturate reveal faster — primaries should fully light the letter.
         hitLetter.revealed = Math.min(1, hitLetter.revealed + 0.75 + d.brightness * 0.25);
         s.splashEnergy = Math.min(1, s.splashEnergy + 0.15);
-        spawnSplashParticles(d.x, d.targetY, d.brightness, dpr, w, h);
+        spawnSplashParticles(d.x, d.targetY, d.brightness, dpr, w, h, s.stripIdx | 0);
       }
     }
   }
 
   // ── SPLASH PARTICLES + STAR PROMOTION ────────────────
-  function spawnSplashParticles(cx, cy, energy, dpr, w, h) {
+  function spawnSplashParticles(cx, cy, energy, dpr, w, h, stripIdx) {
     var count = 10 + Math.floor(energy * 16);
+    var isCyan = (stripIdx | 0) === 1;
     for (var i = 0; i < count; i++) {
       // Initial burst outward + slight upward bias (splash)
-      var angle = -Math.PI + (Math.random() - 0.5) * Math.PI * 0.7; // mostly upward/horizontal
-      if (Math.random() < 0.35) angle = Math.random() * Math.PI * 2; // some omnidirectional
+      var angle = -Math.PI + (Math.random() - 0.5) * Math.PI * 0.7;
+      if (Math.random() < 0.35) angle = Math.random() * Math.PI * 2;
       var speed = (2 + Math.random() * 5) * dpr * (0.6 + energy);
       splashParticles.push({
         x: cx, y: cy,
@@ -1091,9 +1118,8 @@
         life: 1,
         decay: 0.01 + Math.random() * 0.015,
         r: (0.9 + Math.random() * 1.6) * dpr,
+        isCyan: isCyan,          // inherit from sprite — amber or cyan splash
         promoted: false,
-        // Some particles will be promoted to stars when their life hits
-        // this threshold. Bigger = hang around as ink longer before warping.
         promoteAt: 0.55 + Math.random() * 0.25,
         promoteChance: 0.35,
       });
@@ -1114,13 +1140,12 @@
       if (p.life <= 0) { splashParticles.splice(i, 1); continue; }
 
       // Promotion to star: once per particle, some fraction get warped
-      // into the starfield and zoom toward the camera. Works by inserting
-      // a new star at the screen-space (p.x, p.y) with an appropriate z,
-      // such that projection lands at that screen coord.
+      // into the starfield and zoom toward the camera. Strip color flows
+      // through — amber splash → amber-ish (white) star, cyan splash →
+      // cyan star. Makes the starfield "become" the lyric colors.
       if (!p.promoted && p.life < p.promoteAt) {
         p.promoted = true;
         if (Math.random() < p.promoteChance) {
-          // Back-solve for star world coords given screen pos + chosen z.
           var focalLen = Math.min(w, h) * 0.35;
           var startZ = STAR_DEPTH * (0.45 + Math.random() * 0.25);
           var worldX = (p.x - w * 0.5) * startZ / focalLen;
@@ -1129,10 +1154,9 @@
             x: worldX,
             y: worldY,
             z: startZ,
-            isCyan: Math.random() < 0.25,
+            isCyan: p.isCyan,
             baseAlpha: 0.7 + Math.random() * 0.3,
           });
-          // End this particle when it converts.
           splashParticles.splice(i, 1);
           continue;
         }
@@ -1142,6 +1166,8 @@
       c.arc(p.x, p.y, p.r * Math.max(0.3, p.life), 0, Math.PI * 2);
       if (mT > 0.5) {
         c.fillStyle = 'rgba(180,255,180,' + (p.life * 0.9) + ')';
+      } else if (p.isCyan) {
+        c.fillStyle = 'rgba(180,235,245,' + (p.life * 0.85) + ')';
       } else {
         c.fillStyle = 'rgba(255,232,180,' + (p.life * 0.85) + ')';
       }
@@ -1164,7 +1190,20 @@
       if (s.x + s.totalW < -20 || s.x > w + 20) continue;
       c.font = '500 ' + s.fontPx + 'px ' + LYRIC_FONT;
 
-      // Iterate letters: invisible at reveal=0, glowing amber at reveal=1.
+      // Per-strip colors (matrix mode folds both to green).
+      // Strip 0 = amber (synth); strip 1 = cyan (machine).
+      var glowRGB, fillRGB;
+      if (mT > 0.5) {
+        glowRGB = '120,255,140';
+        fillRGB = '180,255,180';
+      } else if (s.stripIdx === 1) {
+        glowRGB = '78,201,212';
+        fillRGB = '188,238,245';
+      } else {
+        glowRGB = '232,184,88';
+        fillRGB = '255,232,188';
+      }
+
       for (var li = 0; li < s.letters.length; li++) {
         var L = s.letters[li];
         var rev = L.revealed;
@@ -1172,21 +1211,16 @@
         var lx = s.x + L.x;
         var ly = s.y + L.y;
 
-        // Fade reveal slowly over time so a splashed word eventually
-        // returns to ink (poetic + keeps the screen from filling).
+        // Fade reveal slowly over time — splashed words eventually return
+        // to ink, screen stays readable.
         L.revealed = Math.max(0, L.revealed - 0.0025);
 
         var amberA = Math.min(1, rev * 1.1) * expand;
         var glowR = 18 * dpr * rev;
 
-        // Amber glow pass
-        c.shadowColor = mT > 0.5
-          ? 'rgba(120,255,140,' + (amberA * 0.85) + ')'
-          : 'rgba(232,184,88,' + (amberA * 0.85) + ')';
+        c.shadowColor = 'rgba(' + glowRGB + ',' + (amberA * 0.85) + ')';
         c.shadowBlur = glowR;
-        c.fillStyle = mT > 0.5
-          ? 'rgba(180,255,180,' + (amberA * 0.95) + ')'
-          : 'rgba(255,232,188,' + (amberA * 0.95) + ')';
+        c.fillStyle = 'rgba(' + fillRGB + ',' + (amberA * 0.95) + ')';
         c.fillText(L.ch, lx, ly);
         c.shadowBlur = 0;
       }
