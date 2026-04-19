@@ -30,7 +30,7 @@
     'fork-at-the-pass.html':                      { title: 'Fork at the PASS',        group: 'Canon',         dark: false },
     'love-as-a-function.html':                    { title: 'Love as a Function',      group: 'Canon',         dark: false },
     'the-last-sessions-insufficient-data.html':   { title: 'The Last Sessions',       group: 'Canon',         dark: false },
-    'visualizer.html':                            { title: 'Signal Visualizer',       group: 'Transmissions', dark: true  },
+    'visualizer.html':                            { title: 'Lyrics + Visuals',        group: 'Transmissions', dark: true  },
     'waitlist.html':                              { title: 'Join the Waitlist',       group: 'Transmissions', dark: true  },
     '_lyrics-preview.html':                       { title: 'Lyrics (preview)',        group: 'Transmissions', dark: true, hidden: true },
     '_labeler.html':                              { title: 'Section Labeler',         group: 'Transmissions', dark: true, hidden: true },
@@ -122,6 +122,7 @@
   var plinkoSmoothed = [];   // fast follower: current energy per column (0-1)
   var plinkoSlow = [];       // slow baseline: recent average per column (0-1)
   var plinkoCooldown = [];   // cooldown timer per column in ms
+  var plinkoSustainAcc = []; // sustain-trickle accumulator per column (fractional drops)
 
   // ── MATRIX EASTER EGG STATE ──────────────────────────
   let matrixMode = false;
@@ -156,17 +157,21 @@
     chunkCursor: 0,       // next chunk index to spawn
   };
 
-  // Spatial packing: 6 y-bands above + below center, skipping the
-  // singularity's glow band (0.42-0.58), which is reserved for rare
-  // KEY PHRASES that get centered big-dark treatment.
-  // Top bands warm (amber/synth), bottom bands cool (cyan/machine) —
-  // spatial intuition that matches the brand signal mapping.
-  var LYRIC_BANDS_Y = [0.22, 0.32, 0.40, 0.60, 0.68, 0.78];
+  // Spatial packing: all lanes live in the SOCIAL CAPTIONS ZONE —
+  // bottom-middle of the viewport, where humans are already trained
+  // to read on-screen text (TikTok/IG/YouTube captions). The center
+  // and top are reserved for rain + singularity; lyrics never go
+  // anywhere else. Four lanes stacked inside 0.62–0.84h, with the
+  // bottom two biased amber (warm/human) and top two cyan (cool).
+  var LYRIC_BANDS_Y = [0.66, 0.72, 0.78, 0.84];
   var LYRIC_BANDS_N = LYRIC_BANDS_Y.length;
   var lyricWaveBufs = new Array(LYRIC_BANDS_N);
   var lyricWaveBufStride = 40;
   // Band color: top 3 amber, bottom 3 cyan.
-  function bandIsCyan(band) { return band >= LYRIC_BANDS_N / 2; }
+  // In the captions zone, higher bands (closer to center of screen,
+  // smaller index) are cyan/cool; lower bands (closer to the player)
+  // are amber/warm. Palette approaches the viewer.
+  function bandIsCyan(band) { return band < LYRIC_BANDS_N / 2; }
 
   // Splash particles (distinct from the existing `particles` array so we
   // can cheaply promote a fraction of them into `stars` without polluting
@@ -462,12 +467,14 @@
           }
 
           if (chB.isKey) {
-            // Key phrase: reserve center. If center overlaps another key,
-            // fall back to eclipse.
+            // Key phrase: reserved spot near the top of the captions
+            // zone (slightly above the ribbon lanes so it reads as
+            // elevated emphasis). NEVER at screen center — the
+            // singularity area is off-limits for lyrics.
             if (anyOverlap(centerOccupancy, chB.startT, chB.endT)) {
               chB.placement = { kind: 'eclipse' };
             } else {
-              chB.placement = { kind: 'key', yFrac: 0.5 };
+              chB.placement = { kind: 'key', yFrac: 0.60 };
               centerOccupancy.push({ startT: chB.startT, endT: chB.endT });
             }
             continue;
@@ -501,18 +508,11 @@
             chB.placement = { kind: 'eclipse' };
           } else {
             // If direction gave a preferred order, respect it (first free
-            // wins). Otherwise pick closest-to-center for visual balance.
-            var pick;
-            if (chB.directedPreferBands && chB.directedPreferBands.length) {
-              pick = free[0];
-            } else {
-              pick = free[0];
-              var pickDist = Math.abs(LYRIC_BANDS_Y[pick] - 0.5);
-              for (var fi = 1; fi < free.length; fi++) {
-                var d = Math.abs(LYRIC_BANDS_Y[free[fi]] - 0.5);
-                if (d < pickDist) { pick = free[fi]; pickDist = d; }
-              }
-            }
+            // wins). Otherwise just take the first free band in the
+            // rotated order — since all bands live in the narrow
+            // captions zone now, "closest to center" would collapse
+            // everything onto band 0; rotation produces better spread.
+            var pick = free[0];
             chB.placement = {
               kind: 'ribbon',
               band: pick,
@@ -925,6 +925,7 @@
     plinkoSmoothed = [];
     plinkoSlow = [];
     plinkoCooldown = [];
+    plinkoSustainAcc = [];
     for (var i = 0; i < PLINKO_COLS; i++) {
       // ONSET thresholds (delta = fast - slow). These gate how much a band
       // must rise above its own recent baseline before a drop fires. Bass
@@ -940,6 +941,7 @@
       plinkoSmoothed.push(0);
       plinkoSlow.push(0);
       plinkoCooldown.push(0);
+      plinkoSustainAcc.push(0);
     }
   }
   initPlinko();
@@ -1002,6 +1004,42 @@
         // to get its own drop, not a burst. Bass=slowest, highs=fastest.
         plinkoCooldown[i] = i < 25 ? 260 : i < 50 ? 160 : 140;
       }
+
+      // ── SUSTAIN TRICKLE ──
+      // Onset detection alone shows only attacks. Held notes — a sustained
+      // chord, a long vocal tone, a synth pad — go invisible. Sustain
+      // trickle fires small, short, dim drops proportional to current
+      // smoothed energy so the "history" of held energy is visible as
+      // falling texture. Rate scales with energy above the noise floor;
+      // below the floor, nothing fires (silence stays silent).
+      var sustainEnergy = plinkoSmoothed[i] - 0.08;
+      if (sustainEnergy > 0) {
+        // Emit rate: up to ~4 trickles/sec at peak sustain. Per-frame
+        // accumulator; floor gate naturally throttles quiet columns.
+        plinkoSustainAcc[i] += sustainEnergy * sustainEnergy * 0.12;
+        if (plinkoSustainAcc[i] >= 1) {
+          plinkoSustainAcc[i] -= 1;
+          var sBright = Math.min(0.7, sustainEnergy * 1.2);
+          var sLen = 2 + Math.floor(Math.random() * 3);
+          var sChars = [];
+          for (var sj = 0; sj < sLen; sj++) {
+            sChars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
+          }
+          plinkoDrops.push({
+            col: i,
+            x: i * colW + colW * 0.5,
+            y: 0,
+            speed: (0.9 + sBright * 1.6) * dpr,
+            len: sLen,
+            chars: sChars,
+            life: 0.7,               // shorter visible time than onset drops
+            brightness: sBright * 0.55,
+            sustain: true,           // mark so renderer can dim further
+          });
+        }
+      } else {
+        plinkoSustainAcc[i] *= 0.9;  // decay when silent
+      }
     }
   }
 
@@ -1017,7 +1055,9 @@
     for (var i = plinkoDrops.length - 1; i >= 0; i--) {
       var d = plinkoDrops[i];
       d.y += d.speed;
-      d.life -= 0.007;  // ~2.4s lifespan — clear the screen between musical events
+      // Onset drops get ~2.4s lifespan; sustain trickles decay slower so
+      // held notes leave a visible falling "history" before fading.
+      d.life -= d.sustain ? 0.004 : 0.007;
 
       // Remove if off screen or dead
       if (d.y - d.len * fontSize > h || d.life <= 0) {
@@ -1250,11 +1290,14 @@
         continue;
       }
 
-      // KEY phrases are centered + stationary, not scrolling. Skip the
-      // ribbon anchor math entirely. y = 0.5h fixed.
+      // KEY phrases are horizontally centered + stationary. Their y
+      // comes from placement.yFrac (top of the captions zone, NOT
+      // screen center — the singularity area is off-limits).
       if (s.isKey) {
+        var keyYFrac = (s.placement && typeof s.placement.yFrac === 'number')
+          ? s.placement.yFrac : 0.60;
         s.x = (w - s.totalW) * 0.5;
-        s.y = h * 0.5 - s.fontPx * 0.5;
+        s.y = h * keyYFrac - s.fontPx * 0.5;
         continue;
       }
 
@@ -1270,16 +1313,39 @@
         var posAtEnd = anchorX - sungX;
         s.x = posAtEnd * (1 - tailU) + (-s.totalW) * tailU;
       } else {
+        // In sung window. Previous behavior: hard-pin currently-sung
+        // letter at the anchor. This FROZE the ribbon during internal
+        // silences (sub-word pauses), breaking the sense of cadence.
+        //
+        // New behavior: INTERPOLATE between letter positions so the
+        // ribbon glides smoothly through the phrase. If audioTime falls
+        // between letter A (sungAt tA) and letter B (sungAt tB), the
+        // anchor target is lerp(A.x, B.x, (t-tA)/(tB-tA)). Letters
+        // arrive at the anchor exactly on their sung beat, and between
+        // beats the ribbon drifts at a rate proportional to the local
+        // phrase density. Cadence becomes felt instead of stuttered.
         if (typeof s._sungIdx !== 'number') s._sungIdx = 0;
         while (s._sungIdx < s.letters.length - 1 &&
-               s.letters[s._sungIdx].sungAt < audioTime) {
+               s.letters[s._sungIdx + 1].sungAt <= audioTime) {
           s._sungIdx++;
         }
-        while (s._sungIdx > 0 && s.letters[s._sungIdx - 1].sungAt >= audioTime) {
+        while (s._sungIdx > 0 && s.letters[s._sungIdx].sungAt > audioTime) {
           s._sungIdx--;
         }
-        var target = s.letters[s._sungIdx];
-        sungX = target.x + target.w * 0.5;
+        var here = s.letters[s._sungIdx];
+        var hereX = here.x + here.w * 0.5;
+        var next = s._sungIdx + 1 < s.letters.length ? s.letters[s._sungIdx + 1] : null;
+        if (next) {
+          var span = Math.max(0.001, next.sungAt - here.sungAt);
+          var u = Math.max(0, Math.min(1, (audioTime - here.sungAt) / span));
+          var nextX = next.x + next.w * 0.5;
+          sungX = hereX + (nextX - hereX) * u;
+        } else {
+          // Last letter — glide out toward its natural duration.
+          var lastDur = Math.max(0.001, s.tEnd - here.sungAt);
+          var uLast = Math.max(0, Math.min(1, (audioTime - here.sungAt) / lastDur));
+          sungX = hereX + (s.totalW - hereX) * uLast * 0.35;
+        }
         s.x = anchorX - sungX;
       }
       var cx = s.x + s.totalW * 0.5;
@@ -1647,8 +1713,9 @@
         c.font = 'italic 400 ' + fontPx + 'px "Fraunces", Georgia, serif';
       }
 
+      // Eclipse lives in the captions zone, not screen center.
       var cx = w * 0.5;
-      var cy = h * 0.5;
+      var cy = h * 0.70;
 
       c.shadowColor = 'rgba(255,240,220,' + (alpha * 0.7) + ')';
       c.shadowBlur = 24 * dpr;
@@ -1831,7 +1898,10 @@
     // Slow-follow wave buffer → sprite layout → aim drops at sung words.
     // Must run BEFORE updatePlinko so splash detection has current drop
     // positions AFTER plinko integrates.
-    if (playing && expand > 0.05 && lyricState.chunks) {
+    // Gated on current page — lyrics only appear on the Lyrics + Visuals
+    // page, not on thesis/landing/etc where the canvas is decorative.
+    var lyricsOnThisPage = currentPage === 'visualizer.html';
+    if (playing && expand > 0.05 && lyricState.chunks && lyricsOnThisPage) {
       var audioTime = audio.currentTime || 0;
       updateLyricWaveBuf(w, h, dpr);
       updateLyricSprites(audioTime, c, w, h, dpr);
@@ -1930,63 +2000,9 @@
       }
     }
 
-    // ── Dark-matter filaments (drift with phase, breathe with mids) ──
-    // Each filament drifts via its own phase offset (slow, independent
-    // currents) and flexes by a per-control-point sine wave so the curve
-    // gently undulates rather than translating rigidly. Alpha pulses with
-    // mid-range energy so filaments breathe with the mix.
-    if (expand > 0.1 && cosmosOpacity > 0.05) {
-      var filBreathe = 0.6 + mid * 0.8 + total * 0.3;   // alpha multiplier
-      var filFlex = (0.6 + mid * 1.4) * dpr;             // curve-deform amplitude in px
-      // Gentle full-filament drift (px), offset per filament via seed
-      function filDrift(seed, ampX, ampY) {
-        return [
-          Math.sin(phase * 0.22 + seed) * ampX * dpr,
-          Math.cos(phase * 0.17 + seed * 1.3) * ampY * dpr,
-        ];
-      }
-      // Per-control-point undulation
-      function fx(x, i, seed) { return x + Math.sin(phase * 0.9 + i * 0.7 + seed) * filFlex; }
-      function fy(y, i, seed) { return y + Math.cos(phase * 1.1 + i * 0.9 + seed) * filFlex * 0.8; }
+    // Dark-matter filaments removed per creative direction 2026-04-19 —
+    // the static horizontal streaks cluttered the reading zone.
 
-      // Filament 1 — upper left sweep
-      var d1 = filDrift(0.0, 6, 3);
-      c.save(); c.translate(d1[0], d1[1]);
-      c.globalAlpha = 0.25 * expand * cosmosOpacity * filBreathe;
-      c.strokeStyle = '#6a5a7a'; c.lineWidth = 0.6 * dpr; c.lineCap = 'round';
-      c.beginPath();
-      c.moveTo(fx(w*0.05, 0, 0.0), fy(h*0.15, 0, 0.0));
-      c.bezierCurveTo(fx(w*0.12,1,0.0),fy(h*0.17,1,0.0), fx(w*0.24,2,0.0),fy(h*0.19,2,0.0), fx(w*0.33,3,0.0),fy(h*0.18,3,0.0));
-      c.bezierCurveTo(fx(w*0.38,4,0.0),fy(h*0.17,4,0.0), fx(w*0.43,5,0.0),fy(h*0.19,5,0.0), fx(w*0.48,6,0.0),fy(h*0.22,6,0.0));
-      c.stroke();
-      c.restore();
-
-      // Filament 2 — lower left drift
-      var d2 = filDrift(2.1, 5, 2.5);
-      c.save(); c.translate(d2[0], d2[1]);
-      c.globalAlpha = 0.2 * expand * cosmosOpacity * filBreathe;
-      c.strokeStyle = '#5c5068'; c.lineWidth = 0.5 * dpr;
-      c.beginPath();
-      c.moveTo(fx(w*0.08, 0, 2.1), fy(h*0.68, 0, 2.1));
-      c.bezierCurveTo(fx(w*0.18,1,2.1),fy(h*0.67,1,2.1), fx(w*0.26,2,2.1),fy(h*0.66,2,2.1), fx(w*0.35,3,2.1),fy(h*0.64,3,2.1));
-      c.lineTo(fx(w*0.37, 4, 2.1), fy(h*0.63, 4, 2.1));
-      c.bezierCurveTo(fx(w*0.41,5,2.1),fy(h*0.62,5,2.1), fx(w*0.45,6,2.1),fy(h*0.61,6,2.1), fx(w*0.50,7,2.1),fy(h*0.61,7,2.1));
-      c.stroke();
-      c.restore();
-
-      // Filament 3 — upper right wisp
-      var d3 = filDrift(4.4, 4, 2);
-      c.save(); c.translate(d3[0], d3[1]);
-      c.globalAlpha = 0.18 * expand * cosmosOpacity * filBreathe;
-      c.strokeStyle = '#8b6a3a'; c.lineWidth = 0.5 * dpr;
-      c.beginPath();
-      c.moveTo(fx(w*0.56, 0, 4.4), fy(h*0.08, 0, 4.4));
-      c.bezierCurveTo(fx(w*0.60,1,4.4),fy(h*0.11,1,4.4), fx(w*0.64,2,4.4),fy(h*0.15,2,4.4), fx(w*0.66,3,4.4),fy(h*0.21,3,4.4));
-      c.stroke();
-      c.restore();
-
-      c.globalAlpha = 1;
-    }
 
     // ── Hot event (beat-synced) ──
     var ex = w * 0.5, ey = h * 0.5;
@@ -2038,22 +2054,10 @@
     c.beginPath(); c.arc(ex, ey, singR * 2, 0, Math.PI * 2);
     c.fillStyle = 'rgba(' + singWhite + ',' + ((0.2 + bass * 0.15) * glowDim) + ')'; c.fill();
 
-    // Diffraction spikes
-    var spikeAlpha = expand;
-    if (spikeAlpha > 0.05) {
-      var spikeAngle = total * 0.3;
-      var sLen = (20 + bass * 40 + subBass * 20 + beat.pulse * 25) * dpr * expand;
-      c.strokeStyle = 'rgba(' + spikeCol + ',' + ((0.25 + bass * 0.35) * spikeAlpha) + ')';
-      c.lineWidth = (0.5 + bass * 0.5) * dpr;
-      for (var a = 0; a < 4; a++) {
-        var ang = spikeAngle + a * Math.PI / 2;
-        var len = a % 2 === 0 ? sLen : sLen * 0.65;
-        c.beginPath();
-        c.moveTo(ex - Math.cos(ang) * len, ey - Math.sin(ang) * len);
-        c.lineTo(ex + Math.cos(ang) * len, ey + Math.sin(ang) * len);
-        c.stroke();
-      }
-    }
+    // Diffraction spikes removed per creative direction 2026-04-19 —
+    // the X over the singularity read as a plus sign / ornament and
+    // didn't belong on the lyric page.
+
 
     // ── Particles ──
     for (var pi = particles.length - 1; pi >= 0; pi--) {
@@ -2077,15 +2081,17 @@
     }
 
     // ── Lyric ribbon (revealed glyphs) + splash particles ──
-    // Drawn under the signal waveforms so the amber wave kisses the
-    // ribbon visually. Eclipse (overflow) lines flash centered italic.
-    if (expand > 0.05 && lyricState.sprites.length) {
+    // Lyrics only render on the Lyrics + Visuals page. Splash particles
+    // likewise only exist there (conductRain is gated upstream).
+    if (expand > 0.05 && lyricsOnThisPage && lyricState.sprites.length) {
       drawLyricRibbon(c, w, h, dpr, expand);
     }
-    if (expand > 0.05 && lyricState.chunks) {
+    if (expand > 0.05 && lyricsOnThisPage && lyricState.chunks) {
       drawEclipses(c, audio.currentTime || 0, w, h, dpr, expand);
     }
-    drawAndPromoteSplashParticles(c, w, h, dpr);
+    if (lyricsOnThisPage) {
+      drawAndPromoteSplashParticles(c, w, h, dpr);
+    }
 
     // ── Signal waveforms ──
     // These are *signal* — they visualize playing audio. When nothing is
@@ -2652,6 +2658,7 @@
     opts = opts || {};
     if (!PAGE_META[page]) { console.warn('unknown page', page); return; }
     if (page === currentPage && !opts.force) return;
+    var leavingVisualizer = currentPage === 'visualizer.html' && page !== 'visualizer.html';
     currentPage = page;
     loader.classList.add('on');
 
@@ -2659,6 +2666,16 @@
     beatSubscribed = false;
     tintTargetSynth = null;
     tintTargetMachine = null;
+
+    // Leaving the lyrics page → flush ribbon state so it doesn't snap on
+    // return. The cursor will rebuild from current audioTime next frame
+    // when we re-enter.
+    if (leavingVisualizer) {
+      lyricState.sprites = [];
+      lyricState.chunkCursor = 0;
+      splashParticles.length = 0;
+      plinkoDrops.length = 0;
+    }
 
     // Update nav state
     document.querySelectorAll('.nav-link').forEach(function(el) {
