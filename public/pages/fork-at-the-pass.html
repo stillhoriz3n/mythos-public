@@ -117,45 +117,51 @@ footer .cursor{
   </marker>
   <style>
     /* ─── REACTIVE BINDINGS — the figure breathes with the song ────────────
+       Strategy: nodes are BRIGHT by default (~0.9 opacity) so the figure
+       reads as fully alive at rest.  Bands ADD energy (extra brightness +
+       drop-shadow halo) on top of that baseline.  At silence (--band-N=0)
+       you see the static figure; with music, it pulses brighter.
+
        SVG inherits document-level CSS vars: --band-0..9, --beat-pulse,
-       --beat-phase, --beat-bar-pulse, --beat-bar-phase.  All effects
-       degrade to a static fallback when a var is unset. */
+       --beat-phase, --beat-bar-pulse, --beat-bar-phase. */
 
-    /* Apex singularities — pulse on every beat (the singularity *is* the beat) */
-    .pump-apex { transform-origin: center; transform-box: fill-box; transition: opacity 60ms linear, filter 60ms linear; }
-    .pump-apex.intent { opacity: calc(0.85 + 0.15 * var(--beat-pulse, 0));
-                        filter: drop-shadow(0 0 calc(2px + 14px * var(--beat-pulse, 0)) #e8b85a); }
-    .pump-apex.intel  { opacity: calc(0.85 + 0.15 * var(--beat-pulse, 0));
-                        filter: drop-shadow(0 0 calc(2px + 14px * var(--beat-pulse, 0)) #5ab6e8); }
+    /* Apex singularities — full bright at rest, pulse hotter on every beat */
+    .pump-apex { transition: filter 60ms linear; }
+    .pump-apex.intent { filter: drop-shadow(0 0 calc(3px + 18px * var(--beat-pulse, 0)) #e8b85a); }
+    .pump-apex.intel  { filter: drop-shadow(0 0 calc(3px + 18px * var(--beat-pulse, 0)) #5ab6e8); }
 
-    /* Tier-2 nodes (3 per side) read the mid-band trio */
-    .pump-mid { transition: opacity 70ms linear, filter 70ms linear; }
-    .pump-mid.b3 { opacity: calc(0.55 + 0.45 * var(--band-3, 0.6)); filter: drop-shadow(0 0 calc(8px * var(--band-3, 0)) currentColor); }
-    .pump-mid.b4 { opacity: calc(0.55 + 0.45 * var(--band-4, 0.6)); filter: drop-shadow(0 0 calc(8px * var(--band-4, 0)) currentColor); }
-    .pump-mid.b5 { opacity: calc(0.55 + 0.45 * var(--band-5, 0.6)); filter: drop-shadow(0 0 calc(8px * var(--band-5, 0)) currentColor); }
+    /* Tier-2 nodes (3 per side) — bright at rest, drop-shadow halo grows
+       with the mid-band trio */
+    .pump-mid { transition: filter 70ms linear; }
+    .pump-mid.b3 { filter: drop-shadow(0 0 calc(2px + 12px * var(--band-3, 0)) currentColor); }
+    .pump-mid.b4 { filter: drop-shadow(0 0 calc(2px + 12px * var(--band-4, 0)) currentColor); }
+    .pump-mid.b5 { filter: drop-shadow(0 0 calc(2px + 12px * var(--band-5, 0)) currentColor); }
 
     /* Tier-3 nodes (9 per side) bind 1:1 across the spectrum — each base
        node lights on its own band, so the row reads as a 9-band spectrum
-       analyser whether you're looking at the intent base or intel base. */
-    .pump-base { transition: opacity 70ms linear, filter 70ms linear; }
-    .pump-base.b0 { opacity: calc(0.45 + 0.55 * var(--band-0, 0.5)); filter: drop-shadow(0 0 calc(6px * var(--band-0, 0)) currentColor); }
-    .pump-base.b1 { opacity: calc(0.45 + 0.55 * var(--band-1, 0.5)); filter: drop-shadow(0 0 calc(6px * var(--band-1, 0)) currentColor); }
-    .pump-base.b2 { opacity: calc(0.45 + 0.55 * var(--band-2, 0.5)); filter: drop-shadow(0 0 calc(6px * var(--band-2, 0)) currentColor); }
-    .pump-base.b3 { opacity: calc(0.45 + 0.55 * var(--band-3, 0.5)); filter: drop-shadow(0 0 calc(6px * var(--band-3, 0)) currentColor); }
-    .pump-base.b4 { opacity: calc(0.45 + 0.55 * var(--band-4, 0.5)); filter: drop-shadow(0 0 calc(6px * var(--band-4, 0)) currentColor); }
-    .pump-base.b5 { opacity: calc(0.45 + 0.55 * var(--band-5, 0.5)); filter: drop-shadow(0 0 calc(6px * var(--band-5, 0)) currentColor); }
-    .pump-base.b6 { opacity: calc(0.45 + 0.55 * var(--band-6, 0.5)); filter: drop-shadow(0 0 calc(6px * var(--band-6, 0)) currentColor); }
-    .pump-base.b7 { opacity: calc(0.45 + 0.55 * var(--band-7, 0.5)); filter: drop-shadow(0 0 calc(6px * var(--band-7, 0)) currentColor); }
-    .pump-base.b8 { opacity: calc(0.45 + 0.55 * var(--band-8, 0.5)); filter: drop-shadow(0 0 calc(6px * var(--band-8, 0)) currentColor); }
+       analyser.  Static bright at rest; halo grows with band energy. */
+    .pump-base { transition: filter 70ms linear; }
+    .pump-base.b0 { filter: drop-shadow(0 0 calc(1px + 9px * var(--band-0, 0)) currentColor); }
+    .pump-base.b1 { filter: drop-shadow(0 0 calc(1px + 9px * var(--band-1, 0)) currentColor); }
+    .pump-base.b2 { filter: drop-shadow(0 0 calc(1px + 9px * var(--band-2, 0)) currentColor); }
+    .pump-base.b3 { filter: drop-shadow(0 0 calc(1px + 9px * var(--band-3, 0)) currentColor); }
+    .pump-base.b4 { filter: drop-shadow(0 0 calc(1px + 9px * var(--band-4, 0)) currentColor); }
+    .pump-base.b5 { filter: drop-shadow(0 0 calc(1px + 9px * var(--band-5, 0)) currentColor); }
+    .pump-base.b6 { filter: drop-shadow(0 0 calc(1px + 9px * var(--band-6, 0)) currentColor); }
+    .pump-base.b7 { filter: drop-shadow(0 0 calc(1px + 9px * var(--band-7, 0)) currentColor); }
+    .pump-base.b8 { filter: drop-shadow(0 0 calc(1px + 9px * var(--band-8, 0)) currentColor); }
 
-    /* Arrow groups — fan-out / converge breathe with the beat-bar pulse
-       (a structural rhythm — once per bar, the whole flow animates). */
-    .pump-flow { transition: opacity 80ms linear; }
-    .pump-flow { opacity: calc(0.45 + 0.55 * var(--beat-bar-pulse, 0.5)); }
+    /* Arrow groups — fully visible at rest (so the flow is always legible),
+       brightness boosts on bar pulse so the flow surges once per bar. */
+    .pump-flow { transition: opacity 80ms linear, filter 80ms linear;
+                 opacity: calc(0.78 + 0.22 * var(--beat-bar-pulse, 0));
+                 filter: drop-shadow(0 0 calc(2px * var(--beat-bar-pulse, 0)) currentColor); }
+    .pump-flow.amber { color: #e8b85a; }
+    .pump-flow.cyan { color: #5ab6e8; }
 
-    /* Pyramid silhouette outlines — soft breathing on bar pulse */
-    .pump-frame { transition: opacity 80ms linear; opacity: calc(0.18 + 0.20 * var(--beat-bar-pulse, 0)); }
-    .pump-frame-fill { transition: opacity 80ms linear; opacity: calc(0.04 + 0.04 * var(--beat-bar-pulse, 0)); }
+    /* Pyramid silhouette outlines — visible at rest, gain a touch of glow on bar pulse */
+    .pump-frame { transition: opacity 80ms linear; opacity: calc(0.34 + 0.16 * var(--beat-bar-pulse, 0)); }
+    .pump-frame-fill { transition: opacity 80ms linear; opacity: calc(0.06 + 0.06 * var(--beat-bar-pulse, 0)); }
 
     /* The central seam ↻ glyph — rotates at bar rate */
     .pump-cycle { transform-origin: center; transform-box: fill-box; transform: rotate(calc(var(--beat-bar-phase, 0) * 360deg)); transition: transform 800ms cubic-bezier(.2,.8,.2,1); }
@@ -198,12 +204,12 @@ footer .cursor{
   <!-- TIER 2 — captains (three nodes) at x: -56, 0, +56  y=250.
        Each captain reads a different mid band — left=band-3, mid=band-4, right=band-5. -->
   <g color="#e8b85a">
-    <circle class="pump-mid b3" cx="-56" cy="250" r="11" fill="#e8b85a" filter="url(#halo)"/>
-    <circle class="pump-mid b4" cx="0"   cy="250" r="11" fill="#e8b85a" filter="url(#halo)"/>
-    <circle class="pump-mid b5" cx="56"  cy="250" r="11" fill="#e8b85a" filter="url(#halo)"/>
-    <circle class="pump-mid b3" cx="-56" cy="250" r="7" fill="#e8b85a"/>
-    <circle class="pump-mid b4" cx="0"   cy="250" r="7" fill="#e8b85a"/>
-    <circle class="pump-mid b5" cx="56"  cy="250" r="7" fill="#e8b85a"/>
+    <circle class="pump-mid b3" cx="-56" cy="250" r="11" fill="#e8b85a" opacity="0.18" filter="url(#halo)"/>
+    <circle class="pump-mid b4" cx="0"   cy="250" r="11" fill="#e8b85a" opacity="0.18" filter="url(#halo)"/>
+    <circle class="pump-mid b5" cx="56"  cy="250" r="11" fill="#e8b85a" opacity="0.18" filter="url(#halo)"/>
+    <circle class="pump-mid b3" cx="-56" cy="250" r="7" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-mid b4" cx="0"   cy="250" r="7" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-mid b5" cx="56"  cy="250" r="7" fill="#e8b85a" opacity="0.85"/>
     <text x="-160" y="254" text-anchor="end" fill="#f5f1e6" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" letter-spacing="0.14em">CAPTAIN</text>
     <text x="-160" y="268" text-anchor="end" fill="#78736a" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="0.06em">3 nodes · decompose &amp; route</text>
   </g>
@@ -211,27 +217,27 @@ footer .cursor{
   <!-- TIER 3 — NCOs (nine nodes).  Each base node reads its own band 0..8,
        so the row reads as a 9-band spectrum analyser at the foot of the pyramid. -->
   <g color="#e8b85a">
-    <circle class="pump-base b0" cx="-112" cy="388" r="5" fill="#e8b85a"/>
-    <circle class="pump-base b1" cx="-84"  cy="388" r="5" fill="#e8b85a"/>
-    <circle class="pump-base b2" cx="-56"  cy="388" r="5" fill="#e8b85a"/>
-    <circle class="pump-base b3" cx="-28"  cy="388" r="5" fill="#e8b85a"/>
-    <circle class="pump-base b4" cx="0"    cy="388" r="5" fill="#e8b85a"/>
-    <circle class="pump-base b5" cx="28"   cy="388" r="5" fill="#e8b85a"/>
-    <circle class="pump-base b6" cx="56"   cy="388" r="5" fill="#e8b85a"/>
-    <circle class="pump-base b7" cx="84"   cy="388" r="5" fill="#e8b85a"/>
-    <circle class="pump-base b8" cx="112"  cy="388" r="5" fill="#e8b85a"/>
+    <circle class="pump-base b0" cx="-112" cy="388" r="5" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-base b1" cx="-84"  cy="388" r="5" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-base b2" cx="-56"  cy="388" r="5" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-base b3" cx="-28"  cy="388" r="5" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-base b4" cx="0"    cy="388" r="5" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-base b5" cx="28"   cy="388" r="5" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-base b6" cx="56"   cy="388" r="5" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-base b7" cx="84"   cy="388" r="5" fill="#e8b85a" opacity="0.85"/>
+    <circle class="pump-base b8" cx="112"  cy="388" r="5" fill="#e8b85a" opacity="0.85"/>
     <text x="-160" y="392" text-anchor="end" fill="#f5f1e6" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" letter-spacing="0.14em">NCO</text>
     <text x="-160" y="406" text-anchor="end" fill="#78736a" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="0.06em">9 nodes · execute &amp; return</text>
   </g>
 
   <!-- FAN-OUT arrows: tier 1 → tier 2 (3 arrows) — flow on bar pulse -->
-  <g class="pump-flow" stroke="url(#intent-grad)" stroke-width="1.4" fill="none">
+  <g class="pump-flow amber" stroke="url(#intent-grad)" stroke-width="1.4" fill="none">
     <line x1="-3" y1="135" x2="-52" y2="237" marker-end="url(#arr-amber)"/>
     <line x1="0"  y1="135" x2="0"   y2="237" marker-end="url(#arr-amber)"/>
     <line x1="3"  y1="135" x2="52"  y2="237" marker-end="url(#arr-amber)"/>
   </g>
   <!-- FAN-OUT arrows: tier 2 → tier 3 (each captain emits 3 NCO tasks) -->
-  <g class="pump-flow" stroke="url(#intent-grad)" stroke-width="1.1" fill="none">
+  <g class="pump-flow amber" stroke="url(#intent-grad)" stroke-width="1.1" fill="none">
     <!-- left captain → -112,-84,-56 -->
     <line x1="-58" y1="259" x2="-110" y2="378" marker-end="url(#arr-amber)"/>
     <line x1="-56" y1="259" x2="-84"  y2="378" marker-end="url(#arr-amber)"/>
@@ -287,27 +293,27 @@ footer .cursor{
 
   <!-- TIER 3 — NCOs returning results (9 nodes, base) — 1:1 spectrum bind -->
   <g color="#5ab6e8">
-    <circle class="pump-base b0" cx="-112" cy="388" r="5" fill="#5ab6e8"/>
-    <circle class="pump-base b1" cx="-84"  cy="388" r="5" fill="#5ab6e8"/>
-    <circle class="pump-base b2" cx="-56"  cy="388" r="5" fill="#5ab6e8"/>
-    <circle class="pump-base b3" cx="-28"  cy="388" r="5" fill="#5ab6e8"/>
-    <circle class="pump-base b4" cx="0"    cy="388" r="5" fill="#5ab6e8"/>
-    <circle class="pump-base b5" cx="28"   cy="388" r="5" fill="#5ab6e8"/>
-    <circle class="pump-base b6" cx="56"   cy="388" r="5" fill="#5ab6e8"/>
-    <circle class="pump-base b7" cx="84"   cy="388" r="5" fill="#5ab6e8"/>
-    <circle class="pump-base b8" cx="112"  cy="388" r="5" fill="#5ab6e8"/>
+    <circle class="pump-base b0" cx="-112" cy="388" r="5" fill="#5ab6e8" opacity="0.7"/>
+    <circle class="pump-base b1" cx="-84"  cy="388" r="5" fill="#5ab6e8" opacity="0.7"/>
+    <circle class="pump-base b2" cx="-56"  cy="388" r="5" fill="#5ab6e8" opacity="0.7"/>
+    <circle class="pump-base b3" cx="-28"  cy="388" r="5" fill="#5ab6e8" opacity="0.7"/>
+    <circle class="pump-base b4" cx="0"    cy="388" r="5" fill="#5ab6e8" opacity="0.7"/>
+    <circle class="pump-base b5" cx="28"   cy="388" r="5" fill="#5ab6e8" opacity="0.7"/>
+    <circle class="pump-base b6" cx="56"   cy="388" r="5" fill="#5ab6e8" opacity="0.7"/>
+    <circle class="pump-base b7" cx="84"   cy="388" r="5" fill="#5ab6e8" opacity="0.7"/>
+    <circle class="pump-base b8" cx="112"  cy="388" r="5" fill="#5ab6e8" opacity="0.7"/>
     <text x="160" y="392" text-anchor="start" fill="#f5f1e6" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" letter-spacing="0.14em">RESULTS</text>
     <text x="160" y="406" text-anchor="start" fill="#78736a" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="0.06em">9 returns · raw output</text>
   </g>
 
   <!-- TIER 2 — captains aggregating (3 nodes) — mid-band trio -->
   <g color="#5ab6e8">
-    <circle class="pump-mid b3" cx="-56" cy="250" r="11" fill="#5ab6e8" filter="url(#halo)"/>
-    <circle class="pump-mid b4" cx="0"   cy="250" r="11" fill="#5ab6e8" filter="url(#halo)"/>
-    <circle class="pump-mid b5" cx="56"  cy="250" r="11" fill="#5ab6e8" filter="url(#halo)"/>
-    <circle class="pump-mid b3" cx="-56" cy="250" r="7" fill="#5ab6e8"/>
-    <circle class="pump-mid b4" cx="0"   cy="250" r="7" fill="#5ab6e8"/>
-    <circle class="pump-mid b5" cx="56"  cy="250" r="7" fill="#5ab6e8"/>
+    <circle class="pump-mid b3" cx="-56" cy="250" r="11" fill="#5ab6e8" opacity="0.18" filter="url(#halo)"/>
+    <circle class="pump-mid b4" cx="0"   cy="250" r="11" fill="#5ab6e8" opacity="0.18" filter="url(#halo)"/>
+    <circle class="pump-mid b5" cx="56"  cy="250" r="11" fill="#5ab6e8" opacity="0.18" filter="url(#halo)"/>
+    <circle class="pump-mid b3" cx="-56" cy="250" r="7" fill="#5ab6e8" opacity="0.85"/>
+    <circle class="pump-mid b4" cx="0"   cy="250" r="7" fill="#5ab6e8" opacity="0.85"/>
+    <circle class="pump-mid b5" cx="56"  cy="250" r="7" fill="#5ab6e8" opacity="0.85"/>
     <text x="160" y="254" text-anchor="start" fill="#f5f1e6" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" letter-spacing="0.14em">REPORTS</text>
     <text x="160" y="268" text-anchor="start" fill="#78736a" font-family="JetBrains Mono,monospace" font-size="9" letter-spacing="0.06em">3 syntheses · noise filtered</text>
   </g>
@@ -322,7 +328,7 @@ footer .cursor{
   </g>
 
   <!-- CONVERGE arrows: tier 3 → tier 2 — flow on bar pulse -->
-  <g class="pump-flow" stroke="url(#intel-grad)" stroke-width="1.1" fill="none">
+  <g class="pump-flow cyan" stroke="url(#intel-grad)" stroke-width="1.1" fill="none">
     <!-- → left captain (-56,250) -->
     <line x1="-110" y1="378" x2="-58" y2="262" marker-end="url(#arr-cyan)"/>
     <line x1="-84"  y1="378" x2="-56" y2="262" marker-end="url(#arr-cyan)"/>
@@ -337,7 +343,7 @@ footer .cursor{
     <line x1="110" y1="378" x2="58" y2="262" marker-end="url(#arr-cyan)"/>
   </g>
   <!-- CONVERGE arrows: tier 2 → tier 1 — flow on bar pulse -->
-  <g class="pump-flow" stroke="url(#intel-grad)" stroke-width="1.4" fill="none">
+  <g class="pump-flow cyan" stroke="url(#intel-grad)" stroke-width="1.4" fill="none">
     <line x1="-52" y1="240" x2="-3" y2="138" marker-end="url(#arr-cyan)"/>
     <line x1="0"   y1="240" x2="0"  y2="138" marker-end="url(#arr-cyan)"/>
     <line x1="52"  y1="240" x2="3"  y2="138" marker-end="url(#arr-cyan)"/>
