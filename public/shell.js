@@ -277,11 +277,13 @@
   var queueOpen = false;
   var selectedAlbum = null; // null = show all
 
-  function toggleQueue() {
+  function toggleQueue(side) {
     queueOpen = !queueOpen;
-    document.getElementById('queue-panel').classList.toggle('on', queueOpen);
+    var panel = document.getElementById('queue-panel');
+    panel.classList.toggle('on', queueOpen);
     document.getElementById('btn-queue').classList.toggle('on', queueOpen);
     if (queueOpen) {
+      panel.classList.toggle('left', side === 'left');
       renderAlbumSelector();
       renderQueue();
     }
@@ -373,7 +375,8 @@
     if (!queueOpen) return;
     var panel = document.getElementById('queue-panel');
     var btn = document.getElementById('btn-queue');
-    if (!panel.contains(e.target) && !btn.contains(e.target)) toggleQueue();
+    var art = document.querySelector('.player-art');
+    if (!panel.contains(e.target) && !btn.contains(e.target) && !(art && art.contains(e.target))) toggleQueue();
   });
 
   // ══════════════════════════════════════════════════════

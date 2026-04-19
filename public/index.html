@@ -369,7 +369,7 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
 /* Album browser panel */
 .queue-panel{
   position:absolute;
-  right:20px;bottom:calc(100% + 8px);
+  right:20px;left:auto;bottom:calc(100% + 8px);
   width:420px;max-height:70vh;
   background:rgba(8,7,13,.95);
   backdrop-filter:blur(16px);
@@ -384,6 +384,7 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
   z-index:120;
 }
 .queue-panel.on{opacity:1;pointer-events:auto;transform:translateY(0)}
+.queue-panel.left{right:auto;left:20px}
 
 /* Album selector — flex-shrink:0 prevents tracklist from squishing art */
 .album-selector{
@@ -684,7 +685,7 @@ html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-
   <!-- PLAYER -->
   <section class="player" role="region" aria-label="Audio player">
     <div class="player-info">
-      <div class="player-art" onclick="toggleQueue()" title="Browse albums">
+      <div class="player-art" onclick="toggleQueue('left')" title="Browse albums">
         <img id="art" src="music/cover-rr.png" alt="album art">
       </div>
       <div class="player-meta">
