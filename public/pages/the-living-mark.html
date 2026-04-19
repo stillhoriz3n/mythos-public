@@ -39,6 +39,7 @@ var ctx = canvas.getContext('2d');
 var W, H, cx, cy, dpr, scale;
 var t = 0;
 var mouseX = 0.5, mouseY = 0.5;
+var CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンMYTHOS01'.split('');
 
 function resize() {
   dpr = devicePixelRatio;
@@ -58,9 +59,6 @@ document.addEventListener('mousemove', function(e) {
   mouseX = e.clientX / window.innerWidth;
   mouseY = e.clientY / window.innerHeight;
 });
-
-// ── MATRIX RAIN CHARS (must be before resize() calls initRain) ──
-var CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンMYTHOS01'.split('');
 
 // ── STARS ──
 var stars = [];
