@@ -156,12 +156,19 @@
     lineCursor: 0,        // next line index to spawn
   };
 
-  // Two-strip ribbon: alternating amber + cyan reading strips. Each strip
-  // has its own slow-follow wave buffer anchored at a different y center.
-  // stripIdx 0 = amber (upper), stripIdx 1 = cyan (lower).
-  var lyricWaveBufs = [null, null]; // Float32Array[2]
-  var lyricWaveBufStride = 40;      // one sample every N canvas px
-  var LYRIC_STRIP_OFFSET = 0.09;    // strip y centers = h*(0.5 ± offset)
+  // Three-lane ribbon: amber / white / cyan reading strips, each with
+  // its own slow-follow wave buffer anchored at a distinct y center.
+  // lane 0 = amber (upper), 1 = white (middle), 2 = cyan (lower).
+  // Lines are dispatched to whichever lane frees up soonest, so
+  // overlapping lines don't stall the ribbon.
+  var LYRIC_LANES = 3;
+  var lyricWaveBufs = [null, null, null];
+  var lyricWaveBufStride = 40;
+  // Lane y centers as fractions of h — outer ±11%, middle at 50%.
+  var LYRIC_LANE_YS = [0.39, 0.50, 0.61];
+  // Tracks each lane's last-scheduled endT so the dispatcher can pick
+  // the lane freeing up soonest. -Infinity = never occupied.
+  var lyricLaneEndT = [-Infinity, -Infinity, -Infinity];
 
   // Splash particles (distinct from the existing `particles` array so we
   // can cheaply promote a fraction of them into `stars` without polluting
@@ -178,6 +185,7 @@
     lyricState.lines = null;
     lyricState.sprites = [];
     lyricState.lineCursor = 0;
+    lyricLaneEndT[0] = lyricLaneEndT[1] = lyricLaneEndT[2] = -Infinity;
     if (!file) return;
     var token = ++lyricState.loadToken;
     var stem = file.replace(/^.*\//, '').replace(/\.mp3$/i, '');
@@ -341,6 +349,7 @@
     // Flush ribbon state; updateLyricSprites will rebuild cursor next frame.
     lyricState.sprites = [];
     lyricState.lineCursor = 0;
+    lyricLaneEndT[0] = lyricLaneEndT[1] = lyricLaneEndT[2] = -Infinity;
   });
   audio.addEventListener('ended', function() {
     if (loop) { audio.currentTime = 0; audio.play().catch(function(){}); }
@@ -766,8 +775,9 @@
   // laid out left-to-right with a single-space gap; each letter carries
   // its owning word index + its sung time so the conductor can fire
   // letter-timed drops for the word being sung right now.
-  // stripIdx: 0 = amber (upper), 1 = cyan (lower). Alternates per line.
-  function spawnLineSprite(line, c, dpr, w, h, stripIdx) {
+  // laneIdx: 0 = amber (upper), 1 = white (middle), 2 = cyan (lower).
+  // Dispatched per-line to whichever lane frees up soonest.
+  function spawnLineSprite(line, c, dpr, w, h, laneIdx) {
     // Auto-scale: on narrow viewports, ensure the line fits ~90% of width
     // so there's always at least a short in-viewport reading window.
     var baseFontPx = LYRIC_FONT_PX * dpr;
@@ -846,12 +856,30 @@
       letters: letters,
       totalW: totalW,
       fontPx: fontPx,
-      stripIdx: stripIdx | 0,
+      laneIdx: laneIdx | 0,
       hits: hits,
       extrasAccum: 0,
       x: 0, y: 0,
       splashEnergy: 0,
     });
+  }
+
+  // Pick the lane freeing up soonest (smallest endT). Ties rotate
+  // across lanes so adjacent lines don't all pile onto lane 0.
+  var laneRotation = 0;
+  function pickLane(line) {
+    // Start the scan at the rotating offset so ties rotate.
+    var bestLane = laneRotation % LYRIC_LANES;
+    var bestEnd = lyricLaneEndT[bestLane];
+    for (var k = 1; k < LYRIC_LANES; k++) {
+      var i = (bestLane + k) % LYRIC_LANES;
+      if (lyricLaneEndT[i] < bestEnd) {
+        bestEnd = lyricLaneEndT[i];
+        bestLane = i;
+      }
+    }
+    laneRotation++;
+    return bestLane;
   }
 
   function updateLyricSprites(audioTime, c, w, h, dpr) {
@@ -869,11 +897,16 @@
     }
 
     // Spawn any lines that have entered their LEAD window.
-    // Alternate strips: even-indexed lines go amber (strip 0), odd go cyan.
+    // Dispatch to the lane that frees up soonest (its lyricLaneEndT is
+    // smallest). This makes overlapping lines distribute across 3 lanes
+    // instead of crowding one — no more waiting for one lane to clear
+    // before the next line can spawn.
     while (lyricState.lineCursor < lyricState.lines.length) {
       var next = lyricState.lines[lyricState.lineCursor];
       if (audioTime >= next.t - LYRIC_LEAD - 0.1) {
-        spawnLineSprite(next, c, dpr, w, h, lyricState.lineCursor & 1);
+        var lane = pickLane(next);
+        spawnLineSprite(next, c, dpr, w, h, lane);
+        lyricLaneEndT[lane] = next.tEnd + LYRIC_TAIL;
         lyricState.lineCursor++;
       } else break;
     }
@@ -884,6 +917,7 @@
       if (audioTime < first.startT - 0.5) {
         lyricState.sprites = [];
         lyricState.lineCursor = 0;
+        lyricLaneEndT[0] = lyricLaneEndT[1] = lyricLaneEndT[2] = -Infinity;
         for (var i = 0; i < lyricState.lines.length; i++) {
           if (lyricState.lines[i].tEnd + LYRIC_TAIL >= audioTime - 0.5) {
             lyricState.lineCursor = i;
@@ -942,31 +976,31 @@
         s.x = anchorX - sungX;
       }
       var cx = s.x + s.totalW * 0.5;
-      s.y = sampleLyricWave(cx, w, h, s.stripIdx);
+      s.y = sampleLyricWave(cx, w, h, s.laneIdx);
     }
   }
 
-  // Slow-follower wave samplers. Two strips, each heavily-attenuated copy
-  // of the amber wave anchored at a y center offset from middle. Reading
-  // strips breathe like paper — tight amplitude + clamp so they don't surf.
+  // Slow-follower wave samplers — one per lane. Each buffer is a
+  // heavily-attenuated copy of the amber wave anchored at its lane's
+  // y center. Reading strips breathe like paper: tight amplitude + clamp
+  // so they don't surf the raw wave. Small per-lane phase offsets keep
+  // the three lanes from undulating in lockstep.
   function updateLyricWaveBuf(w, h, dpr) {
     var samples = Math.max(8, Math.floor(w / lyricWaveBufStride));
-    for (var strip = 0; strip < 2; strip++) {
-      if (!lyricWaveBufs[strip] || lyricWaveBufs[strip].length !== samples) {
-        lyricWaveBufs[strip] = new Float32Array(samples);
-        var initY = h * (0.5 + (strip === 0 ? -LYRIC_STRIP_OFFSET : LYRIC_STRIP_OFFSET));
-        lyricWaveBufs[strip].fill(initY);
+    for (var lane = 0; lane < LYRIC_LANES; lane++) {
+      if (!lyricWaveBufs[lane] || lyricWaveBufs[lane].length !== samples) {
+        lyricWaveBufs[lane] = new Float32Array(samples);
+        lyricWaveBufs[lane].fill(h * LYRIC_LANE_YS[lane]);
       }
     }
-    var ampCap = Math.min(h * 0.035, 30 * dpr);
-    for (var strip = 0; strip < 2; strip++) {
-      var buf = lyricWaveBufs[strip];
-      var anchorY = h * (0.5 + (strip === 0 ? -LYRIC_STRIP_OFFSET : LYRIC_STRIP_OFFSET));
+    var ampCap = Math.min(h * 0.032, 28 * dpr);
+    var phaseShifts = [0, 0.25, 0.5]; // amber / white / cyan
+    for (var lane = 0; lane < LYRIC_LANES; lane++) {
+      var buf = lyricWaveBufs[lane];
+      var anchorY = h * LYRIC_LANE_YS[lane];
       var yMin = anchorY - ampCap * 1.6;
       var yMax = anchorY + ampCap * 1.6;
-      // Strips phase-shift slightly: cyan reads a time-offset sample so
-      // the two strips don't undulate identically (feels more alive).
-      var phaseShift = strip === 1 ? 0.35 : 0;
+      var phaseShift = phaseShifts[lane];
       for (var i = 0; i < samples; i++) {
         var frac = i / (samples - 1);
         var shifted = Math.max(0, Math.min(1, frac + phaseShift * 0.08));
@@ -981,11 +1015,11 @@
     }
   }
 
-  function sampleLyricWave(px, w, h, stripIdx) {
-    var buf = lyricWaveBufs[stripIdx || 0];
-    if (!buf || !buf.length) {
-      return h * (0.5 + ((stripIdx || 0) === 0 ? -LYRIC_STRIP_OFFSET : LYRIC_STRIP_OFFSET));
-    }
+  function sampleLyricWave(px, w, h, laneIdx) {
+    var lane = laneIdx | 0;
+    if (lane < 0 || lane >= LYRIC_LANES) lane = 1;
+    var buf = lyricWaveBufs[lane];
+    if (!buf || !buf.length) return h * LYRIC_LANE_YS[lane];
     var frac = Math.max(0, Math.min(1, px / w));
     var idxF = frac * (buf.length - 1);
     var i0 = Math.floor(idxF);
@@ -1135,17 +1169,16 @@
         // Saturate reveal faster — primaries should fully light the letter.
         hitLetter.revealed = Math.min(1, hitLetter.revealed + 0.75 + d.brightness * 0.25);
         s.splashEnergy = Math.min(1, s.splashEnergy + 0.15);
-        spawnSplashParticles(d.x, d.targetY, d.brightness, dpr, w, h, s.stripIdx | 0);
+        spawnSplashParticles(d.x, d.targetY, d.brightness, dpr, w, h, s.laneIdx | 0);
       }
     }
   }
 
   // ── SPLASH PARTICLES + STAR PROMOTION ────────────────
-  function spawnSplashParticles(cx, cy, energy, dpr, w, h, stripIdx) {
+  function spawnSplashParticles(cx, cy, energy, dpr, w, h, laneIdx) {
     var count = 10 + Math.floor(energy * 16);
-    var isCyan = (stripIdx | 0) === 1;
+    var lane = laneIdx | 0;
     for (var i = 0; i < count; i++) {
-      // Initial burst outward + slight upward bias (splash)
       var angle = -Math.PI + (Math.random() - 0.5) * Math.PI * 0.7;
       if (Math.random() < 0.35) angle = Math.random() * Math.PI * 2;
       var speed = (2 + Math.random() * 5) * dpr * (0.6 + energy);
@@ -1157,7 +1190,7 @@
         life: 1,
         decay: 0.01 + Math.random() * 0.015,
         r: (0.9 + Math.random() * 1.6) * dpr,
-        isCyan: isCyan,          // inherit from sprite — amber or cyan splash
+        laneIdx: lane,            // inherit from sprite — amber / white / cyan
         promoted: false,
         promoteAt: 0.55 + Math.random() * 0.25,
         promoteChance: 0.35,
@@ -1193,13 +1226,18 @@
           // STAR_COUNT field recycles in-place, but promotions push new
           // entries. Without a cap the array grows every verse.
           if (stars.length < STAR_COUNT + 600) {
+            // Lane → star color: 0 amber (bone/white in starfield),
+            // 1 white, 2 cyan. Store laneIdx so the star renderer can
+            // tint. (Existing isCyan is kept for compat with primordial
+            // stars.)
             stars.push({
               x: worldX,
               y: worldY,
               z: startZ,
-              isCyan: p.isCyan,
+              isCyan: p.laneIdx === 2,
+              laneIdx: p.laneIdx,
               baseAlpha: 0.7 + Math.random() * 0.3,
-              promoted: true,  // mark so recycle retires instead of refills
+              promoted: true,
             });
           }
           splashParticles.splice(i, 1);
@@ -1211,8 +1249,10 @@
       c.arc(p.x, p.y, p.r * Math.max(0.3, p.life), 0, Math.PI * 2);
       if (mT > 0.5) {
         c.fillStyle = 'rgba(180,255,180,' + (p.life * 0.9) + ')';
-      } else if (p.isCyan) {
+      } else if (p.laneIdx === 2) {
         c.fillStyle = 'rgba(180,235,245,' + (p.life * 0.85) + ')';
+      } else if (p.laneIdx === 1) {
+        c.fillStyle = 'rgba(250,245,230,' + (p.life * 0.88) + ')';
       } else {
         c.fillStyle = 'rgba(255,232,180,' + (p.life * 0.85) + ')';
       }
@@ -1235,15 +1275,18 @@
       if (s.x + s.totalW < -20 || s.x > w + 20) continue;
       c.font = '500 ' + s.fontPx + 'px ' + LYRIC_FONT;
 
-      // Per-strip colors (matrix mode folds both to green).
-      // Strip 0 = amber (synth); strip 1 = cyan (machine).
+      // Per-lane colors. Matrix mode folds all to green.
+      // Lane 0 amber (synth), 1 white (bone/human), 2 cyan (machine).
       var glowRGB, fillRGB;
       if (mT > 0.5) {
         glowRGB = '120,255,140';
         fillRGB = '180,255,180';
-      } else if (s.stripIdx === 1) {
+      } else if (s.laneIdx === 2) {
         glowRGB = '78,201,212';
         fillRGB = '188,238,245';
+      } else if (s.laneIdx === 1) {
+        glowRGB = '240,235,219';
+        fillRGB = '250,245,230';
       } else {
         glowRGB = '232,184,88';
         fillRGB = '255,232,188';
