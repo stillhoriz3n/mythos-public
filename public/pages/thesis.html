@@ -61,8 +61,9 @@
   .byline .dot { width: 3px; height: 3px; background: var(--ink-faint); border-radius: 50%; }
   .ornament { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 0 auto 80px; color: var(--ink-faint); }
   .ornament .line { width: 80px; height: 1px; background: var(--rule); }
-  .ornament .glyph { font-family: 'Fraunces', serif; font-size: 18px; color: var(--accent); letter-spacing: 0.4em; display: inline-block; transform: rotate(calc(var(--beat-bar-phase, 0) * 360deg)); transition: color .6s; }
-  .ornament .glyph { color: var(--seal-color, var(--accent)); }
+  .ornament .glyph { font-family: 'Fraunces', serif; font-size: 18px; letter-spacing: 0.4em; display: inline-block; transform: rotate(calc(var(--beat-bar-phase, 0) * 360deg)); }
+  /* Breathing compass: rotates at bar-rate, glows on every beat. */
+  .ornament .glyph { color: var(--seal-color, var(--accent)); text-shadow: 0 0 calc(8px * var(--beat-pulse, 0)) var(--seal-color, var(--accent)); transition: transform 800ms cubic-bezier(.2,.8,.2,1), color .6s, text-shadow 60ms linear; }
   article { max-width: 680px; margin: 0 auto; padding-bottom: 120px; }
   article > section:first-of-type > p:first-of-type::first-letter { font-family: 'Fraunces', Georgia, serif; font-variation-settings: "opsz" 144; font-weight: 400; font-size: 5.2em; line-height: 0.88; float: left; margin: 0.1em 0.12em 0 -0.04em; color: var(--accent); font-feature-settings: "onum" 0; }
   section { margin-top: 96px; position: relative; }
@@ -86,7 +87,8 @@
   ul.editorial li:first-child { border-top: 1px solid var(--rule-soft); }
   ul.editorial li::before { content: ""; position: absolute; left: 0; top: 22px; width: 14px; height: 1px; background: var(--accent); }
   .divider { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 80px auto; color: var(--ink-faint); font-family: 'Fraunces', serif; font-size: 14px; }
-  .divider::before, .divider::after { content: ""; width: 40px; height: 1px; background: var(--rule); }
+  /* Section breaks glow on bar downbeats — structural rhythm in a static doc */
+  .divider::before, .divider::after { content: ""; width: 40px; height: 1px; background: var(--seal-color, var(--rule)); opacity: calc(0.45 + 0.55 * var(--beat-bar-pulse, 0)); transition: background 800ms, opacity 80ms linear; }
   .colophon { max-width: 680px; margin: 0 auto; padding: 64px 0 80px; border-top: 1px solid var(--rule); text-align: center; }
   .colophon .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
   .colophon .tagline { font-family: 'Fraunces', serif; font-variation-settings: "opsz" 36; font-style: italic; font-weight: 300; font-size: 1.15rem; color: var(--ink-soft); line-height: 1.5; max-width: 460px; margin: 0 auto; }

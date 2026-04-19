@@ -12,13 +12,18 @@
 /* ── BEAT-SYNC + VU METER OVERRIDES (driven by _mythos-page.js) ── */
 /* Pane header top borders become horizontal VU meters. The origin pane
    reads lows, the fork pane reads highs — because forks run hot. */
+/* External halo on panes escapes their overflow:hidden so the head/callout
+   stripes' energy is visible outside the pane edge at high amplitudes. */
+.pane.origin{filter:drop-shadow(0 0 calc(2px + 10px * var(--band-1, 0)) var(--origin));transition:filter 70ms linear}
+.pane.fork{filter:drop-shadow(0 0 calc(2px + 10px * var(--band-7, 0)) var(--fork));transition:filter 70ms linear}
 .pane.origin .pane-header,
 .pane.fork .pane-header{border-top-color:transparent!important;position:relative}
 .pane.origin .pane-header::after,
 .pane.fork .pane-header::after{
   content:"";position:absolute;top:-2px;left:0;right:0;height:2px;
   transform-origin:left;transform:scaleX(calc(0.1 + 0.9 * var(--band-level, 1)));
-  transition:transform 70ms linear, background 800ms, box-shadow 180ms ease;
+  /* aligned: scale + glow snap together at 70ms, no perceived lag */
+  transition:transform 70ms linear, background 800ms, box-shadow 70ms linear;
 }
 .pane.origin .pane-header::after{background:var(--origin);box-shadow:0 0 calc(3px + 12px * var(--band-level, 0)) var(--origin)}
 .pane.fork .pane-header::after{background:var(--fork);box-shadow:0 0 calc(3px + 12px * var(--band-level, 0)) var(--fork)}
@@ -28,13 +33,15 @@
 .callout::after{
   content:"";position:absolute;top:0;bottom:0;left:0;width:2px;
   transform-origin:bottom;transform:scaleY(calc(0.08 + 0.92 * var(--band-level, 1)));
-  transition:transform 70ms linear, background 800ms, box-shadow 180ms ease;
+  /* aligned: scale + glow snap together at 70ms */
+  transition:transform 70ms linear, background 800ms, box-shadow 70ms linear;
 }
 .pane.origin .callout::after{background:var(--origin-dim);box-shadow:0 0 calc(3px + 10px * var(--band-level, 0)) var(--origin)}
 .pane.fork .callout::after{background:var(--fork-dim);box-shadow:0 0 calc(3px + 10px * var(--band-level, 0)) var(--fork)}
-/* Auto-band assignment — origin callouts read low-mids, fork callouts read highs */
+/* Origin reads low-mids (grounded, foundational).
+   Fork reads treble (hot, present) — band-7 has more body than band-8's brilliance. */
 .pane.origin .callout{--band-level:var(--band-2, 1)}
-.pane.fork .callout{--band-level:var(--band-8, 1)}
+.pane.fork .callout{--band-level:var(--band-7, 1)}
 
 .chrome-status .dot.atmos{
   animation:none;

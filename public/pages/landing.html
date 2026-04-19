@@ -42,7 +42,9 @@ body{overflow-x:hidden}
   display:inline-flex;align-items:center;gap:14px;
 }
 .eyebrow::after{content:"";width:36px;height:1px;background:var(--signal-synth);opacity:.5}
-.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--signal-synth);box-shadow:0 0 8px var(--signal-synth);animation:breath 4s ease-in-out infinite}
+/* Hero "we're live" dot — pulses on bar downbeats when music is playing.
+   Keeps the 4s breath keyframe as a fallback so the dot is always alive. */
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--signal-synth);box-shadow:0 0 calc(8px + 12px * var(--beat-bar-pulse, 0)) var(--signal-synth);opacity:calc(0.6 + 0.4 * var(--beat-bar-pulse, 0));animation:breath 4s ease-in-out infinite;transition:opacity 80ms linear, box-shadow 80ms linear}
 @keyframes breath{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
 
 h1.hero-title{

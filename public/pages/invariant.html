@@ -43,7 +43,14 @@
   article p strong { color: var(--ink); font-weight: 600; }
   article p em { color: var(--ink); }
   h2.chapter { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.75rem; line-height: 1.2; letter-spacing: -0.015em; color: var(--ink); margin: 56px 0 20px; position: relative; padding-top: 36px; }
-  h2.chapter::before { content: ""; position: absolute; top: 0; left: 0; width: 40px; height: 3px; background: var(--seal-color, var(--accent)); border-radius: 1px; transform-origin: left; transform: scaleX(calc(0.15 + 0.85 * var(--band-level, 1))); box-shadow: 0 0 calc(3px + 12px * var(--band-level, 0)) var(--seal-color, var(--accent)); transition: transform 70ms linear, background 800ms, box-shadow 180ms ease; }
+  h2.chapter::before { content: ""; position: absolute; top: 0; left: 0; width: 40px; height: 3px; background: var(--seal-color, var(--accent)); border-radius: 1px; transform-origin: left; transform: scaleX(calc(0.15 + 0.85 * var(--band-level, 1))); box-shadow: 0 0 calc(3px + 12px * var(--band-level, 0)) var(--seal-color, var(--accent)); transition: transform 70ms linear, background 800ms, box-shadow 70ms linear; }
+  /* Wire the data-band attributes already on the markup (0/2/5/8) into
+     --band-level so each chapter's stripe pulses on a rising frequency
+     band — lows → highs as the essay narrows focus. */
+  h2.chapter[data-band="0"] { --band-level: var(--band-0, 1); }
+  h2.chapter[data-band="2"] { --band-level: var(--band-2, 1); }
+  h2.chapter[data-band="5"] { --band-level: var(--band-5, 1); }
+  h2.chapter[data-band="8"] { --band-level: var(--band-8, 1); }
   .pullquote { margin: 48px -16px; padding: 36px 32px; background: var(--highlight); border-left: none; position: relative; }
   .pullquote::before { content: ""; position: absolute; top: 0; left: 0; bottom: 0; width: 4px; background: var(--seal-color, var(--accent)); transform-origin: bottom; transform: scaleY(calc(0.08 + 0.92 * var(--band-level, 1))); box-shadow: 0 0 calc(4px + 14px * var(--band-level, 0)) var(--seal-color, var(--accent)); transition: transform 70ms linear, background 800ms, box-shadow 180ms ease; }
   .pullquote { --band-level: var(--band-4, 1); }
@@ -58,11 +65,15 @@
   .comparison .col.right .col-title { color: var(--accent); }
   .comparison .col-body { font-size: 15px; line-height: 1.55; color: var(--ink-soft); }
   .break { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 56px 0; font-size: 10px; letter-spacing: 0.3em; color: var(--seal-color, var(--ink-faint)); transition: color .8s; }
-  .break::before, .break::after { content: ""; width: 30px; height: 1px; background: var(--rule); }
+  /* Section breaks pulse on bar downbeats, color-locked to the active seal */
+  .break::before, .break::after { content: ""; width: 30px; height: 1px; background: var(--seal-color, var(--rule)); opacity: calc(0.4 + 0.6 * var(--beat-bar-pulse, 0)); transition: background 800ms, opacity 80ms linear; }
   .break-glyph { display: inline-block; transform: rotate(calc(var(--beat-bar-phase, 0) * 360deg)); transition: transform 800ms cubic-bezier(.2,.8,.2,1); }
   .coda { max-width: 660px; margin: 0 auto; padding: 0 32px 80px; }
-  .coda .card { background: #14121c; color: var(--ink); padding: 40px 36px; border-radius: 4px; position: relative; overflow: hidden; border: 1px solid #242a33; }
-  .coda .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--seal-color, var(--accent)); transform-origin: left; transform: scaleX(calc(0.1 + 0.9 * var(--band-level, 1))); box-shadow: 0 0 calc(3px + 14px * var(--band-level, 0)) var(--seal-color, var(--accent)); transition: transform 70ms linear, background 800ms, box-shadow 180ms ease; }
+  .coda .card { background: #14121c; color: var(--ink); padding: 40px 36px; border-radius: 4px; position: relative; overflow: hidden; border: 1px solid #242a33;
+    /* External halo escapes overflow:hidden so the coda glow reads at high amplitudes. */
+    filter: drop-shadow(0 0 calc(2px + 12px * var(--band-level, 0)) var(--seal-color, transparent));
+    transition: filter 70ms linear; }
+  .coda .card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--seal-color, var(--accent)); transform-origin: left; transform: scaleX(calc(0.1 + 0.9 * var(--band-level, 1))); box-shadow: 0 0 calc(3px + 14px * var(--band-level, 0)) var(--seal-color, var(--accent)); transition: transform 70ms linear, background 800ms, box-shadow 70ms linear; }
   .coda .card { --band-level: calc((var(--band-2, 0) + var(--band-5, 0) + var(--band-8, 0)) / 3); }
   .coda .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; }
   .coda .text { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 1.15rem; line-height: 1.55; color: var(--ink-soft); }

@@ -214,13 +214,17 @@
     transform-origin: bottom;
     transform: scaleY(calc(0.1 + 0.9 * var(--band-level, 1)));
     box-shadow: 0 0 calc(3px + 8px * var(--band-level, 0)) var(--seal-color, var(--accent));
-    transition: transform 70ms linear, background 800ms, box-shadow 180ms ease;
+    /* aligned: scale + glow tick together at 70ms, no perceptual lag */
+    transition: transform 70ms linear, background 800ms, box-shadow 70ms linear;
   }
-  .axiom:nth-of-type(1){--band-level:var(--band-0, 1)}
-  .axiom:nth-of-type(2){--band-level:var(--band-2, 1)}
+  /* Stereo where available: outer axioms (premises / conclusions) lean
+     L/R; the middle axiom stays mono.  Mono fallback preserved via the
+     nested var(). */
+  .axiom:nth-of-type(1){--band-level:var(--band-0-l, var(--band-0, 1))}
+  .axiom:nth-of-type(2){--band-level:var(--band-2-l, var(--band-2, 1))}
   .axiom:nth-of-type(3){--band-level:var(--band-4, 1)}
-  .axiom:nth-of-type(4){--band-level:var(--band-6, 1)}
-  .axiom:nth-of-type(5){--band-level:var(--band-8, 1)}
+  .axiom:nth-of-type(4){--band-level:var(--band-6-r, var(--band-6, 1))}
+  .axiom:nth-of-type(5){--band-level:var(--band-8-r, var(--band-8, 1))}
 
   .proof {
     margin: 14px 0 18px;
@@ -245,6 +249,11 @@
     margin: 14px auto 18px;
     font-size: 10.5pt;
     width: 100%;
+    /* Theorems pulse on the beat — top edge gains a subtle glow at every
+       beat onset.  Static when not playing (box-shadow collapses to 0). */
+    border-top: 2px solid var(--seal-color, var(--accent));
+    box-shadow: 0 -3px calc(8px * var(--beat-pulse, 0)) calc(-2px) var(--seal-color, transparent);
+    transition: box-shadow 60ms linear, border-color 800ms;
   }
 
   table caption {

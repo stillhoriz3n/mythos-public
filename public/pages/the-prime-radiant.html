@@ -18,7 +18,11 @@
   --gold: #e8b858;
   --gold-bright: #f5c970;
   --gold-dim: #8b6a2e;
+  /* --gold-faint tracks the active --gold via color-mix, so palette
+     swaps (e.g. matrix mode) carry through.  Falls back to the static
+     amber tint if color-mix isn't supported (very old browsers). */
   --gold-faint: rgba(232,184,88,.06);
+  --gold-faint: color-mix(in srgb, var(--gold, #e8b858) 6%, transparent);
   --cyan: #4ec9d4;
   --ink-bright: #e8e3d4;
   --ink-soft: #b5b0a3;
@@ -32,7 +36,7 @@ body { background: transparent; color: var(--ink-bright); min-height: 100vh; }
 
 /* ── RUNNING HEAD ──────────────────────────────── */
 .running-head {
-  border-bottom: 1px solid var(--rule);
+  border-bottom: none;
   padding: 18px 32px;
   display: flex;
   justify-content: space-between;
@@ -42,6 +46,22 @@ body { background: transparent; color: var(--ink-bright); min-height: 100vh; }
   position: sticky;
   top: 0;
   z-index: 10;
+  /* Bass-band horizontal VU underline — Prime Radiant is the foundational
+     doc; pulse it on the lowest band so the foundation literally vibrates.
+     Static fallback: a static 1px rule across the bottom. */
+  --band-level: var(--band-1, 1);
+}
+.running-head::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--gold, var(--rule));
+  transform-origin: left;
+  transform: scaleX(calc(0.18 + 0.82 * var(--band-level, 1)));
+  box-shadow: 0 0 calc(2px + 10px * var(--band-level, 0)) var(--gold, transparent);
+  transition: transform 70ms linear, background 800ms, box-shadow 70ms linear;
+  opacity: 0.9;
 }
 .running-head .brand {
   font-family: 'Archivo', sans-serif;
@@ -197,6 +217,13 @@ body { background: transparent; color: var(--ink-bright); min-height: 100vh; }
   padding: 36px 32px;
   position: relative;
   overflow: hidden;
+  /* The inner ::before stripe's box-shadow is clipped by overflow:hidden.
+     We mirror its energy as a drop-shadow on the card itself so a halo
+     also escapes outward — glow inside (stripe shadow) + glow outside
+     (drop-shadow), so the card feels alive at high amplitudes instead
+     of capped.  --band-level is set per-pillar by _mythos-page.js. */
+  filter: drop-shadow(0 0 calc(2px + 10px * var(--band-level, 0)) var(--seal-color, transparent));
+  transition: filter 70ms linear;
 }
 .pillar::before {
   content: "";
@@ -272,6 +299,9 @@ body { background: transparent; color: var(--ink-bright); min-height: 100vh; }
   padding: 24px 20px;
   position: relative;
   overflow: hidden;
+  /* Outward halo to escape overflow:hidden; aligned with --band-level. */
+  filter: drop-shadow(0 0 calc(2px + 10px * var(--band-level, 0)) var(--seal-color, transparent));
+  transition: filter 70ms linear;
 }
 .example-card::before {
   content: "";
@@ -282,7 +312,8 @@ body { background: transparent; color: var(--ink-bright); min-height: 100vh; }
   transform-origin: left;
   transform: scaleX(calc(0.1 + 0.9 * var(--band-level, 1)));
   box-shadow: 0 0 calc(3px + 12px * var(--band-level, 0)) var(--seal-color, var(--cyan));
-  transition: transform 70ms linear, background 800ms, box-shadow 180ms ease;
+  /* aligned: scale + glow snap together at 70ms */
+  transition: transform 70ms linear, background 800ms, box-shadow 70ms linear;
 }
 .example-card .card-label {
   font-family: 'JetBrains Mono', monospace;
@@ -360,6 +391,9 @@ body { background: transparent; color: var(--ink-bright); min-height: 100vh; }
   padding: 40px 36px;
   position: relative;
   overflow: hidden;
+  /* Outward halo to escape overflow:hidden; aligned with --band-level. */
+  filter: drop-shadow(0 0 calc(2px + 12px * var(--band-level, 0)) var(--seal-color, transparent));
+  transition: filter 70ms linear;
 }
 .coda-card::before {
   content: "";
@@ -370,7 +404,8 @@ body { background: transparent; color: var(--ink-bright); min-height: 100vh; }
   transform-origin: left;
   transform: scaleX(calc(0.1 + 0.9 * var(--band-level, 1)));
   box-shadow: 0 0 calc(3px + 14px * var(--band-level, 0)) var(--seal-color, var(--gold));
-  transition: transform 70ms linear, background 800ms, box-shadow 180ms ease;
+  /* aligned: scale + glow snap together at 70ms */
+  transition: transform 70ms linear, background 800ms, box-shadow 70ms linear;
 }
 .coda-card .coda-label {
   font-family: 'JetBrains Mono', monospace;
@@ -634,11 +669,14 @@ footer {
     for (var key in d.palette) {
       root.style.setProperty(key, d.palette[key]);
     }
-    // Map shell palette keys to this page's custom variable names
+    // Map shell palette keys to this page's custom variable names.
+    // --gold-faint is derived via color-mix from --gold so it tracks
+    // the active palette (matrix mode shifts gold→green, etc).  No
+    // hardcoded literal; the CSS rule for --gold-faint lives in the
+    // page styles below.
     root.style.setProperty('--gold', d.palette['--signal-synth'] || '');
     root.style.setProperty('--gold-bright', d.palette['--signal-synth-bright'] || '');
     root.style.setProperty('--gold-dim', d.palette['--ink-dim'] || '');
-    root.style.setProperty('--gold-faint', (d.palette['--signal-synth'] || '#e8b858') + '10');
     root.style.setProperty('--cyan', d.palette['--signal-machine'] || '');
     root.style.setProperty('--void', d.palette['--stage-void'] || '');
     root.style.setProperty('--deep', d.palette['--stage-deep'] || '');
