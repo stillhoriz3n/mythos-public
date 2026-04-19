@@ -56,7 +56,7 @@
   let vizCanvas, vizCtx, trailCanvas, trailCtx;
   let dataArray = new Uint8Array(4096);
   let freqArray = new Uint8Array(2048);
-  let phase = 0, particles = [], stars = [], prevBass = 0;
+  let phase = 0, particles = [], stars = [], prevBass = 0, waveVis = 0;
   let viewT = 0;        // 0 = expanded (dark), 1 = collapsed (singularity)
   let viewTarget = 0;
   let singularityEl;
@@ -936,18 +936,24 @@
       c.fill();
     }
 
-    // ── Signal waveforms (fade with expand) ──
-    if (expand > 0.05) {
+    // ── Signal waveforms ──
+    // These are *signal* — they visualize playing audio. When nothing is
+    // playing they collapse to flat horizontals haunting the middle of the
+    // viewport. Smooth-fade their visibility on the playing signal so they
+    // exist iff there is audio to show.
+    waveVis += ((playing && total > 0.02 ? 1 : 0) - waveVis) * 0.06;
+    if (expand > 0.05 && waveVis > 0.01) {
       var waveY = h * 0.5;
       var wsx = 0, wex2 = w;
       var ww = wex2 - wsx;
       var pts = 300;
       var step = Math.floor(dataArray.length / pts);
+      var waveAlpha = expand * waveVis;
 
       function drawWave(color, glowColor, alpha, amplitude, freqMul, phaseMul, phaseOff, yOff, lineW, glowR, dataOff) {
         c.beginPath();
         c.lineWidth = lineW * dpr * expand;
-        c.strokeStyle = 'rgba(' + color + ',' + (alpha * expand) + ')';
+        c.strokeStyle = 'rgba(' + color + ',' + (alpha * waveAlpha) + ')';
         c.shadowColor = 'rgba(' + glowColor + ')';
         c.shadowBlur = glowR * dpr * expand;
         var xPts = [], yPts = [];
