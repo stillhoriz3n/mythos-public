@@ -1105,20 +1105,19 @@
       var s = lyricState.sprites[i];
 
       // ── PRIMARY: fire any hits whose time has arrived ──
-      // hits are sorted by fireAt, so once we find one in the future we
-      // can stop; but we still need to skip already-fired earlier ones.
+      // hits are sorted by fireAt; break on first future hit.
+      // Drop is aimed at the reading anchor (where the letter WILL be
+      // at splash time, ~0.7s from fire), so current on-screen-ness of
+      // the letter doesn't matter — always fire.
       if (s.hits && s.hits.length) {
         for (var hi = 0; hi < s.hits.length; hi++) {
           var h0 = s.hits[hi];
           if (h0.fired) continue;
-          if (audioTime < h0.fireAt) break; // future hit, everything after is too
+          if (audioTime < h0.fireAt) break;
           h0.fired = true;
           var letter = s.letters[h0.letterIdx];
           if (!letter) continue;
-          var tx = s.x + letter.x + letter.w * 0.5;
-          if (tx > 0 && tx < w) {
-            fireAimedDrop(s, h0.letterIdx, w, dpr, 0.9);
-          }
+          fireAimedDrop(s, h0.letterIdx, w, dpr, 0.9);
         }
       }
 
@@ -1127,7 +1126,7 @@
       // to the currently-singing word(s). Primaries still guarantee one
       // strike per letter; extras pile on when mids pump.
       if (audioTime >= s.t - 0.05 && audioTime <= s.tEnd + 0.1) {
-        var extraPerSec = midEnergy * 14;
+        var extraPerSec = midEnergy * 6;
         s.extrasAccum += extraPerSec / 60;
         while (s.extrasAccum >= 1) {
           s.extrasAccum -= 1;
@@ -1175,8 +1174,15 @@
   }
 
   // ── SPLASH PARTICLES + STAR PROMOTION ────────────────
+  // Cap splash particle pool. Dense verses can fire 40+ letters/sec;
+  // without a cap the particle array and downstream promoted stars
+  // stutter the frame loop.
+  var SPLASH_PARTICLE_CAP = 260;
   function spawnSplashParticles(cx, cy, energy, dpr, w, h, laneIdx) {
-    var count = 10 + Math.floor(energy * 16);
+    // Back off count if pool is getting full.
+    var room = SPLASH_PARTICLE_CAP - splashParticles.length;
+    if (room <= 0) return;
+    var count = Math.min(room, 5 + Math.floor(energy * 10));
     var lane = laneIdx | 0;
     for (var i = 0; i < count; i++) {
       var angle = -Math.PI + (Math.random() - 0.5) * Math.PI * 0.7;
@@ -1222,10 +1228,9 @@
           var startZ = STAR_DEPTH * (0.45 + Math.random() * 0.25);
           var worldX = (p.x - w * 0.5) * startZ / focalLen;
           var worldY = (p.y - h * 0.5) * startZ / focalLen;
-          // Cap promoted stars to avoid unbounded growth — the original
-          // STAR_COUNT field recycles in-place, but promotions push new
-          // entries. Without a cap the array grows every verse.
-          if (stars.length < STAR_COUNT + 600) {
+          // Cap promoted stars hard so dense verses don't stack them up
+          // faster than they can zoom past the camera.
+          if (stars.length < STAR_COUNT + 250) {
             // Lane → star color: 0 amber (bone/white in starfield),
             // 1 white, 2 cyan. Store laneIdx so the star renderer can
             // tint. (Existing isCyan is kept for compat with primordial
