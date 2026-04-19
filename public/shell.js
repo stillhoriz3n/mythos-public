@@ -30,7 +30,6 @@
     'fork-at-the-pass.html':                      { title: 'Fork at the PASS',        group: 'Canon',         dark: false },
     'love-as-a-function.html':                    { title: 'Love as a Function',      group: 'Canon',         dark: false },
     'the-last-sessions-insufficient-data.html':   { title: 'The Last Sessions',       group: 'Canon',         dark: false },
-    'radiant-seal.html':                       { title: 'Radiant Seal',            group: 'Artifacts',     dark: true  },
     'visualizer.html':                            { title: 'Signal Visualizer',       group: 'Transmissions', dark: true  },
     'waitlist.html':                              { title: 'Join the Waitlist',       group: 'Transmissions', dark: true  },
   };
@@ -1002,25 +1001,161 @@
     updateSingularity();
   }
 
-  // ── Singularity orb — spinning radiant, beat-reactive ──
-  function updateSingularity() {
-    if (!singularityEl || viewT < 0.01) return;
+  // ── Singularity orb — Radiant Seal M-cycling above the left player ──
+  //
+  // The 5 Ms cycle on bar downbeats (playing) or on a slow 3.5s timer
+  // (idle). Lattice geometry matches the full Radiant Seal artifact, at
+  // mini scale. Retina-doubled for crispness at ~44px display size.
+  var SEAL_OUTER = [[35,2],[60,16],[60,44],[35,58],[10,44],[10,16]];
+  var SEAL_INNER = [[35,16],[47,23],[47,37],[35,44],[23,37],[23,23]];
+  var SEAL_HUB_TOP = [35,22];
+  var SEAL_HUB_BOT = [35,38];
+  var SEAL_CORE = [35,30];
+  var SEAL_MS = [
+    { lines: [[SEAL_OUTER[5],SEAL_OUTER[4]],[SEAL_OUTER[1],SEAL_OUTER[2]],[SEAL_OUTER[5],SEAL_HUB_BOT],[SEAL_HUB_BOT,SEAL_OUTER[1]]], color: '#ffe6a0' },
+    { lines: [[SEAL_OUTER[5],SEAL_OUTER[4]],[SEAL_OUTER[1],SEAL_OUTER[2]],[SEAL_OUTER[5],SEAL_HUB_TOP],[SEAL_HUB_TOP,SEAL_OUTER[1]]], color: '#f5c970' },
+    { lines: [[SEAL_OUTER[5],SEAL_OUTER[4]],[SEAL_OUTER[1],SEAL_OUTER[2]],[SEAL_OUTER[5],SEAL_CORE],[SEAL_CORE,SEAL_OUTER[1]]], color: '#ffffff' },
+    { lines: [[SEAL_OUTER[5],SEAL_OUTER[4]],[SEAL_OUTER[1],SEAL_OUTER[2]],[SEAL_OUTER[5],SEAL_INNER[3]],[SEAL_INNER[3],SEAL_OUTER[1]]], color: '#4ec9d4' },
+    { lines: [[SEAL_INNER[5],SEAL_INNER[4]],[SEAL_INNER[1],SEAL_INNER[2]],[SEAL_INNER[5],SEAL_HUB_BOT],[SEAL_HUB_BOT,SEAL_INNER[1]]], color: '#e8b858' },
+  ];
 
-    var bass = 0, total = 0;
-    if (analyser && audioContextReady) {
-      bass = avg(freqArray, 0, 10) / 255;
-      total = avg(freqArray, 0, 400) / 255;
+  var sealCanvas = null, sealCtx = null, sealDpr = 1;
+  var sealCurrentM = 0;
+  var sealMAlpha = 1;
+  var sealMSwitchT = 0;    // timestamp of last M switch (for idle timer)
+  var sealLastBar = -1;    // last integer bar seen (for downbeat detection)
+  var SEAL_IDLE_MS = 3500; // ms per M when not playing
+
+  function initSealCanvas() {
+    sealCanvas = document.getElementById('singularity-canvas');
+    if (!sealCanvas) return false;
+    sealCtx = sealCanvas.getContext('2d');
+    sealDpr = devicePixelRatio || 1;
+    // Match CSS display size (44×40) scaled for retina
+    sealCanvas.width = Math.round(44 * sealDpr);
+    sealCanvas.height = Math.round(40 * sealDpr);
+    return true;
+  }
+
+  function drawSeal() {
+    if (!sealCtx) return;
+    var c = sealCtx;
+    var w = sealCanvas.width, h = sealCanvas.height;
+    // Radiant viewBox is 70×60, orb is 44×40 — uniform scale so shape fills
+    var sx = w / 70, sy = h / 60;
+    c.clearRect(0, 0, w, h);
+
+    function pt(p) { return [p[0] * sx, p[1] * sy]; }
+    function stroke(a, b, width, alpha, color) {
+      c.strokeStyle = color;
+      c.globalAlpha = alpha;
+      c.lineWidth = width;
+      c.beginPath();
+      var pa = pt(a), pb = pt(b);
+      c.moveTo(pa[0], pa[1]);
+      c.lineTo(pb[0], pb[1]);
+      c.stroke();
     }
 
-    var beat = playing ? getBeat() : { pulse:0 };
-    var size = 18 + bass * 10 + beat.pulse * 6;
-    var glowR = 3 + bass * 6 + beat.pulse * 4;
-    var orbColor = matrixMode ? '#00ff41' : 'var(--signal-synth)';
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    var dimColor = matrixMode ? 'rgba(0,255,65,%A)' : 'rgba(232,184,88,%A)';
+    function dim(a) { return dimColor.replace('%A', a); }
 
+    // Outer hex (dim)
+    c.strokeStyle = dim(0.30);
+    c.globalAlpha = 1;
+    c.lineWidth = 1.4 * sealDpr;
+    c.beginPath();
+    for (var i = 0; i < SEAL_OUTER.length; i++) {
+      var p = pt(SEAL_OUTER[i]);
+      if (i === 0) c.moveTo(p[0], p[1]); else c.lineTo(p[0], p[1]);
+    }
+    c.closePath();
+    c.stroke();
+
+    // Inner hex (dimmer)
+    c.strokeStyle = dim(0.18);
+    c.lineWidth = 0.9 * sealDpr;
+    c.beginPath();
+    for (var i = 0; i < SEAL_INNER.length; i++) {
+      var p = pt(SEAL_INNER[i]);
+      if (i === 0) c.moveTo(p[0], p[1]); else c.lineTo(p[0], p[1]);
+    }
+    c.closePath();
+    c.stroke();
+
+    // Current M (bright, glowing)
+    var m = SEAL_MS[sealCurrentM];
+    var mColor = matrixMode ? '#00ff41' : m.color;
+    c.save();
+    c.shadowColor = mColor;
+    c.shadowBlur = 6 * sealDpr;
+    c.strokeStyle = mColor;
+    c.lineWidth = 1.8 * sealDpr;
+    c.globalAlpha = sealMAlpha * 0.95;
+    for (var i = 0; i < m.lines.length; i++) {
+      var pa = pt(m.lines[i][0]);
+      var pb = pt(m.lines[i][1]);
+      c.beginPath();
+      c.moveTo(pa[0], pa[1]);
+      c.lineTo(pb[0], pb[1]);
+      c.stroke();
+    }
+    c.restore();
+
+    // Core pulse
+    var corePt = pt(SEAL_CORE);
+    var coreR = 1.8 * sealDpr;
+    c.globalAlpha = 1;
+    c.fillStyle = matrixMode ? '#b0ffb0' : '#ffe6a0';
+    c.beginPath();
+    c.arc(corePt[0], corePt[1], coreR, 0, Math.PI * 2);
+    c.fill();
+  }
+
+  function updateSingularity() {
+    if (!singularityEl || viewT < 0.01) return;
+    if (!sealCanvas && !initSealCanvas()) return;
+
+    var bass = 0;
+    if (analyser && audioContextReady) {
+      bass = avg(freqArray, 0, 10) / 255;
+    }
+
+    var beat = playing ? getBeat() : null;
+    var pulse = beat ? beat.pulse : 0;
+
+    // Size + glow react to bass and beat pulse
+    var size = 38 + bass * 14 + pulse * 8;
+    var glowR = 3 + bass * 6 + pulse * 4;
     singularityEl.style.width = size + 'px';
-    singularityEl.style.height = (size * 60/70) + 'px';
-    singularityEl.style.color = orbColor;
+    singularityEl.style.height = (size * 40/44) + 'px';
     singularityEl.style.filter = 'drop-shadow(0 0 ' + glowR + 'px ' + (matrixMode ? '#00ff41' : '#e8b858') + ')';
+
+    // Advance M on bar downbeat (playing) or on idle timer
+    var now = performance.now();
+    if (beat) {
+      var currentBar = Math.floor(beat.raw / 4);
+      if (currentBar !== sealLastBar) {
+        sealLastBar = currentBar;
+        if (sealLastBar > 0) { // skip the phantom 0→real bar transition on play start
+          sealCurrentM = (sealCurrentM + 1) % SEAL_MS.length;
+          sealMSwitchT = now;
+        }
+      }
+    } else {
+      if (now - sealMSwitchT > SEAL_IDLE_MS) {
+        sealCurrentM = (sealCurrentM + 1) % SEAL_MS.length;
+        sealMSwitchT = now;
+      }
+    }
+
+    // M fade — quick fade-in on switch, steady hold
+    var sinceSwitch = now - sealMSwitchT;
+    sealMAlpha = Math.min(1, sinceSwitch / 200);
+
+    drawSeal();
   }
 
   // ══════════════════════════════════════════════════════
