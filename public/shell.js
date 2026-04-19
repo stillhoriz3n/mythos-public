@@ -63,6 +63,13 @@
   let singularityEl;
   let vizStarted = false;
 
+  // ── SPECTRUM PLINKO STATE ─────────────────────────────
+  var PLINKO_COLS = 100;
+  var plinkoDrops = [];    // active falling drops
+  var plinkoThresholds = []; // per-column adaptive thresholds
+  var plinkoSmoothed = [];   // smoothed FFT energy per column
+  var plinkoCooldown = [];   // cooldown timer per column (prevents spam)
+
   // ── MATRIX EASTER EGG STATE ──────────────────────────
   let matrixMode = false;
   let matrixT = 0;       // 0 = cosmos, 1 = fully matrix (smooth transition)
@@ -424,6 +431,113 @@
     };
   }
 
+  // ── SPECTRUM PLINKO ────────────────────────────────
+  function initPlinko() {
+    plinkoThresholds = [];
+    plinkoSmoothed = [];
+    plinkoCooldown = [];
+    for (var i = 0; i < PLINKO_COLS; i++) {
+      // Lower frequencies need higher thresholds (more energy there)
+      // Higher frequencies need lower thresholds (less energy)
+      var freqRatio = i / PLINKO_COLS;
+      var threshold = freqRatio < 0.1 ? 0.45       // sub-bass: hard to trigger
+                    : freqRatio < 0.25 ? 0.35      // bass
+                    : freqRatio < 0.5 ? 0.25       // mids
+                    : freqRatio < 0.75 ? 0.18      // upper mids
+                    : 0.12;                         // highs: sensitive
+      plinkoThresholds.push(threshold);
+      plinkoSmoothed.push(0);
+      plinkoCooldown.push(0);
+    }
+  }
+  initPlinko();
+
+  function updatePlinko(freqArr, w, h, dpr) {
+    if (!freqArr || !freqArr.length) return;
+    var binsPerCol = Math.floor(freqArr.length * 0.6 / PLINKO_COLS); // use bottom 60% of spectrum
+    var colW = w / PLINKO_COLS;
+    var now = performance.now();
+
+    for (var i = 0; i < PLINKO_COLS; i++) {
+      // Average the FFT bins for this column
+      var sum = 0;
+      var startBin = i * binsPerCol;
+      for (var b = 0; b < binsPerCol; b++) {
+        sum += freqArr[startBin + b] || 0;
+      }
+      var energy = (sum / binsPerCol) / 255;
+
+      // Smooth it
+      plinkoSmoothed[i] = plinkoSmoothed[i] * 0.7 + energy * 0.3;
+
+      // Check threshold + cooldown
+      plinkoCooldown[i] = Math.max(0, plinkoCooldown[i] - 16); // ~1 frame at 60fps
+      if (plinkoSmoothed[i] > plinkoThresholds[i] && plinkoCooldown[i] <= 0) {
+        // Spawn a drop!
+        var brightness = Math.min(1, plinkoSmoothed[i] / plinkoThresholds[i] - 0.5);
+        plinkoDrops.push({
+          col: i,
+          x: i * colW + colW * 0.5,
+          y: 0,
+          speed: (1.5 + brightness * 2.5 + Math.random() * 1) * dpr,
+          len: 3 + Math.floor(brightness * 6) + Math.floor(Math.random() * 4),
+          chars: [],
+          life: 1,
+          brightness: brightness,
+        });
+        var d = plinkoDrops[plinkoDrops.length - 1];
+        for (var j = 0; j < d.len; j++) {
+          d.chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
+        }
+        // Cooldown: lower frequencies get longer cooldown (they'd spam otherwise)
+        plinkoCooldown[i] = i < 25 ? 300 : i < 50 ? 180 : 100;
+      }
+    }
+  }
+
+  function drawPlinko(c, w, h) {
+    if (plinkoDrops.length === 0) return;
+    var dpr = devicePixelRatio;
+    var fontSize = 12 * dpr;
+    var mT = matrixT;
+
+    c.font = fontSize + 'px "JetBrains Mono", monospace';
+    c.textAlign = 'center';
+
+    for (var i = plinkoDrops.length - 1; i >= 0; i--) {
+      var d = plinkoDrops[i];
+      d.y += d.speed;
+      d.life -= 0.003;
+
+      // Remove if off screen or dead
+      if (d.y - d.len * fontSize > h || d.life <= 0) {
+        plinkoDrops.splice(i, 1);
+        continue;
+      }
+
+      for (var j = 0; j < d.len; j++) {
+        var charY = d.y - j * fontSize;
+        if (charY < -fontSize || charY > h + fontSize) continue;
+        var age = j / d.len;
+        var alpha = (1 - age) * d.life * d.brightness * 0.7;
+        if (alpha < 0.01) continue;
+
+        if (mT > 0.5) {
+          // Matrix mode — green
+          c.fillStyle = j === 0
+            ? 'rgba(180,255,180,' + Math.min(1, alpha * 1.5) + ')'
+            : 'rgba(0,255,65,' + alpha + ')';
+        } else {
+          // Cosmos mode — amber/bone
+          c.fillStyle = j === 0
+            ? 'rgba(255,242,200,' + Math.min(1, alpha * 1.3) + ')'
+            : 'rgba(232,184,88,' + (alpha * 0.6) + ')';
+        }
+        c.fillText(d.chars[j] || '0', d.x, charY);
+      }
+    }
+  }
+
   function spawnParticles(cx, cy, energy, count) {
     for (var i = 0; i < count; i++) {
       var angle = Math.random() * Math.PI * 2;
@@ -526,6 +640,12 @@
       c.fillStyle = grad;
       c.fillRect(0, 0, w, h);
       c.globalAlpha = 1;
+    }
+
+    // ── Spectrum Plinko ──
+    if (playing && expand > 0.05) {
+      updatePlinko(freqArray, w, h, dpr);
+      drawPlinko(c, w, h);
     }
 
     // ── Trails ──
