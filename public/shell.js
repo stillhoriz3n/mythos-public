@@ -661,7 +661,7 @@
     // ── Stars — forward-flying starfield ──
     var cosmosOpacity = 1 - matrixT;
     var starAlphaScale = expand * cosmosOpacity;
-    var starSpeed = (0.4 + total * 1.2 + bass * 0.8) * dpr;
+    var starSpeed = playing ? (0.3 + total * 1.2 + bass * 0.8) * dpr : 0.05 * dpr;
     var focalLen = Math.min(w, h) * 0.35;
     if (starAlphaScale > 0.01) {
       for (var si = 0; si < stars.length; si++) {
