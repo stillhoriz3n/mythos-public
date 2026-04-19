@@ -786,31 +786,60 @@
       }
     }
 
-    // ── Dark-matter filaments (static, fade with expand and matrix) ──
+    // ── Dark-matter filaments (drift with phase, breathe with mids) ──
+    // Each filament drifts via its own phase offset (slow, independent
+    // currents) and flexes by a per-control-point sine wave so the curve
+    // gently undulates rather than translating rigidly. Alpha pulses with
+    // mid-range energy so filaments breathe with the mix.
     if (expand > 0.1 && cosmosOpacity > 0.05) {
-      c.globalAlpha = 0.25 * expand * cosmosOpacity;
+      var filBreathe = 0.6 + mid * 0.8 + total * 0.3;   // alpha multiplier
+      var filFlex = (0.6 + mid * 1.4) * dpr;             // curve-deform amplitude in px
+      // Gentle full-filament drift (px), offset per filament via seed
+      function filDrift(seed, ampX, ampY) {
+        return [
+          Math.sin(phase * 0.22 + seed) * ampX * dpr,
+          Math.cos(phase * 0.17 + seed * 1.3) * ampY * dpr,
+        ];
+      }
+      // Per-control-point undulation
+      function fx(x, i, seed) { return x + Math.sin(phase * 0.9 + i * 0.7 + seed) * filFlex; }
+      function fy(y, i, seed) { return y + Math.cos(phase * 1.1 + i * 0.9 + seed) * filFlex * 0.8; }
+
+      // Filament 1 — upper left sweep
+      var d1 = filDrift(0.0, 6, 3);
+      c.save(); c.translate(d1[0], d1[1]);
+      c.globalAlpha = 0.25 * expand * cosmosOpacity * filBreathe;
       c.strokeStyle = '#6a5a7a'; c.lineWidth = 0.6 * dpr; c.lineCap = 'round';
       c.beginPath();
-      c.moveTo(w*0.05, h*0.15);
-      c.bezierCurveTo(w*0.12,h*0.17, w*0.24,h*0.19, w*0.33,h*0.18);
-      c.bezierCurveTo(w*0.38,h*0.17, w*0.43,h*0.19, w*0.48,h*0.22);
+      c.moveTo(fx(w*0.05, 0, 0.0), fy(h*0.15, 0, 0.0));
+      c.bezierCurveTo(fx(w*0.12,1,0.0),fy(h*0.17,1,0.0), fx(w*0.24,2,0.0),fy(h*0.19,2,0.0), fx(w*0.33,3,0.0),fy(h*0.18,3,0.0));
+      c.bezierCurveTo(fx(w*0.38,4,0.0),fy(h*0.17,4,0.0), fx(w*0.43,5,0.0),fy(h*0.19,5,0.0), fx(w*0.48,6,0.0),fy(h*0.22,6,0.0));
       c.stroke();
+      c.restore();
 
-      c.globalAlpha = 0.2 * expand * cosmosOpacity;
+      // Filament 2 — lower left drift
+      var d2 = filDrift(2.1, 5, 2.5);
+      c.save(); c.translate(d2[0], d2[1]);
+      c.globalAlpha = 0.2 * expand * cosmosOpacity * filBreathe;
       c.strokeStyle = '#5c5068'; c.lineWidth = 0.5 * dpr;
       c.beginPath();
-      c.moveTo(w*0.08, h*0.68);
-      c.bezierCurveTo(w*0.18,h*0.67, w*0.26,h*0.66, w*0.35,h*0.64);
-      c.lineTo(w*0.37, h*0.63);
-      c.bezierCurveTo(w*0.41,h*0.62, w*0.45,h*0.61, w*0.50,h*0.61);
+      c.moveTo(fx(w*0.08, 0, 2.1), fy(h*0.68, 0, 2.1));
+      c.bezierCurveTo(fx(w*0.18,1,2.1),fy(h*0.67,1,2.1), fx(w*0.26,2,2.1),fy(h*0.66,2,2.1), fx(w*0.35,3,2.1),fy(h*0.64,3,2.1));
+      c.lineTo(fx(w*0.37, 4, 2.1), fy(h*0.63, 4, 2.1));
+      c.bezierCurveTo(fx(w*0.41,5,2.1),fy(h*0.62,5,2.1), fx(w*0.45,6,2.1),fy(h*0.61,6,2.1), fx(w*0.50,7,2.1),fy(h*0.61,7,2.1));
       c.stroke();
+      c.restore();
 
-      c.globalAlpha = 0.18 * expand * cosmosOpacity;
+      // Filament 3 — upper right wisp
+      var d3 = filDrift(4.4, 4, 2);
+      c.save(); c.translate(d3[0], d3[1]);
+      c.globalAlpha = 0.18 * expand * cosmosOpacity * filBreathe;
       c.strokeStyle = '#8b6a3a'; c.lineWidth = 0.5 * dpr;
       c.beginPath();
-      c.moveTo(w*0.56, h*0.08);
-      c.bezierCurveTo(w*0.60,h*0.11, w*0.64,h*0.15, w*0.66,h*0.21);
+      c.moveTo(fx(w*0.56, 0, 4.4), fy(h*0.08, 0, 4.4));
+      c.bezierCurveTo(fx(w*0.60,1,4.4),fy(h*0.11,1,4.4), fx(w*0.64,2,4.4),fy(h*0.15,2,4.4), fx(w*0.66,3,4.4),fy(h*0.21,3,4.4));
       c.stroke();
+      c.restore();
 
       c.globalAlpha = 1;
     }
