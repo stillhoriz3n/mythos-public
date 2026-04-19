@@ -892,20 +892,47 @@
     }
 
     // Update positions + retire.
-    // Travel model: each line's sprite starts at the right edge when
-    // audioTime == line.startT, and has fully exited the left edge at
-    // audioTime == line.endT. Velocity varies per-line (longer lines
-    // occupy the screen for longer spans), which actually matches
-    // reading: slow lines read slow, fast lines read fast.
+    // Anchor model: at any audioTime in the line's sung window, position
+    // the sprite so the currently-sung letter sits at the READING ANCHOR
+    // (a bit right of center). Before the line starts, the sprite ramps
+    // in from the right edge over LYRIC_LEAD seconds; after it ends, the
+    // sprite ramps out to the left over LYRIC_TAIL seconds. This keeps
+    // words being sung in a consistent reading zone regardless of line
+    // length or viewport width.
+    var anchorFrac = 0.58; // 0 = left edge, 1 = right edge
     for (var i = lyricState.sprites.length - 1; i >= 0; i--) {
       var s = lyricState.sprites[i];
       if (audioTime > s.endT + 0.3) {
         lyricState.sprites.splice(i, 1);
         continue;
       }
-      var span = s.endT - s.startT;
-      var u = (audioTime - s.startT) / span;    // 0 at spawn, 1 at exit
-      s.x = w - u * (w + s.totalW);             // right edge → past left
+      var anchorX = w * anchorFrac;
+      var sungX;   // local x within the sprite that should sit at anchorX
+      if (audioTime <= s.t) {
+        // Pre-sing: the first letter is the target. Ramp from off-right.
+        sungX = 0;
+        var leadU = Math.max(0, Math.min(1, (audioTime - s.startT) / LYRIC_LEAD));
+        // At leadU=0: sprite off-screen right (x = w). At leadU=1: first
+        // letter at anchorX.
+        s.x = w * (1 - leadU) + (anchorX - sungX) * leadU;
+      } else if (audioTime >= s.tEnd) {
+        // Post-sing: the last letter is the anchor. Ramp it off to left.
+        sungX = s.totalW;
+        var tailU = Math.max(0, Math.min(1, (audioTime - s.tEnd) / LYRIC_TAIL));
+        var posAtEnd = anchorX - sungX;
+        // At tailU=1: sprite fully past left (x = -totalW).
+        s.x = posAtEnd * (1 - tailU) + (-s.totalW) * tailU;
+      } else {
+        // In sung window: find the letter being sung right now and pin
+        // it at anchorX.
+        var target = s.letters[0];
+        for (var li = 0; li < s.letters.length; li++) {
+          if (s.letters[li].sungAt >= audioTime) { target = s.letters[li]; break; }
+          target = s.letters[li];
+        }
+        sungX = target.x + target.w * 0.5;
+        s.x = anchorX - sungX;
+      }
       var cx = s.x + s.totalW * 0.5;
       s.y = sampleLyricWave(cx, w, h, s.stripIdx);
     }
@@ -974,15 +1001,19 @@
   function fireAimedDrop(sprite, letterIdx, w, dpr, brightness) {
     var letter = sprite.letters[letterIdx];
     if (!letter) return;
-    var targetX = sprite.x + letter.x + letter.w * 0.5;
+    // With the anchor-based position model, by splash time (≈0.7s from
+    // now) the target letter will be pinned at the reading anchor. So
+    // aim the drop at the anchor, not at the letter's current x — drops
+    // fired earlier land exactly where the letter will be, not where
+    // it was.
+    var targetX = w * 0.58;
     var targetY = sprite.y + letter.y;
     if (targetX < 20 || targetX > w - 20) return;
 
     var colW = w / PLINKO_COLS;
     var col = Math.max(0, Math.min(PLINKO_COLS - 1, Math.floor(targetX / colW)));
-    // Match the scheduler's assumed flight time so drops actually arrive.
     var fallDist = Math.max(1, targetY);
-    var fallTime = 0.68 + Math.random() * 0.08; // ~flightTime ± jitter
+    var fallTime = 0.68 + Math.random() * 0.08;
     var speed = fallDist / (fallTime * 60);
     var dLen = 5 + Math.floor(Math.random() * 6);
     var chars = [];
