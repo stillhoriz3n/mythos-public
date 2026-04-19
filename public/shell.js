@@ -71,38 +71,42 @@
   //   roughly equal musical octaves — bass gets narrow high-res columns,
   //   highs get broad averaged ranges. Linear mapping crowded all energy
   //   into the left 25% because music energy is concentrated in bass.
-  //   Every frame, each column's average energy is compared against a
-  //   per-band threshold. If energy > threshold AND cooldown has expired,
-  //   a new character drop spawns at the top of that column and falls.
+  //   Each column runs a two-pole ONSET DETECTOR: fast follower tracks
+  //   current energy, slow baseline tracks recent average, delta = fast -
+  //   slow fires drops on rising edges only. Sustained energy does NOT
+  //   trigger rain — only transients do. This is what makes the music
+  //   "play" the rain: every kick/snare/hat/vocal-in lands a drop.
   //
-  // Tuning guide (the three knobs):
+  // Tuning guide (four knobs):
   //
-  //   1. THRESHOLDS (initPlinko) — how much energy a frequency band needs
-  //      before a drop spawns. Lower = more rain, higher = less rain.
-  //      Bass naturally has WAY more FFT energy than highs, so bass
-  //      thresholds must be set relatively high and high thresholds
-  //      relatively low to get even visual density across the spectrum.
-  //      Current values tuned 2026-04-18 (log mapping + rebalance):
-  //        sub-bass (<10%): 0.42 | bass (10-25%): 0.34
-  //        mids (25-50%):   0.22 | upper mids (50-75%): 0.20
-  //        highs (>75%):    0.16
-  //      If bass is too quiet, lower the first two. If highs are a wall
-  //      of green, raise the last two.
+  //   1. ONSET THRESHOLDS (initPlinko) — delta gate per band. Because
+  //      this is a DELTA (not absolute energy), tuning is much flatter
+  //      across the spectrum than the old sustained-energy model.
+  //      Tuned 2026-04-18 (onset model):
+  //        sub-bass (<10%): 0.14 | bass (10-25%): 0.11
+  //        mids (25-50%):   0.07 | upper mids (50-75%): 0.05
+  //        highs (>75%):    0.04
+  //      Too chatty in a band? Raise threshold ~0.02.
   //
-  //   2. COOLDOWNS (updatePlinko) — minimum ms between spawns per column.
-  //      Prevents machine-gun spam. Bass gets a long cooldown so kicks
-  //      don't dominate; mids/highs fire freely so transients land.
-  //        col 0-24 (bass): 340ms | col 25-49 (mids): 220ms
-  //        col 50-99 (highs): 280ms
+  //   2. COOLDOWNS (updatePlinko) — ms before a column can fire again.
+  //      Each hit lands one drop; cooldown prevents the tail from
+  //      retriggering. Bass=slowest (kicks spaced), highs=fastest (hats).
+  //        col 0-24: 260ms | col 25-49: 160ms | col 50-99: 140ms
   //
-  //   3. SMOOTHING (updatePlinko) — plinkoSmoothed[i] = old * 0.7 + new * 0.3
-  //      Higher old weight = more sluggish/smooth. Lower = more twitchy.
-  //      0.7/0.3 is a good balance. Don't go below 0.5/0.5 or it jitters.
+  //   3. FOLLOWER/BASELINE POLES (updatePlinko) —
+  //        fast = 0.6 * old + 0.4 * new  (~3-frame response)
+  //        slow = 0.96 * old + 0.04 * new (~500ms trailing average)
+  //      Tighter fast pole = twitchier. Looser slow pole = onsets stay
+  //      detectable longer at the cost of baseline tracking lag.
+  //
+  //   4. DROP LIFESPAN (drawPlinko, d.life -= 0.007) — ~2.4s visible.
+  //      Short life = screen clears between events (readable). Long
+  //      life = drops stack into a persistent wall (what we had).
   //
   // Visual tuning:
   //   - Drop speed: (1.5 + brightness * 2.5 + random) * dpr
   //   - Drop length: 3-13 characters depending on brightness
-  //   - Drop life: starts at 1.0, decays at 0.003/frame (~5.5 sec lifespan)
+  //   - Drop life: starts at 1.0, decays at 0.007/frame (~2.4 sec)
   //   - Colors: matrix mode = green, cosmos mode = subdued amber (no glow)
   //
   // Called from the main drawViz loop: updatePlinko() then drawPlinko()
@@ -110,8 +114,9 @@
   //
   var PLINKO_COLS = 100;
   var plinkoDrops = [];    // active falling drops
-  var plinkoThresholds = []; // per-column energy gate (0-1)
-  var plinkoSmoothed = [];   // smoothed FFT energy per column (0-1)
+  var plinkoThresholds = []; // per-column onset gate (fast minus slow)
+  var plinkoSmoothed = [];   // fast follower: current energy per column (0-1)
+  var plinkoSlow = [];       // slow baseline: recent average per column (0-1)
   var plinkoCooldown = [];   // cooldown timer per column in ms
 
   // ── MATRIX EASTER EGG STATE ──────────────────────────
@@ -477,20 +482,22 @@
   function initPlinko() {
     plinkoThresholds = [];
     plinkoSmoothed = [];
+    plinkoSlow = [];
     plinkoCooldown = [];
     for (var i = 0; i < PLINKO_COLS; i++) {
-      // Lower frequencies need higher thresholds (more energy there)
-      // Higher frequencies need lower thresholds (less energy)
+      // ONSET thresholds (delta = fast - slow). These gate how much a band
+      // must rise above its own recent baseline before a drop fires. Bass
+      // transients are punchy, highs are subtle — tune per-band so the
+      // full spectrum participates.
       var freqRatio = i / PLINKO_COLS;
-      // With log-scale bin mapping, upper columns average over many bins,
-      // which smooths peaks down — they need lower thresholds to register.
-      var threshold = freqRatio < 0.1 ? 0.42       // sub-bass — clamp hard, single-bin + dominant
-                    : freqRatio < 0.25 ? 0.34      // bass — tighten (was overspawning)
-                    : freqRatio < 0.5 ? 0.22       // mids — open up, these carry the track
-                    : freqRatio < 0.75 ? 0.20      // upper mids — broad avg, needs low gate
-                    : 0.16;                         // highs — broadest avg, needs lowest gate
+      var threshold = freqRatio < 0.1 ? 0.14       // sub-bass kicks — clear punch
+                    : freqRatio < 0.25 ? 0.11      // bass — strong transients
+                    : freqRatio < 0.5 ? 0.07       // mids — snares/vocals
+                    : freqRatio < 0.75 ? 0.05      // upper mids — leads/hats
+                    : 0.04;                         // highs — cymbals/air
       plinkoThresholds.push(threshold);
       plinkoSmoothed.push(0);
+      plinkoSlow.push(0);
       plinkoCooldown.push(0);
     }
   }
@@ -521,14 +528,21 @@
       }
       var energy = count > 0 ? (sum / count) / 255 : 0;
 
-      // Smooth it
-      plinkoSmoothed[i] = plinkoSmoothed[i] * 0.7 + energy * 0.3;
+      // Two-pole onset detector:
+      //   fast follower tracks current energy; slow baseline tracks recent
+      //   average. delta = fast - slow fires on transients (attacks), NOT
+      //   on sustained levels. This is what makes the music "play" the
+      //   rain — every kick, snare, hat, vocal-in becomes a visible drop.
+      plinkoSmoothed[i] = plinkoSmoothed[i] * 0.6 + energy * 0.4;      // fast: ~3-frame response
+      plinkoSlow[i] = plinkoSlow[i] * 0.96 + energy * 0.04;            // slow: ~500ms baseline
+      var delta = plinkoSmoothed[i] - plinkoSlow[i];
 
-      // Check threshold + cooldown
+      // Require a noise floor so silent columns don't fire on FFT jitter
+      var hasSignal = plinkoSmoothed[i] > 0.08;
+
       plinkoCooldown[i] = Math.max(0, plinkoCooldown[i] - 16); // ~1 frame at 60fps
-      if (plinkoSmoothed[i] > plinkoThresholds[i] && plinkoCooldown[i] <= 0) {
-        // Spawn a drop!
-        var brightness = Math.min(1, plinkoSmoothed[i] / plinkoThresholds[i] - 0.5);
+      if (delta > plinkoThresholds[i] && hasSignal && plinkoCooldown[i] <= 0) {
+        var brightness = Math.min(1, delta / plinkoThresholds[i] * 0.5);
         plinkoDrops.push({
           col: i,
           x: i * colW + colW * 0.5,
@@ -543,8 +557,9 @@
         for (var j = 0; j < d.len; j++) {
           d.chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
         }
-        // Cooldown: bass gets long cooldown (would dominate); mids/highs fire freely
-        plinkoCooldown[i] = i < 25 ? 340 : i < 50 ? 220 : 280;
+        // Cooldown gates retriggering; with onset detection we want each hit
+        // to get its own drop, not a burst. Bass=slowest, highs=fastest.
+        plinkoCooldown[i] = i < 25 ? 260 : i < 50 ? 160 : 140;
       }
     }
   }
@@ -561,7 +576,7 @@
     for (var i = plinkoDrops.length - 1; i >= 0; i--) {
       var d = plinkoDrops[i];
       d.y += d.speed;
-      d.life -= 0.003;
+      d.life -= 0.007;  // ~2.4s lifespan — clear the screen between musical events
 
       // Remove if off screen or dead
       if (d.y - d.len * fontSize > h || d.life <= 0) {
