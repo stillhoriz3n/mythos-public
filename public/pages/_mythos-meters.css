@@ -1,0 +1,95 @@
+/* ═══════════════════════════════════════════════════════════════════
+   _mythos-meters.css — Spectrum utility styles
+   ═══════════════════════════════════════════════════════════════════
+
+   Loaded by _mythos-page.js. Provides:
+     1. Static aliases for band indices (--bass, --mid, --treble, etc)
+     2. A canonical .m-meter utility class
+     3. Modifier attributes: data-meter-axis, data-meter-floor
+
+   ──────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Static aliases for band indices — designers use role names, not numbers */
+  --sub-bass:   var(--band-0, 0);
+  --bass:       var(--band-1, 0);
+  --low-mid:    var(--band-2, 0);
+  --mid:        var(--band-4, 0);
+  --high-mid:   var(--band-5, 0);
+  --presence:   var(--band-6, 0);
+  --treble:     var(--band-7, 0);
+  --brilliance: var(--band-8, 0);
+  --air:        var(--band-9, 0);
+}
+
+/* ── Meter utility ─────────────────────────────────────────────────
+   Usage:
+     <div class="m-meter" data-band-role="bass"></div>
+     <div class="m-meter" data-band="4" data-meter-axis="h"></div>
+     <div class="m-meter m-meter--glow" data-band="5"></div>
+
+   Dimensions / position come from whatever CSS already styles the
+   container element. The utility only draws the reactive fill via
+   ::before, so it composes with border/inset/absolute containers.
+   ──────────────────────────────────────────────────────────────── */
+
+.m-meter {
+  position: relative;
+  --m-meter-floor: 0.08;
+  --m-meter-color: var(--seal-color, currentColor);
+}
+
+.m-meter::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--m-meter-color);
+  transform-origin: bottom;
+  transform: scaleY(calc(var(--m-meter-floor) + (1 - var(--m-meter-floor)) * var(--band-level, 1)));
+  transition: transform 70ms linear, background 800ms ease;
+  pointer-events: none;
+}
+
+/* Horizontal axis (fills from left) */
+.m-meter[data-meter-axis="h"]::before {
+  transform-origin: left;
+  transform: scaleX(calc(var(--m-meter-floor) + (1 - var(--m-meter-floor)) * var(--band-level, 1)));
+}
+
+/* Glow variant — box-shadow scales with energy */
+.m-meter--glow::before {
+  box-shadow: 0 0 calc(3px + 14px * var(--band-level, 0)) var(--m-meter-color);
+}
+
+/* Floor override shorthand */
+.m-meter[data-meter-floor="0"]    { --m-meter-floor: 0; }
+.m-meter[data-meter-floor="0.05"] { --m-meter-floor: 0.05; }
+.m-meter[data-meter-floor="0.1"]  { --m-meter-floor: 0.1; }
+.m-meter[data-meter-floor="0.15"] { --m-meter-floor: 0.15; }
+.m-meter[data-meter-floor="0.2"]  { --m-meter-floor: 0.2; }
+
+/* ── Strobe utility ───────────────────────────────────────────────
+   <div class="m-strobe" data-strobe="bar"></div> flashes on downbeat.
+   data-strobe options: bar, beat, kick, snare, hat.
+   ──────────────────────────────────────────────────────────────── */
+
+.m-strobe { --m-strobe-level: 0; opacity: calc(var(--m-strobe-level) * 0.6); transition: opacity 40ms linear; background: var(--seal-color, currentColor); pointer-events: none; }
+.m-strobe[data-strobe="bar"]   { --m-strobe-level: var(--beat-bar-pulse, 0); }
+.m-strobe[data-strobe="beat"]  { --m-strobe-level: var(--beat-pulse, 0); }
+.m-strobe[data-strobe="kick"]  { --m-strobe-level: var(--kick, 0); }
+.m-strobe[data-strobe="snare"] { --m-strobe-level: var(--snare, 0); }
+.m-strobe[data-strobe="hat"]   { --m-strobe-level: var(--hat, 0); }
+
+/* ── Beat-synced rotation utility ─────────────────────────────────
+   Apply to any element to rotate it exactly one bar per revolution.
+   Combine with animation-duration: var(--beat-bar-sec).
+   ──────────────────────────────────────────────────────────────── */
+
+@keyframes m-spin-bar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.m-spin-bar {
+  animation: m-spin-bar var(--beat-bar-sec, 2s) linear infinite;
+}
+@keyframes m-spin-beat { from { transform: rotate(0deg); } to { transform: rotate(90deg); } }
+.m-spin-beat {
+  animation: m-spin-beat var(--beat-sec, 0.5s) linear infinite;
+}

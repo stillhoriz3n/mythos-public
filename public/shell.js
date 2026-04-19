@@ -1315,13 +1315,40 @@
     }
   }
 
-  // ── 10 log-spaced frequency bands for CSS-driven VU meters ─────────
-  // Bands span bin 2 → end of FFT logarithmically, ~1-octave each. Each
-  // band uses VU ballistics: fast attack (needle jumps with peaks),
-  // slow release (settles back like an analog meter). Page elements
-  // with data-band="N" bind their CSS --band-level to --band-N.
+  // ═══════════════════════════════════════════════════════════════════
+  // ── SPECTRUM BROADCAST ─ FFT-as-design-system ─────────────────────
+  // ═══════════════════════════════════════════════════════════════════
+  //
+  // Per-frame FFT state gets flattened into primitives that CSS can
+  // consume as custom properties. This is the backbone of the site's
+  // audio-reactive design system. The contract is documented in
+  // docs/SPECTRUM.md; summary:
+  //
+  //   bands[10]       — log-spaced energy 0..1 per band with analog-VU
+  //                     ballistics (fast attack, slow release)
+  //   onsets[10]      — transient pulse 0..1 per band (exp decay after
+  //                     each rising-edge detection). Fires on attacks.
+  //   envelope        — overall loudness 0..1, slowly averaged
+  //   beat, sealColor — already in message
+  //
+  // Band index → rough frequency (fftSize 4096, 48kHz):
+  //   0: ~23-46 Hz      (sub-bass)
+  //   1: ~46-93 Hz      (bass)
+  //   2: ~93-186 Hz     (low-mid)
+  //   3: ~186-373 Hz    (mid)
+  //   4: ~373-746 Hz    (mid)
+  //   5: ~746-1492 Hz   (high-mid)
+  //   6: ~1492-2985 Hz  (presence)
+  //   7: ~2985-5970 Hz  (treble)
+  //   8: ~5970-11940 Hz (brilliance)
+  //   9: ~11940-23880Hz (air)
   var NUM_BANDS = 10;
-  var bandSmoothed = new Array(NUM_BANDS); for (var _i = 0; _i < NUM_BANDS; _i++) bandSmoothed[_i] = 0;
+  var bandSmoothed = new Array(NUM_BANDS);
+  var bandSlow = new Array(NUM_BANDS);     // baseline for onset detection
+  var bandOnset = new Array(NUM_BANDS);    // current onset decay value
+  for (var _i = 0; _i < NUM_BANDS; _i++) { bandSmoothed[_i] = 0; bandSlow[_i] = 0; bandOnset[_i] = 0; }
+  var envelopeSmoothed = 0;
+  var ONSET_THRESHOLD = [0.10, 0.09, 0.07, 0.06, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]; // per-band delta gate
 
   function updateBands() {
     if (!freqArray || !freqArray.length) return;
@@ -1329,6 +1356,7 @@
     var maxBin = freqArray.length;
     var logMin = Math.log(minBin);
     var logSpan = Math.log(maxBin) - logMin;
+    var envSum = 0, envCount = 0;
     for (var i = 0; i < NUM_BANDS; i++) {
       var s = Math.floor(Math.exp(logMin + logSpan * (i / NUM_BANDS)));
       var e = Math.max(s + 1, Math.floor(Math.exp(logMin + logSpan * ((i + 1) / NUM_BANDS))));
@@ -1336,10 +1364,21 @@
       var sum = 0, count = e - s;
       for (var b = s; b < e; b++) sum += freqArray[b] || 0;
       var raw = count > 0 ? (sum / count) / 255 : 0;
-      // VU ballistics: fast attack, slow release
+      envSum += raw; envCount++;
+      // VU ballistics
       if (raw > bandSmoothed[i]) bandSmoothed[i] = bandSmoothed[i] * 0.25 + raw * 0.75;
       else bandSmoothed[i] = bandSmoothed[i] * 0.88 + raw * 0.12;
+      // Slow baseline for onset detection
+      bandSlow[i] = bandSlow[i] * 0.96 + raw * 0.04;
+      // Onset fires on delta; then exp-decays each frame
+      var delta = bandSmoothed[i] - bandSlow[i];
+      if (delta > ONSET_THRESHOLD[i] && bandSmoothed[i] > 0.08) {
+        bandOnset[i] = Math.max(bandOnset[i], Math.min(1, delta / ONSET_THRESHOLD[i] * 0.7));
+      }
+      bandOnset[i] *= 0.88; // decay ~200ms
     }
+    var envRaw = envCount > 0 ? envSum / envCount : 0;
+    envelopeSmoothed = envelopeSmoothed * 0.92 + envRaw * 0.08;
   }
 
   function broadcastBeat() {
@@ -1350,11 +1389,17 @@
       var beat = playing ? getBeat() : { phase:0, half:0, quarter:0, bar:0, pulse:0, barPulse:0, bpm: TRACKS[current] ? (TRACKS[current].bpm||120) : 120, raw:0 };
       var mColor = SEAL_MS[sealCurrentM].color;
       var bandsRounded = new Array(NUM_BANDS);
-      for (var i = 0; i < NUM_BANDS; i++) bandsRounded[i] = Math.round(bandSmoothed[i] * 1000) / 1000;
+      var onsetsRounded = new Array(NUM_BANDS);
+      for (var i = 0; i < NUM_BANDS; i++) {
+        bandsRounded[i] = Math.round(bandSmoothed[i] * 1000) / 1000;
+        onsetsRounded[i] = Math.round(bandOnset[i] * 1000) / 1000;
+      }
       frame.contentWindow.postMessage({
         type: 'mythos:beat',
         beat: beat,
         bands: bandsRounded,
+        onsets: onsetsRounded,
+        envelope: Math.round(envelopeSmoothed * 1000) / 1000,
         playing: playing,
         sealM: sealCurrentM,
         sealColor: mColor,
@@ -1462,6 +1507,9 @@
     }
     else if (d.type === 'mythos:beat:subscribe') {
       beatSubscribed = true;
+    }
+    else if (d.type === 'mythos:beat:unsubscribe') {
+      beatSubscribed = false;
     }
     else if (d.type === 'mythos:tint') {
       tintTargetSynth = hexToRgb(d.synth);
