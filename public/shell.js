@@ -412,7 +412,7 @@
     if (matrixMode) initMatrixDrops();
   }
 
-  var STAR_COUNT = 180;
+  var STAR_COUNT = 600;
   var STAR_DEPTH = 2000;
   function initStars() {
     stars = [];
@@ -423,11 +423,11 @@
   }
   function makeStar(z) {
     return {
-      x: (Math.random() - 0.5) * 4,   // -2 to 2, wide spread
-      y: (Math.random() - 0.5) * 4,
+      x: (Math.random() - 0.5) * 6,   // -3 to 3, very wide spread
+      y: (Math.random() - 0.5) * 6,
       z: z || STAR_DEPTH,
-      isCyan: Math.random() < 0.12,
-      baseAlpha: 0.3 + Math.random() * 0.7,
+      isCyan: Math.random() < 0.15,
+      baseAlpha: 0.5 + Math.random() * 0.5,
     };
   }
 
@@ -684,8 +684,8 @@
 
         // size and alpha based on depth
         var depthRatio = 1 - s.z / STAR_DEPTH;
-        var sr = (0.3 + depthRatio * 2.5) * dpr;
-        var alpha = (s.baseAlpha * depthRatio) * starAlphaScale;
+        var sr = (0.5 + depthRatio * 3) * dpr;
+        var alpha = (s.baseAlpha * (0.15 + depthRatio * 0.85)) * starAlphaScale;
         if (alpha < 0.01) continue;
 
         // streak line from previous to current position
@@ -710,7 +710,7 @@
         c.fill();
 
         // glow on close/bright stars
-        if (depthRatio > 0.7 && alpha > 0.3) {
+        if (depthRatio > 0.5 && alpha > 0.2) {
           c.beginPath();
           c.arc(sx, sy, sr * 3, 0, Math.PI * 2);
           c.fillStyle = s.isCyan
