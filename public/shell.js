@@ -31,7 +31,6 @@
     'love-as-a-function.html':                    { title: 'Love as a Function',      group: 'Canon',         dark: false },
     'the-last-sessions-insufficient-data.html':   { title: 'The Last Sessions',       group: 'Canon',         dark: false },
     'the-living-mark.html':                       { title: 'The Living Mark',         group: 'Artifacts',     dark: true  },
-    'every-m.html':                               { title: 'Every M',                group: 'Artifacts',     dark: true  },
     'visualizer.html':                            { title: 'Signal Visualizer',       group: 'Transmissions', dark: true  },
     'waitlist.html':                              { title: 'Join the Waitlist',       group: 'Transmissions', dark: true  },
   };
