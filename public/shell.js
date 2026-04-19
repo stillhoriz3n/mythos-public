@@ -66,11 +66,14 @@
   // ── SPECTRUM PLINKO — FFT-driven falling character rain ────────────
   //
   // How it works:
-  //   100 columns span the screen left-to-right. Each column maps to a
-  //   slice of the FFT frequency spectrum (bottom 60% of bins). Every
-  //   frame, each column's average energy is compared against a per-band
-  //   threshold. If energy > threshold AND cooldown has expired, a new
-  //   character drop spawns at the top of that column and falls.
+  //   100 columns span the screen left-to-right. Columns map to FFT bins
+  //   LOGARITHMICALLY (bin 2 → bin ~1126, ~13kHz) so each column covers
+  //   roughly equal musical octaves — bass gets narrow high-res columns,
+  //   highs get broad averaged ranges. Linear mapping crowded all energy
+  //   into the left 25% because music energy is concentrated in bass.
+  //   Every frame, each column's average energy is compared against a
+  //   per-band threshold. If energy > threshold AND cooldown has expired,
+  //   a new character drop spawns at the top of that column and falls.
   //
   // Tuning guide (the three knobs):
   //
@@ -79,19 +82,18 @@
   //      Bass naturally has WAY more FFT energy than highs, so bass
   //      thresholds must be set relatively high and high thresholds
   //      relatively low to get even visual density across the spectrum.
-  //      Current values tuned 2026-04-18:
-  //        sub-bass (<10%): 0.28 | bass (10-25%): 0.22
-  //        mids (25-50%):   0.32 | upper mids (50-75%): 0.55
-  //        highs (>75%):    0.65
+  //      Current values tuned 2026-04-18 (log mapping + rebalance):
+  //        sub-bass (<10%): 0.42 | bass (10-25%): 0.34
+  //        mids (25-50%):   0.22 | upper mids (50-75%): 0.20
+  //        highs (>75%):    0.16
   //      If bass is too quiet, lower the first two. If highs are a wall
   //      of green, raise the last two.
   //
   //   2. COOLDOWNS (updatePlinko) — minimum ms between spawns per column.
-  //      Prevents machine-gun spam. Bass has short cooldown (200ms) so
-  //      kicks land visually. Highs have long cooldown (500ms) since
-  //      they'd otherwise fire constantly.
-  //        col 0-24 (bass): 200ms | col 25-49 (mids): 350ms
-  //        col 50-99 (highs): 500ms
+  //      Prevents machine-gun spam. Bass gets a long cooldown so kicks
+  //      don't dominate; mids/highs fire freely so transients land.
+  //        col 0-24 (bass): 340ms | col 25-49 (mids): 220ms
+  //        col 50-99 (highs): 280ms
   //
   //   3. SMOOTHING (updatePlinko) — plinkoSmoothed[i] = old * 0.7 + new * 0.3
   //      Higher old weight = more sluggish/smooth. Lower = more twitchy.
@@ -480,11 +482,13 @@
       // Lower frequencies need higher thresholds (more energy there)
       // Higher frequencies need lower thresholds (less energy)
       var freqRatio = i / PLINKO_COLS;
-      var threshold = freqRatio < 0.1 ? 0.28       // sub-bass — lots of energy, still needs low gate
-                    : freqRatio < 0.25 ? 0.22      // bass — let it breathe
-                    : freqRatio < 0.5 ? 0.32       // mids — moderate
-                    : freqRatio < 0.75 ? 0.55      // upper mids — tighten up
-                    : 0.65;                         // highs — clamp hard
+      // With log-scale bin mapping, upper columns average over many bins,
+      // which smooths peaks down — they need lower thresholds to register.
+      var threshold = freqRatio < 0.1 ? 0.42       // sub-bass — clamp hard, single-bin + dominant
+                    : freqRatio < 0.25 ? 0.34      // bass — tighten (was overspawning)
+                    : freqRatio < 0.5 ? 0.22       // mids — open up, these carry the track
+                    : freqRatio < 0.75 ? 0.20      // upper mids — broad avg, needs low gate
+                    : 0.16;                         // highs — broadest avg, needs lowest gate
       plinkoThresholds.push(threshold);
       plinkoSmoothed.push(0);
       plinkoCooldown.push(0);
@@ -494,18 +498,28 @@
 
   function updatePlinko(freqArr, w, h, dpr) {
     if (!freqArr || !freqArr.length) return;
-    var binsPerCol = Math.floor(freqArr.length * 0.6 / PLINKO_COLS); // use bottom 60% of spectrum
+    // Log-scale frequency mapping: column i covers bins [logBin(i), logBin(i+1)).
+    // Linear mapping crowded all energy into the left 25% of the screen and left
+    // the right columns staring at ~14kHz dead air. Log mapping spreads octaves
+    // evenly: bass gets narrow high-res columns, highs average broader ranges.
+    var minBin = 2;                                       // skip DC + bin 1
+    var maxBin = Math.floor(freqArr.length * 0.55);       // ~1126 bins @ fftSize 4096 (~13kHz)
+    var logMin = Math.log(minBin);
+    var logMax = Math.log(maxBin);
+    var logSpan = logMax - logMin;
     var colW = w / PLINKO_COLS;
     var now = performance.now();
 
     for (var i = 0; i < PLINKO_COLS; i++) {
-      // Average the FFT bins for this column
+      var startBin = Math.floor(Math.exp(logMin + logSpan * (i / PLINKO_COLS)));
+      var endBin = Math.max(startBin + 1, Math.floor(Math.exp(logMin + logSpan * ((i + 1) / PLINKO_COLS))));
+      if (endBin > freqArr.length) endBin = freqArr.length;
       var sum = 0;
-      var startBin = i * binsPerCol;
-      for (var b = 0; b < binsPerCol; b++) {
-        sum += freqArr[startBin + b] || 0;
+      var count = endBin - startBin;
+      for (var b = startBin; b < endBin; b++) {
+        sum += freqArr[b] || 0;
       }
-      var energy = (sum / binsPerCol) / 255;
+      var energy = count > 0 ? (sum / count) / 255 : 0;
 
       // Smooth it
       plinkoSmoothed[i] = plinkoSmoothed[i] * 0.7 + energy * 0.3;
@@ -529,8 +543,8 @@
         for (var j = 0; j < d.len; j++) {
           d.chars.push(matrixChars[Math.floor(Math.random() * matrixChars.length)]);
         }
-        // Cooldown: lower frequencies get longer cooldown (they'd spam otherwise)
-        plinkoCooldown[i] = i < 25 ? 200 : i < 50 ? 350 : 500;
+        // Cooldown: bass gets long cooldown (would dominate); mids/highs fire freely
+        plinkoCooldown[i] = i < 25 ? 340 : i < 50 ? 220 : 280;
       }
     }
   }
