@@ -14,7 +14,8 @@
 
     { "wordRange": [113, 186], "kind": "rapidfire", "maxWordsPerChunk": 9, "color": "amber", "note": "the -ed flurry — keep each rhyming line intact so head/read/said/misled/bed/thread/bled/fed/dead all land" },
 
-    { "wordRange": [188, 198], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "I chose the road but I cant help where it led — verse 2 payoff, biggest" },
+    { "wordRange": [188, 191], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "I chose the road — setup, hangs in the air" },
+    { "wordRange": [192, 198], "kind": "key", "emphasis": 1.35, "color": "amber", "note": "but I cant help where it led — the reckoning, biggest ribbon moment" },
 
     { "wordRange": [205, 207], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "whispers of infinity #2" },
 
