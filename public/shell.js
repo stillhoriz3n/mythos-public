@@ -151,24 +151,20 @@
   var lyricState = {
     trackFile: null,
     loadToken: 0,
-    lines: null,          // [{ t, text, words: [{t,d,w}] }]
-    sprites: [],          // active LINE sprites — one per lyric line
-    lineCursor: 0,        // next line index to spawn
+    chunks: null,         // [{ t, tEnd, startT, endT, words, text, laneIdx }]
+    sprites: [],          // active chunk sprites (one per live chunk)
+    chunkCursor: 0,       // next chunk index to spawn
   };
 
-  // Three-lane ribbon: amber / white / cyan reading strips, each with
-  // its own slow-follow wave buffer anchored at a distinct y center.
-  // lane 0 = amber (upper), 1 = white (middle), 2 = cyan (lower).
-  // Lines are dispatched to whichever lane frees up soonest, so
-  // overlapping lines don't stall the ribbon.
-  var LYRIC_LANES = 3;
-  var lyricWaveBufs = [null, null, null];
+  // Two-lane ribbon: amber (upper) + cyan (lower) reading strips, each
+  // with its own slow-follow wave buffer. The middle lane was hard to
+  // read (sits inside the singularity glow), so we pre-schedule chunks
+  // onto these two lanes at lyric-load time and route any unavoidable
+  // overflow to a momentary centered-italic "eclipse" flash instead.
+  var LYRIC_LANES = 2;
+  var lyricWaveBufs = [null, null];
   var lyricWaveBufStride = 40;
-  // Lane y centers as fractions of h — outer ±11%, middle at 50%.
-  var LYRIC_LANE_YS = [0.39, 0.50, 0.61];
-  // Tracks each lane's last-scheduled endT so the dispatcher can pick
-  // the lane freeing up soonest. -Infinity = never occupied.
-  var lyricLaneEndT = [-Infinity, -Infinity, -Infinity];
+  var LYRIC_LANE_YS = [0.40, 0.60];
 
   // Splash particles (distinct from the existing `particles` array so we
   // can cheaply promote a fraction of them into `stars` without polluting
@@ -182,10 +178,9 @@
   function loadLyricsForTrack(file) {
     if (lyricState.trackFile === file) return;
     lyricState.trackFile = file;
-    lyricState.lines = null;
+    lyricState.chunks = null;
     lyricState.sprites = [];
-    lyricState.lineCursor = 0;
-    lyricLaneEndT[0] = lyricLaneEndT[1] = lyricLaneEndT[2] = -Infinity;
+    lyricState.chunkCursor = 0;
     if (!file) return;
     var token = ++lyricState.loadToken;
     var stem = file.replace(/^.*\//, '').replace(/\.mp3$/i, '');
@@ -195,23 +190,91 @@
         if (token !== lyricState.loadToken) return;
         var raw = json && json.lines ? json.lines : null;
         if (!raw) return;
-        // Normalize: each line must have t + words[]. Sort defensively.
-        var lines = [];
+        // Flatten all words from all lines into a single timeline (line
+        // groupings in the JSON are transcriber decisions, not layout
+        // decisions — we rechunk based on timing + length).
+        var allWords = [];
         for (var li = 0; li < raw.length; li++) {
           var ln = raw[li];
-          if (!ln || !ln.words || !ln.words.length) continue;
-          var words = ln.words.map(function(w){ return { t:+w.t, d:+w.d, w: w.w || '' }; });
-          words.sort(function(a,b){ return a.t - b.t; });
-          var last = words[words.length - 1];
-          lines.push({
-            t: +ln.t,
-            tEnd: last.t + last.d,
-            text: ln.text || words.map(function(w){return w.w;}).join(' '),
-            words: words,
-          });
+          if (!ln || !ln.words) continue;
+          for (var wi = 0; wi < ln.words.length; wi++) {
+            var w = ln.words[wi];
+            if (!w || !w.w) continue;
+            allWords.push({ t: +w.t, d: +w.d, w: w.w });
+          }
         }
-        lines.sort(function(a,b){ return a.t - b.t; });
-        lyricState.lines = lines;
+        allWords.sort(function(a,b){ return a.t - b.t; });
+
+        // ── Chunker ──
+        // Break into reading chunks. Break when:
+        //   - gap to next word > GAP_HARD (natural pause)
+        //   - chunk has >= SOFT_WORDS words and gap > GAP_SOFT
+        //   - chunk char count + next word would exceed MAX_CHARS
+        var GAP_HARD = 0.45;
+        var GAP_SOFT = 0.18;
+        var SOFT_WORDS = 6;
+        var MAX_CHARS = 44;
+        var chunks = [];
+        var cur = null;
+        for (var i = 0; i < allWords.length; i++) {
+          var wRec = allWords[i];
+          var prev = cur && cur.words.length ? cur.words[cur.words.length - 1] : null;
+          var gap = prev ? (wRec.t - (prev.t + prev.d)) : Infinity;
+          var chunkChars = cur ? cur.chars + 1 + wRec.w.length : wRec.w.length;
+          var shouldBreak = !cur
+            || gap > GAP_HARD
+            || (cur.words.length >= SOFT_WORDS && gap > GAP_SOFT)
+            || chunkChars > MAX_CHARS;
+          if (shouldBreak) {
+            cur = { words: [], chars: 0 };
+            chunks.push(cur);
+          }
+          cur.words.push(wRec);
+          cur.chars = (cur.words.length === 1) ? wRec.w.length : cur.chars + 1 + wRec.w.length;
+        }
+
+        // Finalize each chunk with timing + text.
+        for (var ci = 0; ci < chunks.length; ci++) {
+          var c0 = chunks[ci];
+          var first = c0.words[0];
+          var last = c0.words[c0.words.length - 1];
+          c0.t = first.t;
+          c0.tEnd = last.t + last.d;
+          c0.text = c0.words.map(function(w){return w.w;}).join(' ');
+          c0.startT = c0.t - LYRIC_LEAD;
+          c0.endT = c0.tEnd + LYRIC_TAIL;
+        }
+
+        // ── Lane scheduler ──
+        // Assign each chunk to a lane (0 or 1) or mark as eclipse overflow.
+        // Greedy: prefer the lane whose last chunk ended earliest AND whose
+        // endT <= this chunk's startT (non-overlapping). If both lanes are
+        // still occupied at startT, eclipse.
+        var laneLastEnd = [-Infinity, -Infinity];
+        var laneAlt = 0; // tiebreaker rotation
+        for (var ci2 = 0; ci2 < chunks.length; ci2++) {
+          var ch = chunks[ci2];
+          var pick = -1;
+          // Try to place on a fully-free lane first.
+          var candidates = [];
+          for (var ln2 = 0; ln2 < LYRIC_LANES; ln2++) {
+            if (laneLastEnd[ln2] <= ch.startT + 0.01) candidates.push(ln2);
+          }
+          if (candidates.length === 1) {
+            pick = candidates[0];
+          } else if (candidates.length > 1) {
+            // Rotate ties so we don't pile lane 0 for opening lines.
+            pick = candidates[laneAlt % candidates.length];
+            laneAlt++;
+          } else {
+            // Both lanes occupied — eclipse this chunk.
+            pick = -1;
+          }
+          ch.laneIdx = pick;
+          if (pick >= 0) laneLastEnd[pick] = ch.endT;
+        }
+
+        lyricState.chunks = chunks;
       }).catch(function(){ /* quiet */ });
   }
 
@@ -348,8 +411,7 @@
   audio.addEventListener('seeked', function() {
     // Flush ribbon state; updateLyricSprites will rebuild cursor next frame.
     lyricState.sprites = [];
-    lyricState.lineCursor = 0;
-    lyricLaneEndT[0] = lyricLaneEndT[1] = lyricLaneEndT[2] = -Infinity;
+    lyricState.chunkCursor = 0;
   });
   audio.addEventListener('ended', function() {
     if (loop) { audio.currentTime = 0; audio.play().catch(function(){}); }
@@ -771,42 +833,39 @@
   // letter is pinned. 0 = left, 1 = right. Tune this to taste.
   var LYRIC_ANCHOR_FRAC = 0.86;
 
-  // Layout a whole lyric LINE as one sprite. Words within the line are
-  // laid out left-to-right with a single-space gap; each letter carries
-  // its owning word index + its sung time so the conductor can fire
-  // letter-timed drops for the word being sung right now.
-  // laneIdx: 0 = amber (upper), 1 = white (middle), 2 = cyan (lower).
-  // Dispatched per-line to whichever lane frees up soonest.
-  function spawnLineSprite(line, c, dpr, w, h, laneIdx) {
-    // Auto-scale: on narrow viewports, ensure the line fits ~90% of width
-    // so there's always at least a short in-viewport reading window.
+  // Layout a single CHUNK as one sprite. Chunks are pre-grouped phrases
+  // produced by the chunker at lyric-load time; their laneIdx is already
+  // assigned by the scheduler. Words within the chunk are laid out
+  // left-to-right with a single-space gap; each letter carries its
+  // owning word index + sung time so the conductor can fire letter-
+  // timed drops for the word being sung right now.
+  function spawnChunkSprite(chunk, c, dpr, w, h) {
+    // Auto-scale: even though the chunker targets ~44 chars, a few long
+    // words can still overflow on narrow mobile. Ensure fit to ~90%w.
     var baseFontPx = LYRIC_FONT_PX * dpr;
     var prevFont = c.font;
     var prevAlign = c.textAlign;
-    // Measure at base size first.
     c.font = '500 ' + baseFontPx + 'px ' + LYRIC_FONT;
     var spaceW = c.measureText(' ').width;
     var measureTotal = 0;
-    for (var mi = 0; mi < line.words.length; mi++) {
-      measureTotal += c.measureText(line.words[mi].w || '').width;
-      if (mi < line.words.length - 1) measureTotal += spaceW;
+    for (var mi = 0; mi < chunk.words.length; mi++) {
+      measureTotal += c.measureText(chunk.words[mi].w || '').width;
+      if (mi < chunk.words.length - 1) measureTotal += spaceW;
     }
     var fontPx = baseFontPx;
     var maxW = w * 0.9;
     if (measureTotal > maxW && measureTotal > 0) {
       fontPx = Math.max(baseFontPx * 0.55, baseFontPx * (maxW / measureTotal));
     }
-    // Re-measure at final size for accurate letter positions.
     c.font = '500 ' + fontPx + 'px ' + LYRIC_FONT;
     c.textAlign = 'left';
     spaceW = c.measureText(' ').width;
 
     var letters = [];
     var xOff = 0;
-    for (var wi = 0; wi < line.words.length; wi++) {
-      var word = line.words[wi];
+    for (var wi = 0; wi < chunk.words.length; wi++) {
+      var word = chunk.words[wi];
       var text = word.w || '';
-      // Per-letter sung-time slice within this word.
       var n = text.length || 1;
       for (var ci = 0; ci < text.length; ci++) {
         var ch = text[ci];
@@ -824,14 +883,13 @@
         });
         xOff += m.width;
       }
-      if (wi < line.words.length - 1) xOff += spaceW;
+      if (wi < chunk.words.length - 1) xOff += spaceW;
     }
     var totalW = xOff;
 
     c.font = prevFont;
     c.textAlign = prevAlign;
 
-    // Flight ≈ 0.7s. Primary strike per letter: fire at sungAt - flightTime.
     var flightTime = 0.7;
     var hits = [];
     for (var li = 0; li < letters.length; li++) {
@@ -842,21 +900,17 @@
         kind: 'primary',
       });
     }
-    hits.sort(function(a,b){ return a.fireAt - b.fireAt; });
 
-    // Sprite travel window: from (firstWord.t - LEAD) to (lastWord.tEnd + TAIL).
-    // Travel uses the same global TRAVEL_SECS so velocity is identical for
-    // every line — they just spawn at different times.
     lyricState.sprites.push({
-      text: line.text,
-      t: line.t,
-      tEnd: line.tEnd,
-      startT: line.t - LYRIC_LEAD,
-      endT:   line.tEnd + LYRIC_TAIL,
+      text: chunk.text,
+      t: chunk.t,
+      tEnd: chunk.tEnd,
+      startT: chunk.startT,
+      endT:   chunk.endT,
       letters: letters,
       totalW: totalW,
       fontPx: fontPx,
-      laneIdx: laneIdx | 0,
+      laneIdx: chunk.laneIdx,
       hits: hits,
       extrasAccum: 0,
       x: 0, y: 0,
@@ -864,50 +918,33 @@
     });
   }
 
-  // Pick the lane freeing up soonest (smallest endT). Ties rotate
-  // across lanes so adjacent lines don't all pile onto lane 0.
-  var laneRotation = 0;
-  function pickLane(line) {
-    // Start the scan at the rotating offset so ties rotate.
-    var bestLane = laneRotation % LYRIC_LANES;
-    var bestEnd = lyricLaneEndT[bestLane];
-    for (var k = 1; k < LYRIC_LANES; k++) {
-      var i = (bestLane + k) % LYRIC_LANES;
-      if (lyricLaneEndT[i] < bestEnd) {
-        bestEnd = lyricLaneEndT[i];
-        bestLane = i;
-      }
-    }
-    laneRotation++;
-    return bestLane;
-  }
-
   function updateLyricSprites(audioTime, c, w, h, dpr) {
-    if (!lyricState.lines || !lyricState.lines.length) return;
+    if (!lyricState.chunks || !lyricState.chunks.length) return;
 
-    // First-run / big-seek: fast-forward cursor past lines whose ribbon
-    // window already ended, so we don't spawn thousands of stale sprites.
-    if (lyricState.lineCursor === 0 && lyricState.sprites.length === 0) {
-      for (var fi = 0; fi < lyricState.lines.length; fi++) {
-        if (lyricState.lines[fi].tEnd + LYRIC_TAIL >= audioTime - 0.5) {
-          lyricState.lineCursor = fi;
+    // First-run / big-seek: fast-forward cursor past chunks whose window
+    // already ended, so we don't spawn stale sprites on startup.
+    if (lyricState.chunkCursor === 0 && lyricState.sprites.length === 0) {
+      for (var fi = 0; fi < lyricState.chunks.length; fi++) {
+        if (lyricState.chunks[fi].endT >= audioTime - 0.5) {
+          lyricState.chunkCursor = fi;
           break;
         }
       }
     }
 
-    // Spawn any lines that have entered their LEAD window.
-    // Dispatch to the lane that frees up soonest (its lyricLaneEndT is
-    // smallest). This makes overlapping lines distribute across 3 lanes
-    // instead of crowding one — no more waiting for one lane to clear
-    // before the next line can spawn.
-    while (lyricState.lineCursor < lyricState.lines.length) {
-      var next = lyricState.lines[lyricState.lineCursor];
-      if (audioTime >= next.t - LYRIC_LEAD - 0.1) {
-        var lane = pickLane(next);
-        spawnLineSprite(next, c, dpr, w, h, lane);
-        lyricLaneEndT[lane] = next.tEnd + LYRIC_TAIL;
-        lyricState.lineCursor++;
+    // Spawn chunks whose startT has arrived. Lane assignment was baked
+    // in at load time; here we just honor it. If laneIdx === -1, this
+    // chunk is an eclipse overflow (handled separately by the eclipse
+    // renderer — no ribbon sprite).
+    while (lyricState.chunkCursor < lyricState.chunks.length) {
+      var next = lyricState.chunks[lyricState.chunkCursor];
+      if (audioTime >= next.startT - 0.1) {
+        if (next.laneIdx >= 0) {
+          spawnChunkSprite(next, c, dpr, w, h);
+        }
+        // Eclipse chunks are rendered directly by drawEclipses (reads
+        // the chunks list for any chunk in its active window). No sprite.
+        lyricState.chunkCursor++;
       } else break;
     }
 
@@ -916,11 +953,10 @@
       var first = lyricState.sprites[0];
       if (audioTime < first.startT - 0.5) {
         lyricState.sprites = [];
-        lyricState.lineCursor = 0;
-        lyricLaneEndT[0] = lyricLaneEndT[1] = lyricLaneEndT[2] = -Infinity;
-        for (var i = 0; i < lyricState.lines.length; i++) {
-          if (lyricState.lines[i].tEnd + LYRIC_TAIL >= audioTime - 0.5) {
-            lyricState.lineCursor = i;
+        lyricState.chunkCursor = 0;
+        for (var i = 0; i < lyricState.chunks.length; i++) {
+          if (lyricState.chunks[i].endT >= audioTime - 0.5) {
+            lyricState.chunkCursor = i;
             break;
           }
         }
@@ -982,9 +1018,8 @@
 
   // Slow-follower wave samplers — one per lane. Each buffer is a
   // heavily-attenuated copy of the amber wave anchored at its lane's
-  // y center. Reading strips breathe like paper: tight amplitude + clamp
-  // so they don't surf the raw wave. Small per-lane phase offsets keep
-  // the three lanes from undulating in lockstep.
+  // y center. Tight amplitude + clamp so strips read calm; small phase
+  // offset so the two lanes don't undulate in lockstep.
   function updateLyricWaveBuf(w, h, dpr) {
     var samples = Math.max(8, Math.floor(w / lyricWaveBufStride));
     for (var lane = 0; lane < LYRIC_LANES; lane++) {
@@ -994,7 +1029,7 @@
       }
     }
     var ampCap = Math.min(h * 0.032, 28 * dpr);
-    var phaseShifts = [0, 0.25, 0.5]; // amber / white / cyan
+    var phaseShifts = [0, 0.45]; // amber / cyan
     for (var lane = 0; lane < LYRIC_LANES; lane++) {
       var buf = lyricWaveBufs[lane];
       var anchorY = h * LYRIC_LANE_YS[lane];
@@ -1017,7 +1052,7 @@
 
   function sampleLyricWave(px, w, h, laneIdx) {
     var lane = laneIdx | 0;
-    if (lane < 0 || lane >= LYRIC_LANES) lane = 1;
+    if (lane < 0 || lane >= LYRIC_LANES) lane = 0;
     var buf = lyricWaveBufs[lane];
     if (!buf || !buf.length) return h * LYRIC_LANE_YS[lane];
     var frac = Math.max(0, Math.min(1, px / w));
@@ -1232,14 +1267,12 @@
           // faster than they can zoom past the camera.
           if (stars.length < STAR_COUNT + 250) {
             // Lane → star color: 0 amber (bone/white in starfield),
-            // 1 white, 2 cyan. Store laneIdx so the star renderer can
-            // tint. (Existing isCyan is kept for compat with primordial
-            // stars.)
+            // 1 cyan. Star renderer uses the existing isCyan flag.
             stars.push({
               x: worldX,
               y: worldY,
               z: startZ,
-              isCyan: p.laneIdx === 2,
+              isCyan: p.laneIdx === 1,
               laneIdx: p.laneIdx,
               baseAlpha: 0.7 + Math.random() * 0.3,
               promoted: true,
@@ -1254,14 +1287,81 @@
       c.arc(p.x, p.y, p.r * Math.max(0.3, p.life), 0, Math.PI * 2);
       if (mT > 0.5) {
         c.fillStyle = 'rgba(180,255,180,' + (p.life * 0.9) + ')';
-      } else if (p.laneIdx === 2) {
-        c.fillStyle = 'rgba(180,235,245,' + (p.life * 0.85) + ')';
       } else if (p.laneIdx === 1) {
-        c.fillStyle = 'rgba(250,245,230,' + (p.life * 0.88) + ')';
+        c.fillStyle = 'rgba(180,235,245,' + (p.life * 0.85) + ')';
       } else {
         c.fillStyle = 'rgba(255,232,180,' + (p.life * 0.85) + ')';
       }
       c.fill();
+    }
+  }
+
+  // ── ECLIPSE RENDERER ─────────────────────────────────
+  // When both lanes are occupied at a chunk's startT, the scheduler marks
+  // it laneIdx=-1 (eclipse). These don't ride the ribbon — instead they
+  // flash centered, italic, fading in at (t - ECLIPSE_FADE_IN) and out
+  // over ECLIPSE_FADE_OUT after tEnd. Fraunces italic gives it a distinct
+  // "moment of emphasis" feel vs the monospace ribbon.
+  var ECLIPSE_FADE_IN = 0.4;
+  var ECLIPSE_FADE_OUT = 0.8;
+  var ECLIPSE_FONT_PX = 28;
+  function drawEclipses(c, audioTime, w, h, dpr, expand) {
+    if (!lyricState.chunks) return;
+    // Chunks are sorted by t. Start scanning around the current cursor
+    // so we don't walk the whole list every frame.
+    var start = Math.max(0, lyricState.chunkCursor - 4);
+    for (var i = start; i < lyricState.chunks.length; i++) {
+      var ch = lyricState.chunks[i];
+      var showStart = ch.t - ECLIPSE_FADE_IN;
+      var showEnd = ch.tEnd + ECLIPSE_FADE_OUT;
+      if (audioTime < showStart) break;
+      if (ch.laneIdx !== -1) continue;
+      if (audioTime > showEnd) continue;
+
+      var alpha;
+      if (audioTime < ch.t) {
+        alpha = (audioTime - showStart) / ECLIPSE_FADE_IN;
+      } else if (audioTime > ch.tEnd) {
+        alpha = 1 - (audioTime - ch.tEnd) / ECLIPSE_FADE_OUT;
+      } else {
+        alpha = 1;
+      }
+      alpha = Math.max(0, Math.min(1, alpha)) * expand;
+      if (alpha < 0.01) continue;
+
+      // Scale in slightly — starts at 0.92, ends at 1.08 for a breath.
+      var lineU = (audioTime - ch.t) / Math.max(0.001, (ch.tEnd - ch.t));
+      var scale = 0.92 + Math.max(0, Math.min(1, lineU)) * 0.16;
+
+      var fontPx = ECLIPSE_FONT_PX * dpr * scale;
+      var prevFont = c.font;
+      var prevAlign = c.textAlign;
+      var prevBaseline = c.textBaseline;
+      // Fraunces italic for the moment-of-emphasis feel. If Fraunces
+      // hasn't loaded, falls back to serif italic — still readable.
+      c.font = 'italic 400 ' + fontPx + 'px "Fraunces", Georgia, serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+
+      // Auto-scale down if text too wide.
+      var m = c.measureText(ch.text);
+      if (m.width > w * 0.85) {
+        fontPx = fontPx * (w * 0.85 / m.width);
+        c.font = 'italic 400 ' + fontPx + 'px "Fraunces", Georgia, serif';
+      }
+
+      var cx = w * 0.5;
+      var cy = h * 0.5;
+
+      c.shadowColor = 'rgba(255,240,220,' + (alpha * 0.7) + ')';
+      c.shadowBlur = 24 * dpr;
+      c.fillStyle = 'rgba(250,240,215,' + (alpha * 0.95) + ')';
+      c.fillText(ch.text, cx, cy);
+      c.shadowBlur = 0;
+
+      c.font = prevFont;
+      c.textAlign = prevAlign;
+      c.textBaseline = prevBaseline;
     }
   }
 
@@ -1280,18 +1380,15 @@
       if (s.x + s.totalW < -20 || s.x > w + 20) continue;
       c.font = '500 ' + s.fontPx + 'px ' + LYRIC_FONT;
 
-      // Per-lane colors. Matrix mode folds all to green.
-      // Lane 0 amber (synth), 1 white (bone/human), 2 cyan (machine).
+      // Per-lane colors. Matrix mode folds both to green.
+      // Lane 0 amber (synth, upper), 1 cyan (machine, lower).
       var glowRGB, fillRGB;
       if (mT > 0.5) {
         glowRGB = '120,255,140';
         fillRGB = '180,255,180';
-      } else if (s.laneIdx === 2) {
+      } else if (s.laneIdx === 1) {
         glowRGB = '78,201,212';
         fillRGB = '188,238,245';
-      } else if (s.laneIdx === 1) {
-        glowRGB = '240,235,219';
-        fillRGB = '250,245,230';
       } else {
         glowRGB = '232,184,88';
         fillRGB = '255,232,188';
@@ -1409,7 +1506,7 @@
     // Slow-follow wave buffer → sprite layout → aim drops at sung words.
     // Must run BEFORE updatePlinko so splash detection has current drop
     // positions AFTER plinko integrates.
-    if (playing && expand > 0.05 && lyricState.lines) {
+    if (playing && expand > 0.05 && lyricState.chunks) {
       var audioTime = audio.currentTime || 0;
       updateLyricWaveBuf(w, h, dpr);
       updateLyricSprites(audioTime, c, w, h, dpr);
@@ -1656,9 +1753,12 @@
 
     // ── Lyric ribbon (revealed glyphs) + splash particles ──
     // Drawn under the signal waveforms so the amber wave kisses the
-    // ribbon visually. Only visible when playing + lyrics loaded.
+    // ribbon visually. Eclipse (overflow) lines flash centered italic.
     if (expand > 0.05 && lyricState.sprites.length) {
       drawLyricRibbon(c, w, h, dpr, expand);
+    }
+    if (expand > 0.05 && lyricState.chunks) {
+      drawEclipses(c, audio.currentTime || 0, w, h, dpr, expand);
     }
     drawAndPromoteSplashParticles(c, w, h, dpr);
 
