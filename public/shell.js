@@ -2642,16 +2642,18 @@
       var waveCyan  = lerpRGB(78,201,212, 0,200,40, mT);
       var waveBone  = lerpRGB(240,235,219, 0,180,30, mT);
 
-      var amberA = 0.55 + mid * 0.45;
+      // Lowered base alphas + slightly higher reactive coefficients so dimmer at rest,
+      // more sensitive to FFT energy when music drives them. Glow dialed back in step.
+      var amberA = 0.40 + mid * 0.55;
       var amberW = 1.6 + mid * 2;
-      drawWave(waveAmber, waveAmber+',0.45', amberA, 50 + mid * 30, 0.028, 1, 0, 0, amberW, 14, 0);
+      drawWave(waveAmber, waveAmber+',0.32', amberA, 45 + mid * 42, 0.028, 1, 0, 0, amberW, 14, 0);
 
-      var cyanA = 0.4 + high * 0.5;
+      var cyanA = 0.28 + high * 0.60;
       var cyanW = 1.1 + high * 1.8;
-      drawWave(waveCyan, waveCyan+',0.4', cyanA, 38 + high * 25, 0.045, 1.4, 1.8, -10, cyanW, 12, Math.floor(step * 0.4));
+      drawWave(waveCyan, waveCyan+',0.28', cyanA, 34 + high * 36, 0.045, 1.4, 1.8, -10, cyanW, 12, Math.floor(step * 0.4));
 
-      var boneA = 0.08 + total * 0.18;
-      drawWave(waveBone, waveBone+',0.15', boneA, 22 + total * 15, 0.035, 0.7, 3.5, 8, 0.7, 0, Math.floor(step * 0.7));
+      var boneA = 0.06 + total * 0.22;
+      drawWave(waveBone, waveBone+',0.12', boneA, 20 + total * 22, 0.035, 0.7, 3.5, 8, 0.7, 0, Math.floor(step * 0.7));
     }
 
     // ── Presence shimmer ──
