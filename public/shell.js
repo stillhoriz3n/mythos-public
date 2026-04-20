@@ -1344,9 +1344,16 @@
     // the sprite so the currently-sung letter sits at the READING ANCHOR
     // (LYRIC_ANCHOR_FRAC of viewport width). Before the line starts the
     // sprite ramps in from the right edge over LEAD; after it ends it
-    // ramps out to the left over TAIL. Words being sung stay in a
-    // consistent reading zone regardless of line length or viewport.
+    // ramps out to the left over TAIL.
+    //
+    // CRITICAL invariant: the sprite MUST always fit inside the viewport.
+    // After computing the anchor-based x, we clamp s.x to [margin,
+    // w - totalW - margin] so the sprite never clips past either edge.
+    // The sung-letter glow still tracks the correct letter via the
+    // per-letter reveal system, so losing the anchor pin on short
+    // phrases that don't need to scroll is fine.
     var anchorFrac = lyricAnchorFrac(w);
+    var edgePad = 12 * dpr;
     for (var i = lyricState.sprites.length - 1; i >= 0; i--) {
       var s = lyricState.sprites[i];
       if (audioTime > s.endT + 0.3) {
@@ -1411,6 +1418,23 @@
           sungX = hereX + (s.totalW - hereX) * uLast * 0.35;
         }
         s.x = anchorX - sungX;
+      }
+      // Viewport clamp — the sprite must not clip either edge during
+      // the sung window. We clamp only when the sprite is near the
+      // anchor (sung window + sung-window-ish parts of LEAD/TAIL), not
+      // in the fully-offscreen slices of LEAD/TAIL where the sprite is
+      // meant to be coming in or out.
+      if (audioTime > s.startT + LYRIC_LEAD * 0.5 && audioTime < s.tEnd + LYRIC_TAIL * 0.5) {
+        if (s.totalW < w - edgePad * 2) {
+          if (s.x + s.totalW > w - edgePad) s.x = w - edgePad - s.totalW;
+          if (s.x < edgePad) s.x = edgePad;
+        } else {
+          // Sprite wider than viewport (shouldn't happen given maxW
+          // cap, but guard anyway): pin so the sung letter stays on
+          // screen at the anchor, accept that one edge clips.
+          if (s.x > edgePad) s.x = edgePad;
+          if (s.x + s.totalW < w - edgePad) s.x = w - edgePad - s.totalW;
+        }
       }
       var cx = s.x + s.totalW * 0.5;
       s.y = sampleLyricWave(cx, w, h, s.bandIdx);
@@ -1863,7 +1887,10 @@
       // With this, letters dissolve smoothly as they flow out of the
       // reading zone.
       var anchorAbsX = w * lyricAnchorFrac(w);
-      var fadeRadius = w * 0.42;  // half-width of the reading zone
+      // Fade radius = distance from anchor to the nearer viewport edge.
+      // Letters at the edges of the visible zone fade smoothly to zero.
+      var aFracR = lyricAnchorFrac(w);
+      var fadeRadius = w * Math.max(0.25, Math.min(aFracR, 1 - aFracR));
 
       // Two-pass render: glow pass (shadowBlur once) then sharp pass.
       // We precompute each visible letter's alpha + color so we don't
