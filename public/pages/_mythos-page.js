@@ -259,6 +259,7 @@
   var lyricsState = {
     containers: [],      // DOM roots
     trackFile: null,     // e.g. "music/sh-1 - askJarvis.mp3"
+    trackDuration: 0,    // seconds, from mythos:audio broadcast; 0 = unknown
     data: null,          // { lines: [ { t, words: [...] } ] }
     flatWords: [],       // flat index for fast cursor
     flatLineIdx: [],     // parallel line index for each flat word
@@ -370,8 +371,59 @@
     });
   }
 
+  // Line cursor — applies is-active/is-past/is-future + windowed scroll.
+  // Factored out so the low-alignment path (which drives the line index
+  // directly from duration) can reuse the same DOM manipulation without
+  // going through the word-level machinery.
+  function applyLineCursor(newLine) {
+    if (newLine === lyricsState.currentLineIdx) return;
+    lyricsState.containers.forEach(function(c){
+      c.querySelectorAll('.m-lyrics-line').forEach(function(ld, li){
+        ld.classList.toggle('is-active', li === newLine);
+        ld.classList.toggle('is-past',   li < newLine);
+        ld.classList.toggle('is-future', li > newLine);
+      });
+      // Windowed scroll — translate so the active line lands at container centre.
+      // The track is centered via `top:50%; translateY(-50% + <this>)`, which
+      // puts the track's middle at the container's middle when offset is 0.
+      // Measuring the active line's actual offset inside the track handles
+      // wrapped lines correctly (a long lyric line that breaks across two
+      // visual rows counts as two heights worth of track, not one).
+      if (c.hasAttribute('data-lyrics-window') && newLine >= 0) {
+        var track = c.querySelector('.m-lyrics-track');
+        var activeLine = track ? track.children[newLine] : null;
+        if (track && activeLine) {
+          var trackH = track.offsetHeight || 0;
+          var lineCenter = activeLine.offsetTop + activeLine.offsetHeight / 2;
+          var offset = (trackH / 2) - lineCenter;
+          c.style.setProperty('--m-lyrics-translate', offset + 'px');
+        }
+      }
+    });
+    lyricsState.currentLineIdx = newLine;
+  }
+
   function updateLyricsCursor(t, playing) {
     if (!lyricsState.flatWords.length) return;
+    var alignmentOK = !(lyricsState.data &&
+                        lyricsState.data.meta &&
+                        typeof lyricsState.data.meta.matched_pct === 'number' &&
+                        lyricsState.data.meta.matched_pct < 30);
+    // Low-alignment fallback: Whisper couldn't find the words. All the
+    // per-word timings are fake 0.25s-per-word interpolations covering a
+    // fraction of the real song length. Using them makes the karaoke race
+    // through the whole song in the first 30–60s and stick at the end.
+    // Instead, drive the LINE cursor directly from (currentTime / duration)
+    // × numLines and skip the word-level machinery entirely. The .is-active
+    // line lands where it should; we just don't pretend to know sub-line
+    // timing. Requires knowing the real duration from the audio broadcast.
+    if (!alignmentOK && lyricsState.trackDuration > 0 && lyricsState.data.lines) {
+      var numLines = lyricsState.data.lines.length;
+      var progressed = Math.max(0, Math.min(1, t / lyricsState.trackDuration));
+      var syntheticLine = Math.min(numLines - 1, Math.floor(progressed * numLines));
+      applyLineCursor(syntheticLine);
+      return;
+    }
     // Find the active word: greatest i where flatWords[i].t <= t
     // Use a linear scan from current position (usually advances 0-1 words per frame).
     var words = lyricsState.flatWords;
@@ -382,17 +434,6 @@
     // End of last word's duration means it's "past" not "current"
     var activeEnd = idx >= 0 ? words[idx].t + words[idx].d : 0;
     var isCurrent = idx >= 0 && t >= words[idx].t && t <= activeEnd + 0.05;
-
-    // Per-word progress for the current word (0..1 karaoke sweep).
-    // When alignment quality is poor, pin progress to 1 instead of animating
-    // the sweep — wrong words pulsing gold is worse than static illumination.
-    // Line-level .is-active still shows the cursor; this just stops lying
-    // about sub-line timing. Tracks with bad Whisper match (e.g. instrumental
-    // breaks transcribed as "music" tokens) land here.
-    var alignmentOK = !(lyricsState.data &&
-                        lyricsState.data.meta &&
-                        typeof lyricsState.data.meta.matched_pct === 'number' &&
-                        lyricsState.data.meta.matched_pct < 30);
     if (idx >= 0) {
       var w = words[idx];
       var p;
@@ -436,36 +477,7 @@
 
       // Line focus
       var newLine = idx >= 0 ? lyricsState.flatLineIdx[idx] : -1;
-      if (newLine !== lyricsState.currentLineIdx) {
-        lyricsState.containers.forEach(function(c){
-          c.querySelectorAll('.m-lyrics-line').forEach(function(ld, li){
-            ld.classList.toggle('is-active', li === newLine);
-            ld.classList.toggle('is-past',   li < newLine);
-            ld.classList.toggle('is-future', li > newLine);
-          });
-          // Windowed scroll — translate so the active line lands at container centre.
-          // The track is centered via `top:50%; translateY(-50% + <this>)`, which
-          // puts the track's middle at the container's middle when offset is 0.
-          // Measuring the active line's actual offset inside the track handles
-          // wrapped lines correctly (a long lyric line that breaks across two
-          // visual rows counts as two heights worth of track, not one).
-          // Earlier formula used -(newLine + 0.5) * lineH, which was off by
-          // roughly half the track's height on every song.
-          if (c.hasAttribute('data-lyrics-window') && newLine >= 0) {
-            var track = c.querySelector('.m-lyrics-track');
-            var activeLine = track ? track.children[newLine] : null;
-            if (track && activeLine) {
-              var trackH = track.offsetHeight || 0;
-              var lineCenter = activeLine.offsetTop + activeLine.offsetHeight / 2;
-              // To move lineCenter to trackH/2 (track centre, which is also
-              // container centre given top:50%+translateY(-50%)), shift by:
-              var offset = (trackH / 2) - lineCenter;
-              c.style.setProperty('--m-lyrics-translate', offset + 'px');
-            }
-          }
-        });
-        lyricsState.currentLineIdx = newLine;
-      }
+      applyLineCursor(newLine);
     } else if (!isCurrent && idx >= 0) {
       // Current word's duration elapsed; demote
       var el = words[idx].el;
@@ -495,6 +507,12 @@
     if (!d || typeof d !== 'object') return;
     if (d.type === 'mythos:audio' && d.track && d.track.file) {
       if (lyricsState.containers.length) loadLyricsForTrack(d.track.file);
+      // Cache duration — used by the low-alignment line-cursor fallback so
+      // we can map currentTime → line index across the ACTUAL song length
+      // instead of the fake 0.25s-per-word interpolated timings.
+      if (typeof d.duration === 'number' && d.duration > 0) {
+        lyricsState.trackDuration = d.duration;
+      }
     }
   });
 
