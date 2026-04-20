@@ -61,6 +61,24 @@
   let freqArray = new Uint8Array(2048);
   let freqArrayL = new Uint8Array(2048);
   let freqArrayR = new Uint8Array(2048);
+
+  // ── Vocal gate ────────────────────────────────────────
+  // Whisper's word timings are approximate. We trust the audio itself
+  // to decide when the vocalist is actually making sound, and gate
+  // letter reveal + conductor fire accordingly. Covers mis-alignments,
+  // sibilants-without-fundamental, and silent gaps Whisper glued.
+  //
+  // Bin window assumes fftSize=4096 and sample rate ~44.1–48 kHz
+  // (binHz ≈ 10.8–11.7). Vocal band = fundamental + first formant
+  // (~200–1500 Hz). Sibilant tail (~3–6 kHz) weighted lower since it
+  // also fires on cymbals/hats.
+  var VOCAL_BIN_LO = 17;       // ~200 Hz
+  var VOCAL_BIN_HI = 128;      // ~1500 Hz
+  var SIBILANT_BIN_LO = 256;   // ~3000 Hz
+  var SIBILANT_BIN_HI = 512;   // ~6000 Hz
+  var vocalFast = 0;           // ~60 ms follower
+  var vocalSlow = 0;           // ~2.4 s baseline
+  var vocalGate = 0;           // 0 = silence, ~1 = clearly singing
   let phase = 0, particles = [], stars = [], prevBass = 0, waveVis = 0;
   let viewT = 0;        // 0 = expanded (dark), 1 = collapsed (singularity)
   let viewTarget = 0;
@@ -1850,22 +1868,15 @@
     var letter = sprite.letters[letterIdx];
     if (!letter) return;
 
-    // Two targeting models:
-    //   SCROLLING (ribbon): by splash time (~0.7s from fire) the letter
-    //     will be pinned at the reading anchor, so aim there regardless
-    //     of letter's current position.
-    //   STATIONARY (key phrases): the sprite doesn't move, so aim at
-    //     the letter's actual screen x. Spreading drops across the
-    //     letters' real positions prevents the "wall of rain in one
-    //     column" look that hardcoded-anchor aim produced for keys.
-    var targetX, targetY;
-    if (sprite.isKey) {
-      targetX = sprite.x + letter.x + letter.w * 0.5;
-      targetY = sprite.y + letter.y;
-    } else {
-      targetX = w * lyricAnchorFrac(w);
-      targetY = sprite.y + letter.y;
-    }
+    // Under the directional-lane + anchored-ribbon model (2026-04-20), the
+    // currently-sung letter sits at w/2 at splash time for BOTH ribbon and
+    // key sprites. Primary hits fire at (sungAt - flightTime), so by the
+    // time the drop lands the targeted letter has scrolled/slid to center.
+    // Aim the column there — otherwise drops land where the letter was, or
+    // worse, where the old anchor model thought it would be, and the rain
+    // stops making visible contact with the glyph it's supposed to splash.
+    var targetX = w * 0.5;
+    var targetY = sprite.y + letter.y;
     if (targetX < 20 || targetX > w - 20) return;
 
     // Rain char-pool color mix for key phrases: 60% amber matrixChars,
@@ -1940,6 +1951,13 @@
           var h0 = s.hits[hi];
           if (h0.fired) continue;
           if (audioTime < h0.fireAt) break;
+          // Vocal gate: Whisper's per-letter sungAt is a best guess.
+          // If the vocalist hasn't actually started singing yet, hold
+          // the primary up to 150 ms so the splash lands on the real
+          // vocal onset instead of phantom silence. After the hold we
+          // fire anyway — letting stale hits back up forever would
+          // pile on one frame once the singer comes in.
+          if (vocalGate < 0.3 && audioTime < h0.fireAt + 0.15) break;
           h0.fired = true;
           var letter = s.letters[h0.letterIdx];
           if (!letter) continue;
@@ -1997,7 +2015,14 @@
         // because the primary is the GUARANTEED strike (extras are
         // decoration). Previously dense verses could leave a letter at
         // 0.75 reveal still reading as half-ink.
-        hitLetter.revealed = Math.min(1, hitLetter.revealed + 0.95 + d.brightness * 0.15);
+        //
+        // Vocal-gated: splashes landing in silence (Whisper mis-timing)
+        // only pre-reveal dimly. Once real vocal energy rises and
+        // another splash lands, the letter snaps to full ink. Floor at
+        // 0.25 so splashes never go completely ghost — small splash
+        // still reads as intent.
+        var gate = Math.max(0.25, Math.min(1, vocalGate));
+        hitLetter.revealed = Math.min(1, hitLetter.revealed + (0.95 + d.brightness * 0.15) * gate);
         s.splashEnergy = Math.min(1, s.splashEnergy + 0.15);
         // Color derives from the sprite's y-band (top half = amber,
         // bottom half = cyan). Key phrases default to amber (warm hook).
@@ -2371,6 +2396,18 @@
     high = avg(freqArray, 80, 300) / 255;
     presence = avg(freqArray, 300, 600) / 255;
     total = avg(freqArray, 0, 400) / 255;
+
+    // Vocal gate: fast follower minus slow baseline in the vocal formant
+    // band. Used downstream to dim splashes that land during silence
+    // (Whisper mis-timing) and to delay primary conductor fires by up to
+    // 150 ms while waiting for actual vocal energy.
+    var vocalE = avg(freqArray, VOCAL_BIN_LO, VOCAL_BIN_HI) / 255;
+    var sibilE = avg(freqArray, SIBILANT_BIN_LO, SIBILANT_BIN_HI) / 255;
+    var vocalRaw = vocalE + sibilE * 0.35;
+    vocalFast += (vocalRaw - vocalFast) * 0.28;
+    vocalSlow += (vocalRaw - vocalSlow) * 0.007;
+    var vocalAbove = vocalFast - Math.max(0.05, vocalSlow * 1.05);
+    vocalGate = Math.max(0, Math.min(1.2, vocalAbove / Math.max(0.04, vocalSlow * 0.8 + 0.06)));
 
     // ── Beat clock ──
     var beat = playing ? getBeat() : { phase:0, half:0, quarter:0, bar:0, pulse:0, barPulse:0, raw:0, bpm:120 };
