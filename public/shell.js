@@ -256,13 +256,21 @@
       }
     }
 
+    // Cap per-word sung duration. Whisper occasionally glues the trailing
+    // instrumental onto the last word it transcribed (multi-word chunks
+    // inheriting identical 18s+ durations is the tell). Without this cap
+    // the sprite reads as "word camping through the break." Directions
+    // can still declare a true sustained word via kind:"hold".
+    var MAX_WORD_HOLD_S = 3.0;
+
     function finalizeChunk(words, extra) {
       var first = words[0], last = words[words.length - 1];
+      var lastD = Math.min(last.d, MAX_WORD_HOLD_S);
       var c = {
         words: words,
         chars: words.map(function(w){return w.w;}).join(' ').length,
         t: first.t,
-        tEnd: last.t + last.d,
+        tEnd: last.t + lastD,
         text: words.map(function(w){return w.w;}).join(' '),
       };
       c.startT = c.t - LYRIC_LEAD;
@@ -1504,10 +1512,13 @@
       var word = chunk.words[wi];
       var text = word.w || '';
       var n = text.length || 1;
+      // Cap per-word duration here too, mirroring finalizeChunk's MAX_WORD_HOLD_S
+      // so per-letter sungAt doesn't stretch across whisper-glued instrumentals.
+      var effD = Math.min(word.d, 3.0);
       for (var ci = 0; ci < text.length; ci++) {
         var ch = text[ci];
         var m = c.measureText(ch);
-        var sungAt = word.t + (word.d * (ci + 0.5) / n);
+        var sungAt = word.t + (effD * (ci + 0.5) / n);
         letters.push({
           ch: ch,
           x: xOff,
