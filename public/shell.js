@@ -347,40 +347,118 @@
         allWords.sort(function(a,b){ return a.t - b.t; });
 
         // ── Chunker ──
-        // Break into reading chunks. Break when:
-        //   - gap to next word > GAP_HARD (natural pause)
-        //   - gap > GAP_STALL with ≥ STALL_WORDS words (would stall the
-        //     ribbon visibly — letter pins at anchor and waits)
-        //   - chunk has ≥ SOFT_WORDS words AND gap > GAP_SOFT
-        //   - chunk char count + next word would exceed MAX_CHARS
-        // GAP_STALL is the key knob: any gap this long makes the
-        // anchor-model ribbon feel broken (it pauses motionless waiting
-        // for the next sung letter). Break there so a new chunk comes in
-        // fresh.
-        var GAP_HARD = 0.50;
-        var GAP_STALL = 0.35;
-        var STALL_WORDS = 2;
-        var GAP_SOFT = 0.18;
-        var SOFT_WORDS = 6;
-        var MAX_CHARS = 56;
-        var chunks = [];
-        var cur = null;
-        for (var i = 0; i < allWords.length; i++) {
-          var wRec = allWords[i];
-          var prev = cur && cur.words.length ? cur.words[cur.words.length - 1] : null;
-          var gap = prev ? (wRec.t - (prev.t + prev.d)) : Infinity;
-          var chunkChars = cur ? cur.chars + 1 + wRec.w.length : wRec.w.length;
-          var shouldBreak = !cur
-            || gap > GAP_HARD
-            || (cur.words.length >= STALL_WORDS && gap > GAP_STALL)
-            || (cur.words.length >= SOFT_WORDS && gap > GAP_SOFT)
-            || chunkChars > MAX_CHARS;
-          if (shouldBreak) {
-            cur = { words: [], chars: 0 };
-            chunks.push(cur);
+        // v3: break at linguistic boundaries (punctuation, large gaps)
+        // rather than a fixed char count. Earlier versions broke chunks
+        // at MAX_CHARS=56 regardless of where that fell — mid-sentence,
+        // mid-phrase, sometimes mid-word. Result: "now it's all I want
+        // to hear put me up on the" / "pulpit, let me make my message
+        // clear." was two chunks instead of the real two clauses.
+        //
+        // Each word-boundary gets a score based on:
+        //   - terminal punctuation in the word (. ? ! = 10; , = 5; ; : = 4; — = 4)
+        //   - gap to the next word (up to +8 for big pauses, +20 at EOS)
+        // We greedily accumulate words. At each candidate break (word
+        // index i), we look ahead up to LOOKAHEAD words. If a STRONGER
+        // boundary is reachable without blowing the hard ceilings, we
+        // skip this break and keep going. Strong boundaries (≥ STRONG_
+        // SCORE: period or big gap) break immediately. Soft ceilings
+        // (MAX_WORDS / MAX_CHARS) force a break at the best-scored
+        // position seen; hard ceilings (HARD_WORDS / HARD_CHARS) are the
+        // safety net. Result: chunks align with sentences, commas,
+        // or natural vocal phrasing rather than arbitrary char counts.
+        var MIN_WORDS = 2;      // never break before this many
+        var TARGET_WORDS = 6;   // start considering breaks here
+        var MAX_WORDS = 14;     // soft ceiling
+        var HARD_WORDS = 20;    // absolute ceiling (MAX + LOOKAHEAD)
+        var TARGET_CHARS = 46;
+        var MAX_CHARS = 72;
+        var HARD_CHARS = 88;
+        var GOOD_SCORE = 4;     // comma / medium gap = acceptable
+        var STRONG_SCORE = 8;   // period / big gap = always break
+        var LOOKAHEAD = 6;
+
+        function boundaryScore(idx) {
+          var w = allWords[idx];
+          var n = idx + 1 < allWords.length ? allWords[idx + 1] : null;
+          var gap = n ? (n.t - (w.t + w.d)) : Infinity;
+          var s = 0;
+          var stripped = w.w.replace(/['"”’)]+$/, '');
+          var last = stripped.charAt(stripped.length - 1);
+          if (last === '.' || last === '?' || last === '!') s += 10;
+          else if (last === ',') s += 5;
+          else if (last === ';' || last === ':') s += 4;
+          else if ((last === '—' || last === '-') && stripped.length > 1) s += 4;
+          if (gap > 0 && gap !== Infinity) s += Math.min(gap * 5, 8);
+          if (gap === Infinity) s += 20;
+          return s;
+        }
+
+        function chunkChars(from, toIncl) {
+          var n = 0;
+          for (var i = from; i <= toIncl; i++) {
+            if (i > from) n += 1; // space
+            n += allWords[i].w.length;
           }
-          cur.words.push(wRec);
-          cur.chars = (cur.words.length === 1) ? wRec.w.length : cur.chars + 1 + wRec.w.length;
+          return n;
+        }
+
+        // Build the break-after list.
+        var breakIndices = [];
+        var chunkStart = 0;
+        for (var ii = 0; ii < allWords.length - 1; ii++) {
+          var wordsInChunk = ii - chunkStart + 1;
+          if (wordsInChunk < MIN_WORDS) continue;
+          var chars = chunkChars(chunkStart, ii);
+          var score = boundaryScore(ii);
+
+          // Strong boundary: break immediately.
+          if (score >= STRONG_SCORE) {
+            breakIndices.push(ii);
+            chunkStart = ii + 1;
+            continue;
+          }
+
+          // Under target length: keep accumulating.
+          if (wordsInChunk < TARGET_WORDS && chars < TARGET_CHARS) continue;
+
+          // Look ahead for a stronger boundary. Allow mild overflow past
+          // soft ceilings if doing so lets us land on a strong boundary.
+          var betterAhead = false;
+          for (var k = 1; k <= LOOKAHEAD && ii + k < allWords.length - 1; k++) {
+            var aheadWords = wordsInChunk + k;
+            var aheadChars = chunkChars(chunkStart, ii + k);
+            if (aheadWords > HARD_WORDS || aheadChars > HARD_CHARS) break;
+            var sAhead = boundaryScore(ii + k);
+            var needStrong = aheadWords > MAX_WORDS || aheadChars > MAX_CHARS;
+            if (sAhead > score + 1 && (!needStrong || sAhead >= STRONG_SCORE)) {
+              betterAhead = true;
+              break;
+            }
+          }
+          if (betterAhead) continue;
+
+          // No better boundary reachable. Break if this one is decent,
+          // or force a break at soft ceilings.
+          if (score >= GOOD_SCORE || wordsInChunk >= MAX_WORDS || chars >= MAX_CHARS) {
+            breakIndices.push(ii);
+            chunkStart = ii + 1;
+          }
+        }
+
+        // Materialize chunks from break list.
+        var chunks = [];
+        var segStart = 0;
+        for (var bi = 0; bi < breakIndices.length; bi++) {
+          var bEnd = breakIndices[bi];
+          var cSlice = { words: allWords.slice(segStart, bEnd + 1), chars: 0 };
+          cSlice.chars = cSlice.words.map(function(w){return w.w;}).join(' ').length;
+          chunks.push(cSlice);
+          segStart = bEnd + 1;
+        }
+        if (segStart < allWords.length) {
+          var tail = { words: allWords.slice(segStart), chars: 0 };
+          tail.chars = tail.words.map(function(w){return w.w;}).join(' ').length;
+          chunks.push(tail);
         }
 
         // Finalize each chunk with timing + text.
