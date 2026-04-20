@@ -2510,7 +2510,7 @@
     var ex = w * 0.5, ey = h * 0.5;
     var beatKick = beat.pulse * 0.3; // 0→0.3 on each beat
     // Scale the event by expand — contracts toward a point as viewT → 1
-    var eventR = (40 + bass * 100 + subBass * 35 + beatKick * 40) * dpr * bloomScale * (0.15 + expand * 0.85);
+    var eventR = 2 * (40 + bass * 100 + subBass * 35 + beatKick * 40) * dpr * bloomScale * (0.15 + expand * 0.85);
 
     // ── Color lerp for hot event (amber → green in matrix mode) ──
     var mT = matrixT;
@@ -2550,7 +2550,7 @@
     c.fillStyle = core; c.fill();
 
     // Singularity point (beat-synced)
-    var singR = (2 + bass * 3 + subBass * 1.5 + beatKick * 4) * dpr;
+    var singR = 2 * (2 + bass * 3 + subBass * 1.5 + beatKick * 4) * dpr;
     c.beginPath(); c.arc(ex, ey, singR, 0, Math.PI * 2);
     c.fillStyle = 'rgba(255,255,255,' + (0.85 + bass * 0.15) + ')'; c.fill();
     c.beginPath(); c.arc(ex, ey, singR * 2, 0, Math.PI * 2);
