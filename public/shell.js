@@ -116,7 +116,15 @@
   // Called from the main drawViz loop: updatePlinko() then drawPlinko()
   // Only runs when playing && expand > 0.05
   //
-  var PLINKO_COLS = 100;
+  // Plinko column count is viewport-adaptive. 100 cols at desktop width
+  // gives 19px-wide cells which fit 12px matrix chars cleanly. On a
+  // 390px-wide phone 100 cols would be 4px/cell — chars overlap into a
+  // dense green wall. Halve for phones so the rain reads as discrete
+  // drops instead of a solid curtain. Recomputed on resize below.
+  var PLINKO_COLS = (function(){
+    var lw = window.innerWidth || document.documentElement.clientWidth || 1000;
+    return lw < 500 ? 50 : lw < 900 ? 72 : 100;
+  })();
   var plinkoDrops = [];    // active falling drops
   var plinkoThresholds = []; // per-column onset gate (fast minus slow)
   var plinkoSmoothed = [];   // fast follower: current energy per column (0-1)
@@ -168,10 +176,10 @@
   var LYRIC_BANDS_N = LYRIC_BANDS_Y.length;
   var lyricWaveBufs = new Array(LYRIC_BANDS_N);
   var lyricWaveBufStride = 40;
-  // Band color: top 3 amber, bottom 3 cyan.
-  // In the captions zone, higher bands (closer to center of screen,
-  // smaller index) are cyan/cool; lower bands (closer to the player)
-  // are amber/warm. Palette approaches the viewer.
+  // Band color split: top half cyan (cool/machine), bottom half amber
+  // (warm/human). LYRIC_BANDS_Y is ordered top→bottom, so bands 0..N/2-1
+  // are cyan and N/2..N-1 are amber. Palette approaches the viewer:
+  // cool at the captions-zone ceiling, warm near the player chrome.
   function bandIsCyan(band) { return band < LYRIC_BANDS_N / 2; }
 
   // Splash particles (distinct from the existing `particles` array so we
@@ -1104,6 +1112,15 @@
     var dpr = devicePixelRatio;
     vizCanvas.width = trailCanvas.width = window.innerWidth * dpr;
     vizCanvas.height = trailCanvas.height = window.innerHeight * dpr;
+    // Re-tune plinko column count for the new viewport (phone rotation,
+    // desktop window resize). Only reset state if the column count
+    // actually changed — otherwise mid-song rain keeps flowing.
+    var newCols = window.innerWidth < 500 ? 50 : window.innerWidth < 900 ? 72 : 100;
+    if (newCols !== PLINKO_COLS) {
+      PLINKO_COLS = newCols;
+      initPlinko();
+      plinkoDrops.length = 0;
+    }
     initStars();
   }
 
@@ -1661,7 +1678,10 @@
         lyricWaveBufs[band].fill(h * LYRIC_BANDS_Y[band]);
       }
     }
-    var ampCap = Math.min(h * 0.028, 24 * dpr);
+    // Amplitude tuned so the ribbon has audible motion without making
+    // the text feel seasick. Previous value (h*0.028 / 24dpr ≈ 25px
+    // swing) shook letters by nearly a line-height on loud passages.
+    var ampCap = Math.min(h * 0.010, 9 * dpr);
     for (var band = 0; band < LYRIC_BANDS_N; band++) {
       var buf = lyricWaveBufs[band];
       var anchorY = h * LYRIC_BANDS_Y[band];
