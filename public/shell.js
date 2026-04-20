@@ -167,20 +167,39 @@
   };
 
   // Spatial packing: all lanes live in the SOCIAL CAPTIONS ZONE —
-  // bottom-middle of the viewport, where humans are already trained
-  // to read on-screen text (TikTok/IG/YouTube captions). The center
-  // and top are reserved for rain + singularity; lyrics never go
-  // anywhere else. Four lanes stacked inside 0.62–0.84h, with the
-  // bottom two biased amber (warm/human) and top two cyan (cool).
-  var LYRIC_BANDS_Y = [0.66, 0.72, 0.78, 0.84];
+  // bottom third of the viewport, below the singularity horizon
+  // (y=0.66h). The center owns the singularity; lyrics never cross
+  // into it. Ever.
+  //
+  // HORIZON INVARIANT — ratified 2026-04-20. NO lyric sprite, key,
+  // ribbon, or eclipse renders above y=0.66h. Below that is where
+  // humans are already trained to read on-screen text (TikTok/IG/
+  // YouTube captions). Above is the viz's focal event.
+  //
+  // Bands span 0.76–0.91h. Four bands: top two CYAN (machine, cool)
+  // scroll LEFT→RIGHT, bottom two AMBER (synth, warm) scroll
+  // RIGHT→LEFT. The opposite motion is the "two streams" signal —
+  // your ear sequences what lands when, your eye catches motion from
+  // both sides. Keys live above the bands at 0.70h with their own
+  // anchored-ribbon treatment (see updateLyricSprites).
+  var LYRIC_BANDS_Y = [0.76, 0.81, 0.86, 0.91];
   var LYRIC_BANDS_N = LYRIC_BANDS_Y.length;
   var lyricWaveBufs = new Array(LYRIC_BANDS_N);
   var lyricWaveBufStride = 40;
-  // Band color split: top half cyan (cool/machine), bottom half amber
-  // (warm/human). LYRIC_BANDS_Y is ordered top→bottom, so bands 0..N/2-1
-  // are cyan and N/2..N-1 are amber. Palette approaches the viewer:
-  // cool at the captions-zone ceiling, warm near the player chrome.
+  // Band color split: top half cyan, bottom half amber (unchanged).
+  // Direction: top half enters from LEFT and exits RIGHT; bottom
+  // half enters from RIGHT and exits LEFT. See updateLyricSprites.
   function bandIsCyan(band) { return band < LYRIC_BANDS_N / 2; }
+  function bandDirection(band) {
+    // +1 = left-to-right (cyan lanes), -1 = right-to-left (amber lanes)
+    return bandIsCyan(band) ? 1 : -1;
+  }
+
+  // Captions-zone key placement — above the bands, below the horizon.
+  // Keys don't get a band index but they do get a fixed y.
+  var KEY_Y_FRAC = 0.70;
+  // Horizon: no lyric sprite crosses above this.
+  var LYRIC_HORIZON = 0.66;
 
   // Splash particles (distinct from the existing `particles` array so we
   // can cheaply promote a fraction of them into `stars` without polluting
@@ -620,11 +639,16 @@
 
         // ── Key phrase detection ──
         // A chunk is a KEY phrase if either:
-        //   (A) repeated verbatim ≥ 3 times in the song (hooks/choruses)
-        //   (B) isolated one-liner: 2-6 words, prev gap ≥ 1.5s AND next
-        //       gap ≥ 1.5s (breath on both sides)
-        // Key phrases get dedicated centered placement; everything else
-        // gets packed into y-bands by the scheduler.
+        //   (A) repeated verbatim ≥ 4 times in the song (hard hooks only)
+        //   (B) isolated one-liner: 2-5 words, prev gap ≥ 2.5s AND next
+        //       gap ≥ 2.5s (real breath on both sides, not just a pause)
+        // TIGHTENED 2026-04-20: prior thresholds (3 reps, 1.5s gaps) were
+        // promoting ordinary verse lines to keys on songs where most
+        // choruses repeat 4x. That flooded the screen with billboard-style
+        // centered phrases that all read as dogwater. 4+ reps keeps true
+        // hooks (chorus title lines) and drops background refrains; 2.5s
+        // isolation restricts "breath" keys to deliberate one-liners.
+        // The author always gets the final say via direction.json.
         var textCounts = {};
         for (var ci3 = 0; ci3 < chunks.length; ci3++) {
           var txt = chunks[ci3].text.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
@@ -642,13 +666,13 @@
           } else if (cN.directedKind === 'ribbon' || cN.directedKind === 'eclipse') {
             cN.isKey = false;
           } else {
-            var repeated = textCounts[cN._ntext] >= 3 && cN._ntext.length > 2;
+            var repeated = textCounts[cN._ntext] >= 4 && cN._ntext.length > 2;
             var prevEnd = ci4 > 0 ? chunks[ci4 - 1].tEnd : -Infinity;
             var nextStart = ci4 < chunks.length - 1 ? chunks[ci4 + 1].t : Infinity;
             var prevGap = cN.t - prevEnd;
             var nextGap = nextStart - cN.tEnd;
-            var isolated = prevGap >= 1.5 && nextGap >= 1.5
-              && cN.words.length >= 2 && cN.words.length <= 6;
+            var isolated = prevGap >= 2.5 && nextGap >= 2.5
+              && cN.words.length >= 2 && cN.words.length <= 5;
             cN.isKey = repeated || isolated;
           }
         }
@@ -686,19 +710,17 @@
           }
 
           if (chB.isKey) {
-            // Key phrase: reserved spot in the captions zone.
-            // NEVER at screen center — the singularity area is off-limits.
+            // Key phrase: dedicated key y-slot above the ribbon bands.
+            // Keys render as "anchored ribbons" — directional enter/exit
+            // like ribbons, but land centered and hang longer. No more
+            // stationary billboard (see updateLyricSprites). Bands live
+            // below keys so no band-blocking needed — the horizon alone
+            // keeps them separated.
             if (anyOverlap(centerOccupancy, chB.startT, chB.endT)) {
               chB.placement = { kind: 'eclipse' };
             } else {
-              chB.placement = { kind: 'key', yFrac: 0.75 };
+              chB.placement = { kind: 'key', yFrac: KEY_Y_FRAC };
               centerOccupancy.push({ startT: chB.startT, endT: chB.endT });
-              // Also block nearby ribbon bands during the key's window
-              // so a scrolling chunk doesn't visually collide with the
-              // centered key phrase. Key lives at 0.75h, bands 1+2 are
-              // at 0.72/0.78 — block those for the key's duration.
-              bandOccupancy.push({ band: 1, startT: chB.startT, endT: chB.endT });
-              bandOccupancy.push({ band: 2, startT: chB.startT, endT: chB.endT });
             }
             continue;
           }
@@ -1386,10 +1408,19 @@
   // or resizing the window retunes automatically.
   function lyricAnchorFrac(widthPx) {
     // widthPx is canvas pixels (already scaled by dpr). Use logical px.
+    //
+    // TUNED 2026-04-20 for iPhone 15 Pro (393w). Root problem before:
+    // anchor at 0.58w meant 58% viewport for already-sung letters and
+    // only 42% (~165px) for upcoming letters of the CURRENT word. A
+    // word like "harmonizing" (11 chars × 14px = 154px) clipped past
+    // the right edge. 0.50 centers the sung letter — equal runway both
+    // directions. Combined with the tighter maxW cap and the clamp-
+    // on-every-phase behavior (see updateLyricSprites), this class of
+    // edge-clip bugs is gone.
     var w = widthPx / (window.devicePixelRatio || 1);
-    if (w < 480) return 0.58;   // narrow phone
-    if (w < 720) return 0.70;   // large phone / small tablet
-    return 0.86;                 // desktop / tablet landscape
+    if (w < 480) return 0.50;   // narrow phone — centered anchor
+    if (w < 720) return 0.62;   // large phone / small tablet
+    return 0.82;                 // desktop / tablet landscape
   }
 
   // Layout a single CHUNK as one sprite. Chunks are pre-grouped phrases
@@ -1408,8 +1439,10 @@
     // or a monster.
     var emphasis = chunk.placement.emphasis || 1.0;
     emphasis = Math.max(0.6, Math.min(2.0, emphasis));
-    // Key phrases are ~2.4× regular size and have a tighter maxW cap.
-    var baseFontPx = (isKey ? LYRIC_FONT_PX * 2.4 : LYRIC_FONT_PX) * dpr * emphasis;
+    // Key phrases are 1.6× regular size (was 2.4× — that billboard
+    // scale was the root of the "dogwater key" reading: too big to feel
+    // like a landed line, too static to feel like motion).
+    var baseFontPx = (isKey ? LYRIC_FONT_PX * 1.6 : LYRIC_FONT_PX) * dpr * emphasis;
     var prevFont = c.font;
     var prevAlign = c.textAlign;
     c.font = '500 ' + baseFontPx + 'px ' + LYRIC_FONT;
@@ -1420,11 +1453,11 @@
       if (mi < chunk.words.length - 1) measureTotal += spaceW;
     }
     var fontPx = baseFontPx;
-    // Cap sprite width so long chunks auto-shrink to fit. Tighter cap
-    // (0.82 vs the old 0.9) leaves room for the ribbon to scroll past
-    // the reading anchor without immediately clipping the right edge on
-    // narrow phones where the anchor sits further left.
-    var maxW = w * (isKey ? 0.78 : 0.82);
+    // TUNED 2026-04-20: tighter caps guarantee edge padding on a 393px
+    // iPhone. Previous 0.78/0.82 left ~35px of reserve — not enough for
+    // the viewport clamp to swing chunks around the anchor without
+    // hitting the edge. 0.70/0.76 gives ~47px edge pad.
+    var maxW = w * (isKey ? 0.70 : 0.76);
     if (measureTotal > maxW && measureTotal > 0) {
       fontPx = Math.max(baseFontPx * 0.5, baseFontPx * (maxW / measureTotal));
     }
@@ -1461,7 +1494,13 @@
     c.font = prevFont;
     c.textAlign = prevAlign;
 
-    var flightTime = 0.7;
+    // FLIGHT TIME — interval between firing an aimed drop and its
+    // splash landing on the letter. TUNED 2026-04-20 to 0.42s (was
+    // 0.7s): matches typical vocal attack perception threshold so the
+    // splash feels *on* the word rather than ahead of it. Paired with
+    // drop fallTime 0.42s below (they MUST match or the splash drifts
+    // relative to the vocal).
+    var flightTime = 0.42;
     var hits = [];
     // If the sprite spawns mid-sung-window (e.g. mid-song resume, seek, or
     // lyrics loading late), mark any hits whose fireAt is already in the
@@ -1563,20 +1602,31 @@
     }
 
     // Update positions + retire.
-    // Anchor model: at any audioTime in the line's sung window, position
-    // the sprite so the currently-sung letter sits at the READING ANCHOR
-    // (LYRIC_ANCHOR_FRAC of viewport width). Before the line starts the
-    // sprite ramps in from the right edge over LEAD; after it ends it
-    // ramps out to the left over TAIL.
     //
-    // CRITICAL invariant: the sprite MUST always fit inside the viewport.
-    // After computing the anchor-based x, we clamp s.x to [margin,
-    // w - totalW - margin] so the sprite never clips past either edge.
-    // The sung-letter glow still tracks the correct letter via the
-    // per-letter reveal system, so losing the anchor pin on short
-    // phrases that don't need to scroll is fine.
-    var anchorFrac = lyricAnchorFrac(w);
+    // DIRECTIONAL LANE MODEL (2026-04-20) — Design Claude's contribution.
+    // Bottom two bands (AMBER) scroll RIGHT→LEFT; top two bands (CYAN)
+    // scroll LEFT→RIGHT. Opposite motion gives the eye two streams to
+    // track instead of one busy ribbon; the ear sequences which line
+    // is being sung. At any audioTime in the sung window, position the
+    // sprite so the currently-sung letter sits at screen-center (x=w/2)
+    // — regardless of lane direction, sung-letter-centered is the
+    // reading anchor. Direction only matters during LEAD (enter) and
+    // TAIL (exit). Amber entries come from the right, exits left.
+    // Cyan entries come from the left, exits right.
+    //
+    // KEYS use the same sung-letter-centered anchor as ribbons, but
+    // with yFrac=KEY_Y_FRAC (0.70h) and enter-from-right-always. They
+    // get proximity fade just like ribbons (dropped the no-fade hack
+    // that made them read as billboards).
+    //
+    // CLAMP INVARIANT: the sprite MUST always fit inside the viewport
+    // in EVERY phase (LEAD, sung, TAIL). Previously the clamp was gated
+    // to the sung window only, causing edge-clip bugs during LEAD when
+    // park-at-sung-start placed a 0.76w sprite with 26% off-screen.
+    // Now clamp runs in all phases. The sung-letter glow still tracks
+    // the correct letter via per-letter reveal.
     var edgePad = 12 * dpr;
+    var centerX = w * 0.5;
     for (var i = lyricState.sprites.length - 1; i >= 0; i--) {
       var s = lyricState.sprites[i];
       if (audioTime > s.endT + 0.3) {
@@ -1584,40 +1634,15 @@
         continue;
       }
 
-      // KEY phrases are horizontally centered + stationary. Their y
-      // comes from placement.yFrac (top of the captions zone, NOT
-      // screen center — the singularity area is off-limits).
-      if (s.isKey) {
-        var keyYFrac = (s.placement && typeof s.placement.yFrac === 'number')
-          ? s.placement.yFrac : 0.60;
-        s.x = (w - s.totalW) * 0.5;
-        s.y = h * keyYFrac - s.fontPx * 0.5;
-        continue;
-      }
+      // Direction: keys always come from the right (amber-like). Ribbons
+      // inherit direction from their band (top=+1 L→R, bottom=-1 R→L).
+      var dir = s.isKey ? -1 : bandDirection(s.bandIdx);
 
-      var anchorX = w * anchorFrac;
+      // Sung-letter-centered anchor: find the currently-sung letter
+      // index (same model for keys and ribbons) and position the
+      // sprite so that letter sits at w/2.
       var sungX;
-      if (audioTime <= s.t) {
-        sungX = 0;
-        var leadU = Math.max(0, Math.min(1, (audioTime - s.startT) / LYRIC_LEAD));
-        s.x = w * (1 - leadU) + (anchorX - sungX) * leadU;
-      } else if (audioTime >= s.tEnd) {
-        sungX = s.totalW;
-        var tailU = Math.max(0, Math.min(1, (audioTime - s.tEnd) / LYRIC_TAIL));
-        var posAtEnd = anchorX - sungX;
-        s.x = posAtEnd * (1 - tailU) + (-s.totalW) * tailU;
-      } else {
-        // In sung window. Previous behavior: hard-pin currently-sung
-        // letter at the anchor. This FROZE the ribbon during internal
-        // silences (sub-word pauses), breaking the sense of cadence.
-        //
-        // New behavior: INTERPOLATE between letter positions so the
-        // ribbon glides smoothly through the phrase. If audioTime falls
-        // between letter A (sungAt tA) and letter B (sungAt tB), the
-        // anchor target is lerp(A.x, B.x, (t-tA)/(tB-tA)). Letters
-        // arrive at the anchor exactly on their sung beat, and between
-        // beats the ribbon drifts at a rate proportional to the local
-        // phrase density. Cadence becomes felt instead of stuttered.
+      if (audioTime > s.t && audioTime < s.tEnd) {
         if (typeof s._sungIdx !== 'number') s._sungIdx = 0;
         while (s._sungIdx < s.letters.length - 1 &&
                s.letters[s._sungIdx + 1].sungAt <= audioTime) {
@@ -1635,32 +1660,69 @@
           var nextX = next.x + next.w * 0.5;
           sungX = hereX + (nextX - hereX) * u;
         } else {
-          // Last letter — glide out toward its natural duration.
           var lastDur = Math.max(0.001, s.tEnd - here.sungAt);
           var uLast = Math.max(0, Math.min(1, (audioTime - here.sungAt) / lastDur));
           sungX = hereX + (s.totalW - hereX) * uLast * 0.35;
         }
-        s.x = anchorX - sungX;
-      }
-      // Viewport clamp — the sprite must not clip either edge during
-      // the sung window. We clamp only when the sprite is near the
-      // anchor (sung window + sung-window-ish parts of LEAD/TAIL), not
-      // in the fully-offscreen slices of LEAD/TAIL where the sprite is
-      // meant to be coming in or out.
-      if (audioTime > s.startT + LYRIC_LEAD * 0.5 && audioTime < s.tEnd + LYRIC_TAIL * 0.5) {
-        if (s.totalW < w - edgePad * 2) {
-          if (s.x + s.totalW > w - edgePad) s.x = w - edgePad - s.totalW;
-          if (s.x < edgePad) s.x = edgePad;
+        s.x = centerX - sungX;
+      } else if (audioTime <= s.t) {
+        // LEAD: slide in from the direction-appropriate edge to the
+        // sung-start-centered position. First letter lands centered.
+        var firstX = (s.letters[0] ? s.letters[0].x + s.letters[0].w * 0.5 : 0);
+        var sungStartX = centerX - firstX;
+        var leadU = Math.max(0, Math.min(1, (audioTime - s.startT) / LYRIC_LEAD));
+        // Ease-out cubic so the sprite decelerates into place.
+        var eU = 1 - Math.pow(1 - leadU, 3);
+        var entryX;
+        if (dir > 0) {
+          // cyan / L→R: enter from the left
+          entryX = -s.totalW;
         } else {
-          // Sprite wider than viewport (shouldn't happen given maxW
-          // cap, but guard anyway): pin so the sung letter stays on
-          // screen at the anchor, accept that one edge clips.
-          if (s.x > edgePad) s.x = edgePad;
-          if (s.x + s.totalW < w - edgePad) s.x = w - edgePad - s.totalW;
+          // amber / key / R→L: enter from the right
+          entryX = w;
         }
+        s.x = entryX * (1 - eU) + sungStartX * eU;
+      } else {
+        // TAIL: last letter holds centered briefly, then slides off in
+        // direction-appropriate exit.
+        var lastL = s.letters[s.letters.length - 1];
+        var lastX = lastL ? lastL.x + lastL.w * 0.5 : s.totalW;
+        var sungEndX = centerX - lastX;
+        var tailU = Math.max(0, Math.min(1, (audioTime - s.tEnd) / LYRIC_TAIL));
+        // Ease-in cubic: hold first, accelerate away.
+        var tU = tailU * tailU * tailU;
+        var exitX;
+        if (dir > 0) {
+          // cyan / L→R: exit off the right
+          exitX = w;
+        } else {
+          // amber / key / R→L: exit off the left
+          exitX = -s.totalW;
+        }
+        s.x = sungEndX * (1 - tU) + exitX * tU;
       }
-      var cx = s.x + s.totalW * 0.5;
-      s.y = sampleLyricWave(cx, w, h, s.bandIdx);
+
+      // CLAMP — every phase, not just sung window. If the sprite would
+      // clip past an edge, pull it in. Sung letter won't stay perfectly
+      // centered at edges but readability beats perfect anchor pinning.
+      if (s.totalW < w - edgePad * 2) {
+        if (s.x + s.totalW > w - edgePad) s.x = w - edgePad - s.totalW;
+        if (s.x < edgePad) s.x = edgePad;
+      } else {
+        // Sprite wider than viewport: keep sung letter on-screen.
+        if (s.x > edgePad) s.x = edgePad;
+        if (s.x + s.totalW < w - edgePad) s.x = w - edgePad - s.totalW;
+      }
+
+      // Y positioning: keys at KEY_Y_FRAC, ribbons on their band wave.
+      if (s.isKey) {
+        var keyYFrac = (s.placement && typeof s.placement.yFrac === 'number')
+          ? Math.max(LYRIC_HORIZON, s.placement.yFrac) : KEY_Y_FRAC;
+        s.y = h * keyYFrac - s.fontPx * 0.5;
+      } else {
+        var cx = s.x + s.totalW * 0.5;
+        s.y = sampleLyricWave(cx, w, h, s.bandIdx);
+      }
     }
   }
 
@@ -1759,7 +1821,10 @@
     var colW = w / PLINKO_COLS;
     var col = Math.max(0, Math.min(PLINKO_COLS - 1, Math.floor(targetX / colW)));
     var fallDist = Math.max(1, targetY);
-    var fallTime = 0.68 + Math.random() * 0.08;
+    // Must match flightTime above (was 0.68s, mismatched with 0.7s
+    // flight → splashes landed ~0.3s after their own scheduled fire
+    // window, reading as late karaoke). Now both ~0.42s, aligned.
+    var fallTime = 0.40 + Math.random() * 0.06;
     var speed = fallDist / (fallTime * 60);
     var dLen = 5 + Math.floor(Math.random() * 6);
     var chars = [];
@@ -1871,8 +1936,13 @@
         }
       }
       if (hitLetter) {
-        // Saturate reveal faster — primaries should fully light the letter.
-        hitLetter.revealed = Math.min(1, hitLetter.revealed + 0.75 + d.brightness * 0.25);
+        // Saturate reveal — primaries should pin letter to near-full
+        // reveal regardless of prior state. TUNED 2026-04-20 from +0.75
+        // to +0.95: a single splash should fully light its letter,
+        // because the primary is the GUARANTEED strike (extras are
+        // decoration). Previously dense verses could leave a letter at
+        // 0.75 reveal still reading as half-ink.
+        hitLetter.revealed = Math.min(1, hitLetter.revealed + 0.95 + d.brightness * 0.15);
         s.splashEnergy = Math.min(1, s.splashEnergy + 0.15);
         // Color derives from the sprite's y-band (top half = amber,
         // bottom half = cyan). Key phrases default to amber (warm hook).
@@ -2017,22 +2087,22 @@
       // Fraunces italic for the moment-of-emphasis feel. If Fraunces
       // hasn't loaded, falls back to serif italic — still readable.
       c.font = 'italic 400 ' + fontPx + 'px "Fraunces", Georgia, serif';
-      c.textAlign = 'right';
+      c.textAlign = 'center';
       c.textBaseline = 'middle';
 
       // Auto-scale down if text too wide for the reading zone.
       var m = c.measureText(ch.text);
-      if (m.width > w * 0.85) {
-        fontPx = fontPx * (w * 0.85 / m.width);
+      if (m.width > w * 0.76) {
+        fontPx = fontPx * (w * 0.76 / m.width);
         c.font = 'italic 400 ' + fontPx + 'px "Fraunces", Georgia, serif';
       }
 
-      // Eclipse lives in the captions zone, right-anchored at the
-      // reading zone (same x as the ribbon's scrolling anchor) so the
-      // screen center stays clear. Vertically in band 0 (0.66h) — above
-      // the key-phrase y (0.75h) so they don't stack.
-      var cx = w * lyricAnchorFrac(w);
-      var cy = h * 0.66;
+      // Eclipse lives at the HORIZON — exactly at LYRIC_HORIZON (0.66h),
+      // centered horizontally. It's the "above-the-bands" slot where
+      // the directional-lane model has a visual pause. Keys sit just
+      // below at 0.70h; ribbon bands below that at 0.76–0.91h.
+      var cx = w * 0.5;
+      var cy = h * LYRIC_HORIZON;
 
       c.shadowColor = 'rgba(255,240,220,' + (alpha * 0.7) + ')';
       c.shadowBlur = 24 * dpr;
@@ -2106,17 +2176,17 @@
       // brightness comes from alpha alone.
       var glowR = 14 * dpr * glowMul;
 
-      // Distance-from-anchor fade. Revealed letters glow brightest near
-      // the reading anchor and fade toward both edges. Without this,
-      // phrases dangle half-lit past the edges of the screen as the
-      // ribbon scrolls — "everything, I f" with the rest clipped.
-      // With this, letters dissolve smoothly as they flow out of the
-      // reading zone.
-      var anchorAbsX = w * lyricAnchorFrac(w);
-      // Fade radius = distance from anchor to the nearer viewport edge.
-      // Letters at the edges of the visible zone fade smoothly to zero.
-      var aFracR = lyricAnchorFrac(w);
-      var fadeRadius = w * Math.max(0.25, Math.min(aFracR, 1 - aFracR));
+      // Distance-from-CENTER fade. Revealed letters glow brightest at
+      // screen center (where the sung letter sits under the directional-
+      // lane model) and fade toward both edges. Anchor moved from
+      // lyricAnchorFrac() to w*0.5 — the sprite's center lives at the
+      // sung letter which itself lives at w/2 in the new model.
+      //
+      // TUNED 2026-04-20: floor widened 0.25 → 0.32 so on phones the
+      // fade window is ~126px each side (was 98px). Letters of medium
+      // words no longer flicker at their edges before scrolling off.
+      var anchorAbsX = w * 0.5;
+      var fadeRadius = w * 0.38;
 
       // Two-pass render: glow pass (shadowBlur once) then sharp pass.
       // We precompute each visible letter's alpha + color so we don't
@@ -2130,19 +2200,25 @@
         var lx = s.x + L.x;
         var ly = s.y + L.y;
 
-        // Fade reveal slowly over time — splashed words eventually return
-        // to ink, screen stays readable. Key phrases fade slower.
-        L.revealed = Math.max(0, L.revealed - (s.isKey ? 0.0012 : 0.0025));
+        // Fade reveal slowly over time — splashed words eventually
+        // return to ink, screen stays readable. TUNED 2026-04-20:
+        // Ribbon 0.0025 → 0.0011 (~15s full fade, matches tail window).
+        // Key    0.0012 → 0.0005 (~33s — hooks linger, come back into
+        // focus when the chorus repeats so the escalation ladder reads
+        // visually). Old decay was faster than many chunks' own sung
+        // window ("carrying this frequency" = 4.2s, was half-faded mid-
+        // phrase).
+        L.revealed = Math.max(0, L.revealed - (s.isKey ? 0.0005 : 0.0011));
 
-        // Distance-from-anchor proximity: 1 at anchor, 0 at edges.
-        // Key phrases are centered-stationary so skip this fade for them.
-        var proximity = 1;
-        if (!s.isKey) {
-          var letterCenterX = lx + L.w * 0.5;
-          var dist = Math.abs(letterCenterX - anchorAbsX);
-          proximity = Math.max(0, 1 - dist / fadeRadius);
-          proximity = proximity * proximity * (3 - 2 * proximity);
-        }
+        // Distance-from-center proximity: 1 at center, 0 at edges.
+        // Applied to BOTH keys and ribbons under the new directional-
+        // lane model — keys used to skip this fade and that's exactly
+        // why they read as static billboards. Now they breathe with
+        // proximity just like ribbons.
+        var letterCenterX = lx + L.w * 0.5;
+        var dist = Math.abs(letterCenterX - anchorAbsX);
+        var proximity = Math.max(0, 1 - dist / fadeRadius);
+        proximity = proximity * proximity * (3 - 2 * proximity);
         if (proximity < 0.02) continue;
 
         var amberA = Math.min(1, rev * 1.1) * expand * proximity;

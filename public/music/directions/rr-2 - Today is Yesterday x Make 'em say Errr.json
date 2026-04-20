@@ -1,26 +1,26 @@
 {
   "track": "rr-2 - Today is Yesterday x Make 'em say Errr",
-  "notes": "Groundhog-day anxiety. Tight AAB triplets in verses. The hook's stutter 'over, over' is baked into the timing. 'You're on your way to nowhere now' is the thesis; in the final section it collapses to 'nowhere' without 'now' — auto-detection caught that. Long hold on 'You're' (1.84s at 3:39) is the breath mid-collapse.",
+  "notes": "Groundhog-day anxiety. Tight AAB triplets. 'You're on your way to nowhere now' is the thesis — final section collapses to 'nowhere' without 'now'. 1.84s hold on 'You're' mid-collapse. AUDITED 2026-04-20: the three 'hook' iterations are ribbons so the 'You're on your way to nowhere now' payoff at each section lands as the actual moment. Final sustained 'You're' becomes the key; everything else rides the ribbon lanes.",
   "defaults": {
     "intensity": 1.0,
     "colorBias": "neutral"
   },
   "chunks": [
-    { "wordRange": [46, 51], "kind": "key", "emphasis": 1.15, "color": "mixed", "note": "Today is yesterday over, over again — hook #1 pt1, mixed = time doubling" },
-    { "wordRange": [52, 59], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "Press rewind and play over, it never ends — hook #1 pt2" },
-    { "wordRange": [69, 75], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "You're on your way to nowhere now — first payoff" },
+    { "wordRange": [46, 51], "kind": "ribbon", "emphasis": 1.1, "color": "mixed", "note": "Today is yesterday over, over — hook #1 pt1 ribbon, mixed" },
+    { "wordRange": [52, 59], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "Press rewind and play — hook #1 pt2 ribbon" },
+    { "wordRange": [69, 75], "kind": "ribbon", "emphasis": 1.15, "color": "amber", "note": "You're on your way to nowhere now #1 — first payoff ribbon" },
 
-    { "wordRange": [126, 131], "kind": "key", "emphasis": 1.15, "color": "mixed", "note": "hook #2 pt1" },
-    { "wordRange": [132, 139], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "hook #2 pt2" },
-    { "wordRange": [148, 154], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "You're on your way to nowhere now — second payoff" },
+    { "wordRange": [126, 131], "kind": "ribbon", "emphasis": 1.1, "color": "mixed", "note": "hook #2 pt1 ribbon" },
+    { "wordRange": [132, 139], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "hook #2 pt2 ribbon" },
+    { "wordRange": [148, 154], "kind": "ribbon", "emphasis": 1.2, "color": "amber", "note": "You're on your way to nowhere now #2 — ribbon" },
 
-    { "wordRange": [155, 159], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "Today is yesterday over again — bridge into breakdown" },
+    { "wordRange": [155, 159], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "Today is yesterday over — bridge ribbon" },
 
-    { "wordRange": [190, 196], "kind": "key", "emphasis": 1.35, "color": "amber", "note": "You're on your way to nowhere now — the 1.84s 'You're' hold; biggest mid-song moment" },
+    { "wordRange": [190, 196], "kind": "key", "emphasis": 1.5, "color": "amber", "note": "You're on your way to nowhere now — 1.84s 'You're' hold, biggest mid-song moment, KEY" },
 
-    { "wordRange": [197, 202], "kind": "key", "emphasis": 1.15, "color": "mixed", "note": "final hook pt1, the held 'over'" },
-    { "wordRange": [203, 210], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "final hook pt2" },
-    { "wordRange": [219, 225], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "final payoff with 'now'" }
+    { "wordRange": [197, 202], "kind": "ribbon", "emphasis": 1.1, "color": "mixed", "note": "final hook pt1 ribbon (held 'over')" },
+    { "wordRange": [203, 210], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "final hook pt2 ribbon" },
+    { "wordRange": [219, 225], "kind": "key", "emphasis": 1.35, "color": "amber", "note": "final payoff with 'now' — closing KEY, return of the word" }
   ],
   "moments": []
 }

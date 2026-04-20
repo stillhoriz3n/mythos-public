@@ -1,23 +1,23 @@
 {
   "track": "rr-10 - Rock Lobster",
-  "notes": "Crustacean braggadocio rap. 'Clack clack' is the onomatopoeic signature — the claw on the snare. Playful amber throughout. 'Prawn, prawn, prawn' is a three-beat taunt. 'One guitar, two claws' is the declaration. Final 'Clack clack' closes the song.",
+  "notes": "Crustacean braggadocio rap. 'Clack clack' is the onomatopoeic signature — the claw on the snare. 'Prawn, prawn, prawn' is a three-beat taunt. AUDITED 2026-04-20: demoted most bars to ribbons so the two true hooks (prawn-taunt + final clack) can land without competition. Ribbon emphasis preserved so each peak still feels bigger than the ambient verse.",
   "defaults": {
     "intensity": 1.0,
     "colorBias": "amber"
   },
   "chunks": [
-    { "wordRange": [0, 7], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "Rock lobster, mob lobster, whole reef on lock — opening declaration" },
+    { "wordRange": [0, 7], "kind": "ribbon", "emphasis": 1.15, "color": "amber", "note": "Rock lobster, mob lobster — opening declaration rides on ribbon amber scroll" },
 
-    { "wordRange": [71, 79], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "Clack clack — that's the claw on the snare — hook #1, mixed (sound becomes signal)" },
-    { "wordRange": [80, 87], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "Clack clack — lobster trap if you dare — hook #1 pt2" },
+    { "wordRange": [71, 79], "kind": "ribbon", "emphasis": 1.1, "color": "mixed", "note": "Clack clack — first hook, mixed (sound becomes signal)" },
+    { "wordRange": [80, 87], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "lobster trap if you dare — hook pt2" },
 
-    { "wordRange": [183, 185], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "Prawn, prawn, prawn — three-beat taunt" },
+    { "wordRange": [183, 185], "kind": "key", "emphasis": 1.35, "color": "amber", "note": "Prawn, prawn, prawn — three-beat taunt, one of two keys on the song" },
 
-    { "wordRange": [207, 217], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "When the rock lobster snap you clear the whole tide flow — peak verse" },
+    { "wordRange": [207, 217], "kind": "ribbon", "emphasis": 1.1, "color": "amber", "note": "rock lobster snap — peak verse, still a ribbon" },
 
-    { "wordRange": [245, 252], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "I'm the crustacean your crustacean told you about — the boast" },
+    { "wordRange": [245, 252], "kind": "ribbon", "emphasis": 1.2, "color": "amber", "note": "I'm the crustacean — the boast, big ribbon" },
 
-    { "wordRange": [253, 254], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "Clack clack — final signature, mic drop" }
+    { "wordRange": [253, 254], "kind": "key", "emphasis": 1.5, "color": "mixed", "note": "Clack clack — final signature, mic drop, biggest key" }
   ],
   "moments": []
 }

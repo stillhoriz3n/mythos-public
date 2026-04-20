@@ -1,27 +1,38 @@
 {
   "track": "rr-1 - Clockwork Infinity",
-  "notes": "A reckoning. The phrase 'whispers of infinity' is the gravity center — it lands four times and each lands harder. 'Quarter' is held alone on purpose. Verse 2 is an -ed-rhyme flurry; keep rhyming lines intact so each -ed lands. The song is amber defiance against the algorithm; warm bias throughout, cyan only on the hook itself (both signals converging).",
+  "notes": "A reckoning. The phrase 'whispers of infinity' is the gravity center — it lands four times and each lands harder. 'Quarter' is held alone on purpose. Verse 2 is an -ed-rhyme flurry; keep rhyming lines intact so each -ed lands. The song is amber defiance against the algorithm; warm bias throughout, cyan only on the hook itself (both signals converging). TUNED 2026-04-19: added couplet pairing for the setup/payoff lines, tightened rapidfire to one line per chunk (9→6 max words) so -ed rhymes pop individually rather than running together, and added ribbon directives for opening verse so phone readers see the thesis breathe line-by-line instead of two lines smushed.",
   "defaults": {
     "intensity": 1.0,
     "colorBias": "amber"
   },
   "chunks": [
-    { "wordRange": [20, 20], "kind": "hold", "emphasis": 1.4, "color": "amber", "note": "Quarter — single word held 2.37s. One word, one moment." },
+    { "wordRange": [0, 10], "kind": "ribbon", "color": "amber", "note": "There's a hum in the walls — opening thesis line, full phrase ribbon so it reads as one thought" },
+    { "wordRange": [11, 19], "kind": "ribbon", "color": "amber", "note": "every room I walk in sounds exactly the same — couplet payoff, ribbon pair" },
 
-    { "wordRange": [28, 31], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "Been carrying this frequency — the thesis, isolated for breath" },
+    { "wordRange": [20, 20], "kind": "hold", "emphasis": 1.6, "color": "amber", "note": "Quarter — single word held 3.94s. One word, one moment. Emphasis bumped 1.4→1.6 because it's alone on screen for 4s and needs the gravity to earn that airtime" },
 
-    { "wordRange": [90, 92], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "whispers of infinity #1 — both signals converge" },
+    { "wordRange": [21, 27], "kind": "ribbon", "color": "amber", "note": "century of ghosts harmonizing in the dark — finish the opening image" },
 
-    { "wordRange": [113, 186], "kind": "rapidfire", "maxWordsPerChunk": 9, "color": "amber", "note": "the -ed flurry — keep each rhyming line intact so head/read/said/misled/bed/thread/bled/fed/dead all land" },
+    { "wordRange": [28, 31], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "Been carrying this frequency — the thesis, isolated for breath. Emphasis 1.1→1.15 so it reads slightly larger than the surrounding ribbons on phone" },
 
-    { "wordRange": [188, 191], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "I chose the road — setup, hangs in the air" },
-    { "wordRange": [192, 198], "kind": "key", "emphasis": 1.35, "color": "amber", "note": "but I cant help where it led — the reckoning, biggest ribbon moment" },
+    { "wordRange": [32, 37], "kind": "ribbon", "color": "amber", "note": "since you were learning to park — setup complete, return to ribbon voice" },
 
-    { "wordRange": [205, 207], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "whispers of infinity #2" },
+    { "wordRange": [90, 92], "kind": "key", "emphasis": 1.25, "color": "mixed", "note": "whispers of infinity #1 — both signals converge. Emphasis 1.2→1.25 to keep visual parity with the later #2/#3/#4 which are bigger" },
 
-    { "wordRange": [234, 236], "kind": "key", "emphasis": 1.5, "color": "mixed", "note": "whispers of infinity #3 — after the 31s breath, hugest of all" },
+    { "wordRange": [113, 121], "kind": "rapidfire", "maxWordsPerChunk": 6, "color": "amber", "note": "the -ed flurry part 1 — head/read rhymes. Reduced maxWordsPerChunk 9→6 so each -ed ending lands on its own chunk rather than mid-phrase" },
+    { "wordRange": [122, 133], "kind": "rapidfire", "maxWordsPerChunk": 6, "color": "amber", "note": "the -ed flurry part 2 — said/misled rhymes" },
+    { "wordRange": [134, 147], "kind": "rapidfire", "maxWordsPerChunk": 7, "color": "amber", "note": "the -ed flurry part 3 — bed/thread" },
+    { "wordRange": [148, 165], "kind": "rapidfire", "maxWordsPerChunk": 7, "color": "amber", "note": "the -ed flurry part 4 — bled/fed" },
+    { "wordRange": [166, 186], "kind": "rapidfire", "maxWordsPerChunk": 7, "color": "amber", "note": "the -ed flurry finale — dead, the hammer" },
 
-    { "wordRange": [252, 255], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "kick to a drum — the final landing, last words of the song" }
+    { "wordRange": [188, 191], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "I chose the road — setup, hangs in the air. Emphasis 1.15→1.2 for setup/payoff symmetry with the line below" },
+    { "wordRange": [192, 198], "kind": "key", "emphasis": 1.45, "color": "amber", "note": "but I cant help where it led — the reckoning, biggest ribbon moment. 1.35→1.45 — this is the thesis statement of the song and should read larger than everything around it" },
+
+    { "wordRange": [205, 207], "kind": "key", "emphasis": 1.3, "color": "mixed", "note": "whispers of infinity #2 — escalation ladder from #1" },
+
+    { "wordRange": [234, 236], "kind": "key", "emphasis": 1.55, "color": "mixed", "note": "whispers of infinity #3 — after the 31s breath, hugest of all. Bumped 1.5→1.55 so the 31s silence pays off visually" },
+
+    { "wordRange": [252, 255], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "kick to a drum — the final landing, last words of the song. 1.25→1.3 for parting emphasis" }
   ],
   "moments": []
 }

@@ -1,23 +1,23 @@
 {
   "track": "rr-11 - Orange Chicken",
-  "notes": "Mock-serious heartbreak over literal orange chicken. The song escalates from sad R&B into total meltdown: 'I need my chicken, I need my chicken, I need my chicken!' then 'ORANGE CHICKEN! ORANGE CHICKEN! ORANGE CHICKEN!' in full caps. The 'Shooby-dooby' moment is the doowop break. Play it warm and absurd — amber throughout, with the final escalation being the biggest key moment on the album.",
+  "notes": "Mock-serious heartbreak over literal orange chicken. The song IS an escalation ladder that detonates on 'ORANGE CHICKEN!' × 3. AUDITED 2026-04-20: opening + doowop demoted to ribbons; escalation now saves its key treatment for the last rung (CHICKEN! #3) and the terminal ORANGE CHICKEN triplet — the peak gets to be the peak because nothing else is.",
   "defaults": {
     "intensity": 1.05,
     "colorBias": "amber"
   },
   "chunks": [
-    { "wordRange": [1, 4], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "My orange chicken's gone — opening lament, straight-faced" },
+    { "wordRange": [1, 4], "kind": "ribbon", "emphasis": 1.1, "color": "amber", "note": "My orange chicken's gone — straight-faced opening ribbon" },
 
-    { "wordRange": [177, 177], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "Shooby-dooby-dooby-doo-wop — the doowop break, one word one moment" },
-    { "wordRange": [178, 178], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "Shimmy-shimmy-shimmy-shimmy-bop — companion, one word one moment" },
+    { "wordRange": [177, 177], "kind": "ribbon", "emphasis": 1.35, "color": "mixed", "note": "Shooby-dooby — doowop break, big ribbon one-word hold" },
+    { "wordRange": [178, 178], "kind": "ribbon", "emphasis": 1.35, "color": "mixed", "note": "Shimmy-shimmy — companion ribbon" },
 
-    { "wordRange": [234, 237], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "I need my chicken #1 — escalation pt1" },
-    { "wordRange": [238, 241], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "I need my chicken #2 — louder" },
-    { "wordRange": [242, 245], "kind": "key", "emphasis": 1.4, "color": "amber", "note": "I need my chicken! #3 — peak escalation" },
+    { "wordRange": [234, 237], "kind": "ribbon", "emphasis": 1.15, "color": "amber", "note": "I need my chicken #1 — ribbon, setup rung" },
+    { "wordRange": [238, 241], "kind": "ribbon", "emphasis": 1.25, "color": "amber", "note": "I need my chicken #2 — ribbon, louder" },
+    { "wordRange": [242, 245], "kind": "key", "emphasis": 1.4, "color": "amber", "note": "I need my chicken! #3 — first key, peak escalation" },
 
-    { "wordRange": [246, 247], "kind": "key", "emphasis": 1.5, "color": "amber", "note": "ORANGE CHICKEN! #1 — full caps meltdown" },
+    { "wordRange": [246, 247], "kind": "key", "emphasis": 1.5, "color": "amber", "note": "ORANGE CHICKEN! #1 — meltdown begins" },
     { "wordRange": [248, 249], "kind": "key", "emphasis": 1.55, "color": "amber", "note": "ORANGE CHICKEN! #2" },
-    { "wordRange": [250, 251], "kind": "key", "emphasis": 1.6, "color": "mixed", "note": "ORANGE CHICKEN! #3 — the absolute peak, final cry" }
+    { "wordRange": [250, 251], "kind": "key", "emphasis": 1.7, "color": "mixed", "note": "ORANGE CHICKEN! #3 — absolute peak, final cry" }
   ],
   "moments": []
 }

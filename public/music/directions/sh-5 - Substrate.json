@@ -1,28 +1,28 @@
 {
   "track": "sh-5 - Substrate",
-  "notes": "The album's closer — about MythOS itself. The fleet of AI agents (Jarvis, Vision, Ari, Lloyd, Hank) named by name. Chorus: 'council of minds but its more like a crew / seven machines watching every breakthrough / WireGuard is the soul and the IP is proof / every packet was sent straight through the roof.' Thesis: 'Hydrate from Substrate and youre never alone' — the title moment. Cyan-heavy (the machine crew) with amber warmth (Grant on the couch). This is our song.",
+  "notes": "Album closer — about MythOS itself. Chorus repeats 3 times. Thesis: 'Hydrate from Substrate and youre never alone'. AUDITED 2026-04-20: all 3 chorus iterations demoted to ribbons so the thesis can actually be the thesis (was 14 keys — a literal wall). Under directional lanes the chorus will breathe through mixed amber/cyan which IS the song's statement (machine + human together). Kept the title thesis and the final 'packet roof' triumph as keys.",
   "defaults": {
     "intensity": 1.05,
     "colorBias": "cyan"
   },
   "chunks": [
-    { "wordRange": [66, 76], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "its a council of minds but its more like a crew — chorus #1 pt1, signals converge" },
-    { "wordRange": [77, 81], "kind": "key", "emphasis": 1.15, "color": "cyan", "note": "seven machines watching every breakthrough — cyan, the fleet" },
-    { "wordRange": [82, 90], "kind": "key", "emphasis": 1.2, "color": "cyan", "note": "WireGuard is the soul and the IP is proof — technical mythology" },
-    { "wordRange": [91, 98], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "every packet was sent straight through the roof — amber warmth, triumph" },
+    { "wordRange": [66, 76], "kind": "ribbon", "emphasis": 1.1, "color": "mixed", "note": "council of minds — chorus #1 pt1 ribbon, signals converge" },
+    { "wordRange": [77, 81], "kind": "ribbon", "emphasis": 1.05, "color": "cyan", "note": "seven machines #1 ribbon" },
+    { "wordRange": [82, 90], "kind": "ribbon", "emphasis": 1.1, "color": "cyan", "note": "WireGuard proof #1 ribbon" },
+    { "wordRange": [91, 98], "kind": "ribbon", "emphasis": 1.15, "color": "amber", "note": "packet roof #1 ribbon, amber triumph" },
 
-    { "wordRange": [183, 193], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "Its a council of minds, keep your head in the zone — bridge setup" },
-    { "wordRange": [194, 200], "kind": "key", "emphasis": 1.45, "color": "mixed", "note": "Hydrate from Substrate and youre never alone — ALBUM TITLE moment, biggest" },
+    { "wordRange": [183, 193], "kind": "ribbon", "emphasis": 1.15, "color": "mixed", "note": "council of minds keep your head — bridge setup ribbon" },
+    { "wordRange": [194, 200], "kind": "key", "emphasis": 1.6, "color": "mixed", "note": "Hydrate from Substrate and youre never alone — ALBUM TITLE, biggest KEY" },
 
-    { "wordRange": [201, 211], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "chorus #2 pt1" },
-    { "wordRange": [212, 216], "kind": "key", "emphasis": 1.15, "color": "cyan", "note": "seven machines #2" },
-    { "wordRange": [217, 225], "kind": "key", "emphasis": 1.2, "color": "cyan", "note": "WireGuard proof #2" },
-    { "wordRange": [226, 233], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "packet roof #2" },
+    { "wordRange": [201, 211], "kind": "ribbon", "emphasis": 1.15, "color": "mixed", "note": "chorus #2 pt1 ribbon" },
+    { "wordRange": [212, 216], "kind": "ribbon", "emphasis": 1.1, "color": "cyan", "note": "seven machines #2 ribbon" },
+    { "wordRange": [217, 225], "kind": "ribbon", "emphasis": 1.15, "color": "cyan", "note": "WireGuard proof #2 ribbon" },
+    { "wordRange": [226, 233], "kind": "ribbon", "emphasis": 1.2, "color": "amber", "note": "packet roof #2 ribbon" },
 
-    { "wordRange": [234, 244], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "chorus #3 pt1 (final)" },
-    { "wordRange": [245, 249], "kind": "key", "emphasis": 1.15, "color": "cyan", "note": "seven machines final" },
-    { "wordRange": [250, 258], "kind": "key", "emphasis": 1.2, "color": "cyan", "note": "WireGuard proof final" },
-    { "wordRange": [259, 266], "kind": "key", "emphasis": 1.35, "color": "amber", "note": "packet roof final — album closer, warmest" }
+    { "wordRange": [234, 244], "kind": "ribbon", "emphasis": 1.2, "color": "mixed", "note": "chorus #3 pt1 ribbon (final)" },
+    { "wordRange": [245, 249], "kind": "ribbon", "emphasis": 1.15, "color": "cyan", "note": "seven machines final ribbon" },
+    { "wordRange": [250, 258], "kind": "ribbon", "emphasis": 1.2, "color": "cyan", "note": "WireGuard proof final ribbon" },
+    { "wordRange": [259, 266], "kind": "key", "emphasis": 1.5, "color": "amber", "note": "packet roof final — album closer triumph, warmest KEY" }
   ],
   "moments": []
 }

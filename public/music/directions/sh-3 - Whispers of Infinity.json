@@ -1,27 +1,31 @@
 {
   "track": "sh-3 - Whispers of Infinity",
-  "notes": "The stillHORIZ3N version of Clockwork Infinity. Same structural story, 'torch' instead of 'frequency' in the verse — the SH album is quieter/reflective. Reduced intensity; softer emphasis on all key moments. Still centered on 'whispers of infinity' as the gravity center but as a whisper not a shout.",
+  "notes": "The stillHORIZ3N version of Clockwork Infinity. Same structural story, 'torch' instead of 'frequency' — this album is reflective not defiant. AUDITED 2026-04-20: mirror rr-1's audit on this quieter version. 'Quarter' stays (hold). Verse lines demoted to ribbons. The reckoning ('it led') and the centerpiece hook ('whispers #3') stay as keys. The first two 'whispers' are ribbons that let #3 land harder.",
   "defaults": {
     "intensity": 0.8,
     "colorBias": "cyan"
   },
   "chunks": [
-    { "wordRange": [20, 20], "kind": "hold", "emphasis": 1.3, "color": "cyan", "note": "Quarter — single word held, quieter on SH" },
+    { "wordRange": [20, 20], "kind": "hold", "emphasis": 1.5, "color": "cyan", "note": "Quarter — single word held, first key of SH track" },
 
-    { "wordRange": [28, 31], "kind": "key", "emphasis": 1.0, "color": "cyan", "note": "Been carrying the torch — reflective, cooler than rr-1's 'frequency'" },
+    { "wordRange": [28, 31], "kind": "ribbon", "emphasis": 1.1, "color": "cyan", "note": "Been carrying the torch — reflective ribbon" },
 
-    { "wordRange": [90, 92], "kind": "key", "emphasis": 1.1, "color": "mixed", "note": "whispers of infinity #1 — softer here" },
+    { "wordRange": [90, 92], "kind": "ribbon", "emphasis": 1.1, "color": "mixed", "note": "whispers #1 — ribbon, first mention rides soft" },
 
-    { "wordRange": [113, 186], "kind": "rapidfire", "maxWordsPerChunk": 9, "color": "cyan", "note": "the -ed flurry — preserved, but cooler tone" },
+    { "wordRange": [113, 121], "kind": "rapidfire", "maxWordsPerChunk": 6, "color": "cyan", "note": "-ed flurry pt1 — cooler tone, one rhyme per chunk" },
+    { "wordRange": [122, 133], "kind": "rapidfire", "maxWordsPerChunk": 6, "color": "cyan", "note": "-ed flurry pt2" },
+    { "wordRange": [134, 147], "kind": "rapidfire", "maxWordsPerChunk": 7, "color": "cyan", "note": "-ed flurry pt3" },
+    { "wordRange": [148, 165], "kind": "rapidfire", "maxWordsPerChunk": 7, "color": "cyan", "note": "-ed flurry pt4" },
+    { "wordRange": [166, 186], "kind": "rapidfire", "maxWordsPerChunk": 7, "color": "cyan", "note": "-ed flurry finale" },
 
-    { "wordRange": [188, 191], "kind": "key", "emphasis": 1.05, "color": "cyan", "note": "I chose the road — setup" },
-    { "wordRange": [192, 198], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "but I cant help where it led — reckoning, warmth returns" },
+    { "wordRange": [188, 191], "kind": "ribbon", "emphasis": 1.05, "color": "cyan", "note": "I chose the road — setup ribbon" },
+    { "wordRange": [192, 198], "kind": "key", "emphasis": 1.35, "color": "amber", "note": "but I cant help where it led — reckoning, warmth returns, KEY" },
 
-    { "wordRange": [205, 207], "kind": "key", "emphasis": 1.1, "color": "mixed", "note": "whispers of infinity #2" },
+    { "wordRange": [205, 207], "kind": "ribbon", "emphasis": 1.15, "color": "mixed", "note": "whispers #2 — ribbon, escalation rung" },
 
-    { "wordRange": [234, 236], "kind": "key", "emphasis": 1.35, "color": "mixed", "note": "whispers of infinity #3 — the centerpiece, biggest on this quieter version" },
+    { "wordRange": [234, 236], "kind": "key", "emphasis": 1.5, "color": "mixed", "note": "whispers #3 — centerpiece, BIGGEST key on this quieter version" },
 
-    { "wordRange": [252, 255], "kind": "key", "emphasis": 1.15, "color": "cyan", "note": "kick to a drum — softer close than rr-1" }
+    { "wordRange": [252, 255], "kind": "ribbon", "emphasis": 1.2, "color": "cyan", "note": "kick to a drum — softer close ribbon" }
   ],
   "moments": []
 }

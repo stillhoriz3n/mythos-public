@@ -1,40 +1,40 @@
 {
   "track": "rr-9 - Barbra Streisand x Eduardo Saverin",
-  "notes": "Manifesto. Contrast-heavy verses ('You study the signal — I am the signal'). The 'Barbra Streisand / Looping in my head / Same four bars / But they hit like a movie' is the hook. The escalation at end: 'I didn't read the manual / I am the manual / Let's fucking go.' Then 'Let's. Fucking. Go.' is three SEPARATE key chunks — each word its own moment. Then the fade 'Barbra Streisand... go... go... go...' closes it.",
+  "notes": "Manifesto. Hook: 'Barbra Streisand / Looping in my head / Same four bars / But they hit like a movie'. Escalation: 'I didn't read the manual / I am the manual / Let's fucking go.' Detonation: 'Let's. Fucking. Go.' — three one-word chunks, each its own breath. AUDITED 2026-04-20: the two hook iterations + both thesis verses demoted to ribbons; only the final reveal ('I am the manual' #2) and the terminal word-triplet get key treatment. That gives the detonation the stage it deserves.",
   "defaults": {
     "intensity": 1.1,
     "colorBias": "amber"
   },
   "chunks": [
-    { "wordRange": [85, 90], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "Barbra Streisand / Looping in my head — title hook #1" },
-    { "wordRange": [91, 99], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "Same four bars / But they hit like a movie — hook landing #1" },
+    { "wordRange": [85, 90], "kind": "ribbon", "emphasis": 1.1, "color": "mixed", "note": "Barbra Streisand title hook #1 ribbon" },
+    { "wordRange": [91, 99], "kind": "ribbon", "emphasis": 1.1, "color": "amber", "note": "Same four bars — hook landing #1 ribbon" },
 
-    { "wordRange": [100, 108], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "I don't have the context / But I still deploy — thesis pt1 #1" },
-    { "wordRange": [109, 117], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "I don't know the method / But I still enjoy — thesis pt2 #1" },
+    { "wordRange": [100, 108], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "context / deploy — thesis pt1 #1 ribbon" },
+    { "wordRange": [109, 117], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "method / enjoy — thesis pt2 #1 ribbon" },
 
-    { "wordRange": [234, 239], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "Barbra Streisand / Looping in my head — hook #2" },
-    { "wordRange": [240, 248], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "Same four bars / But they hit like a movie — hook landing #2" },
+    { "wordRange": [234, 239], "kind": "ribbon", "emphasis": 1.15, "color": "mixed", "note": "Barbra Streisand hook #2 ribbon (slightly bigger, escalating)" },
+    { "wordRange": [240, 248], "kind": "ribbon", "emphasis": 1.15, "color": "amber", "note": "Same four bars #2 ribbon" },
 
-    { "wordRange": [249, 257], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "I don't have the context / But I still deploy — thesis #2" },
-    { "wordRange": [258, 265], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "I don't match requirements / But I still enjoy — #2 variant" },
+    { "wordRange": [249, 257], "kind": "ribbon", "emphasis": 1.1, "color": "amber", "note": "context / deploy #2 ribbon" },
+    { "wordRange": [258, 265], "kind": "ribbon", "emphasis": 1.1, "color": "amber", "note": "requirements / enjoy #2 ribbon" },
 
-    { "wordRange": [266, 270], "kind": "key", "emphasis": 1.2, "color": "amber", "note": "I didn't read the manual — setup #1" },
-    { "wordRange": [271, 274], "kind": "key", "emphasis": 1.35, "color": "mixed", "note": "I am the manual — the reveal, signals converge" },
-    { "wordRange": [275, 277], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "Let's fucking go. — detonation #1" },
+    { "wordRange": [266, 270], "kind": "ribbon", "emphasis": 1.15, "color": "amber", "note": "I didn't read the manual — setup #1 ribbon" },
+    { "wordRange": [271, 274], "kind": "ribbon", "emphasis": 1.3, "color": "mixed", "note": "I am the manual — reveal #1 ribbon (the final reveal is the key)" },
+    { "wordRange": [275, 277], "kind": "ribbon", "emphasis": 1.2, "color": "amber", "note": "Let's fucking go #1 — detonation ribbon" },
 
-    { "wordRange": [278, 282], "kind": "eclipse", "note": "(low echo: go... go... go...) — literal echo, italic treatment" },
+    { "wordRange": [278, 282], "kind": "eclipse", "note": "(low echo: go... go... go...) — italic eclipse" },
 
-    { "wordRange": [360, 365], "kind": "key", "emphasis": 1.25, "color": "mixed", "note": "Barbra Streisand / Looping in my head — final hook" },
+    { "wordRange": [360, 365], "kind": "ribbon", "emphasis": 1.2, "color": "mixed", "note": "Barbra Streisand final hook ribbon" },
 
-    { "wordRange": [366, 370], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "I didn't read the manual — setup #final" },
-    { "wordRange": [371, 374], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "I am the manual — the reveal, biggest" },
-    { "wordRange": [375, 377], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "Let's fucking go. — detonation" },
+    { "wordRange": [366, 370], "kind": "ribbon", "emphasis": 1.2, "color": "amber", "note": "I didn't read the manual #final ribbon" },
+    { "wordRange": [371, 374], "kind": "key", "emphasis": 1.5, "color": "mixed", "note": "I am the manual — FINAL REVEAL, first key of the song" },
+    { "wordRange": [375, 377], "kind": "ribbon", "emphasis": 1.25, "color": "amber", "note": "Let's fucking go #final ribbon (the triplet below is the key)" },
 
-    { "wordRange": [378, 378], "kind": "key", "emphasis": 1.5, "color": "amber", "note": "Let's. — one word, one breath" },
-    { "wordRange": [379, 379], "kind": "key", "emphasis": 1.5, "color": "amber", "note": "Fucking. — one word, one breath" },
-    { "wordRange": [380, 380], "kind": "key", "emphasis": 1.6, "color": "mixed", "note": "Go. — one word, the final period" },
+    { "wordRange": [378, 378], "kind": "key", "emphasis": 1.6, "color": "amber", "note": "Let's. — one word, one breath, KEY" },
+    { "wordRange": [379, 379], "kind": "key", "emphasis": 1.6, "color": "amber", "note": "Fucking. — one word, one breath, KEY" },
+    { "wordRange": [380, 380], "kind": "key", "emphasis": 1.8, "color": "mixed", "note": "Go. — one word, the final period, biggest KEY" },
 
-    { "wordRange": [381, 386], "kind": "eclipse", "note": "(fade: Barbra Streisand... go... go... go...) — outro fade italic" }
+    { "wordRange": [381, 386], "kind": "eclipse", "note": "(fade: Barbra Streisand... go... go... go...) — outro italic eclipse" }
   ],
   "moments": []
 }

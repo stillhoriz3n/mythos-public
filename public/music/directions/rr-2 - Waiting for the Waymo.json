@@ -1,27 +1,27 @@
 {
   "track": "rr-2 - Waiting for the Waymo",
-  "notes": "Observational autonomy. The eerie-warm chorus 'Waymo, Waymo, take me home' is the bed. The pivot is 'This is the most autonomous I will ever feel' — the thesis, half-ironic half-sincere. Ad-read comedy: 'Good thing I'm not...' trails off, the unspoken word is the joke and the truth. Outro 'You have arrived at your destination' has a 3.16s hold on 'at' — the AI voice dissolving.",
+  "notes": "Observational autonomy. Chorus is the bed; 'This is the most autonomous I will ever feel' is the thesis. 'Good thing I'm not—' trails off; the unspoken word IS the joke. AUDITED 2026-04-20: chorus + opening utterance demoted to ribbons so the two deliberate held moments (punchline trail-off, final destination outro) can land as true keys. The final thesis gets a key; the first thesis stays ribbon so the escalation reads.",
   "defaults": {
     "intensity": 1.0,
     "colorBias": "neutral"
   },
   "chunks": [
-    { "wordRange": [8, 12], "kind": "key", "emphasis": 1.15, "color": "mixed", "note": "Your driver is... no one — 2nd utterance, 1.62s hold on 'no' — the song's uncanny opening" },
+    { "wordRange": [8, 12], "kind": "ribbon", "emphasis": 1.1, "color": "mixed", "note": "Your driver is... no one — uncanny opening, mixed ribbon" },
 
-    { "wordRange": [145, 149], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "Waymo, Waymo, take me home — first chorus pt1" },
-    { "wordRange": [150, 155], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "Me and my prescriptions, riding alone — pt2" },
-    { "wordRange": [156, 162], "kind": "key", "emphasis": 1.15, "color": "mixed", "note": "Waymo, Waymo, no one at the wheel — mixed = machine+human" },
-    { "wordRange": [163, 171], "kind": "key", "emphasis": 1.25, "color": "amber", "note": "This is the most autonomous I will ever feel — the thesis" },
+    { "wordRange": [145, 149], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "Waymo, Waymo, take me home — first chorus pt1, ribbon" },
+    { "wordRange": [150, 155], "kind": "ribbon", "emphasis": 1.0, "color": "amber", "note": "prescriptions, riding alone — pt2 ribbon" },
+    { "wordRange": [156, 162], "kind": "ribbon", "emphasis": 1.05, "color": "mixed", "note": "no one at the wheel — mixed ribbon" },
+    { "wordRange": [163, 171], "kind": "ribbon", "emphasis": 1.15, "color": "amber", "note": "most autonomous I will ever feel — thesis #1, ribbon (final is the key)" },
 
-    { "wordRange": [339, 343], "kind": "key", "emphasis": 1.05, "color": "amber", "note": "Good thing I'm not driving #1" },
-    { "wordRange": [349, 352], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "Good thing I'm not — the trailed-off punchline, unspoken word is the joke" },
+    { "wordRange": [339, 343], "kind": "ribbon", "emphasis": 1.0, "color": "amber", "note": "Good thing I'm not driving #1 — ribbon" },
+    { "wordRange": [349, 352], "kind": "key", "emphasis": 1.35, "color": "amber", "note": "Good thing I'm not — trailed-off punchline, unspoken word is the joke. KEY." },
 
-    { "wordRange": [515, 519], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "Waymo, Waymo, take me home — final chorus pt1" },
-    { "wordRange": [520, 525], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "final chorus pt2" },
-    { "wordRange": [526, 532], "kind": "key", "emphasis": 1.15, "color": "mixed", "note": "final Waymo no-one-at-the-wheel" },
-    { "wordRange": [533, 541], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "This is the most autonomous I will ever feel — final, biggest" },
+    { "wordRange": [515, 519], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "Waymo final chorus pt1, ribbon" },
+    { "wordRange": [520, 525], "kind": "ribbon", "emphasis": 1.0, "color": "amber", "note": "final chorus pt2, ribbon" },
+    { "wordRange": [526, 532], "kind": "ribbon", "emphasis": 1.05, "color": "mixed", "note": "final no-one-at-the-wheel, ribbon" },
+    { "wordRange": [533, 541], "kind": "key", "emphasis": 1.4, "color": "amber", "note": "This is the most autonomous I will ever feel — final thesis, KEY" },
 
-    { "wordRange": [542, 547], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "You have arrived at your destination — 3.16s hold on 'at', the AI outro" }
+    { "wordRange": [542, 547], "kind": "key", "emphasis": 1.3, "color": "mixed", "note": "You have arrived at your destination — 3.16s hold, the AI dissolving. KEY." }
   ],
   "moments": []
 }

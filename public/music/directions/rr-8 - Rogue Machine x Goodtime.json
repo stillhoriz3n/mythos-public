@@ -1,32 +1,32 @@
 {
   "track": "rr-8 - Rogue Machine x Goodtime",
-  "notes": "Longing. The hook 'Don't say that you want me, say that you need me / Let yourself go' is the plea. The bridge 'We are intersecting lines, we crash and fly / Like a rogue machine / You are ultraviolet light, it burns my eyes / And it's all I see' is the title moment — cyan dominant (ultraviolet) with amber burn. Final chorus collapses: 'Let yourself go' repeats alone at the end.",
+  "notes": "Longing. Hook: 'Don't say that you want me, say that you need me / Let yourself go'. Bridge is the title moment — 'Like a rogue machine / You are ultraviolet light, it burns my eyes / And it's all I see'. Final chorus collapses to 'Let yourself go' dissolving. AUDITED 2026-04-20: every chorus bar was a key which turned the screen into a billboard wall. Demoted to ribbons (direction-aware chorus will breathe amber/cyan naturally). Kept only the title moment ('Like a rogue machine') and the declaration ('And it's all I see') as keys.",
   "defaults": {
     "intensity": 1.0,
     "colorBias": "neutral"
   },
   "chunks": [
-    { "wordRange": [44, 54], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "Don't say that you want me, say that you need me — chorus #1 pt1" },
-    { "wordRange": [55, 57], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "Let yourself go #1" },
-    { "wordRange": [58, 64], "kind": "key", "emphasis": 1.1, "color": "cyan", "note": "Don't try pretending, there is no feeling — pt2, cyan = colder turn" },
-    { "wordRange": [65, 68], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "Left in your bones — chorus #1 landing" },
+    { "wordRange": [44, 54], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "Don't say that you want me — chorus #1 ribbon" },
+    { "wordRange": [55, 57], "kind": "ribbon", "emphasis": 1.0, "color": "amber", "note": "Let yourself go #1 ribbon" },
+    { "wordRange": [58, 64], "kind": "ribbon", "emphasis": 1.0, "color": "cyan", "note": "no feeling — cyan ribbon" },
+    { "wordRange": [65, 68], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "Left in your bones — chorus #1 landing ribbon" },
 
-    { "wordRange": [113, 123], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "chorus #2 pt1" },
-    { "wordRange": [124, 126], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "Let yourself go #2" },
-    { "wordRange": [127, 133], "kind": "key", "emphasis": 1.1, "color": "cyan", "note": "pretending feeling #2" },
-    { "wordRange": [134, 137], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "bones #2" },
+    { "wordRange": [113, 123], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "chorus #2 pt1 ribbon" },
+    { "wordRange": [124, 126], "kind": "ribbon", "emphasis": 1.0, "color": "amber", "note": "Let yourself go #2 ribbon" },
+    { "wordRange": [127, 133], "kind": "ribbon", "emphasis": 1.0, "color": "cyan", "note": "pretending #2 ribbon" },
+    { "wordRange": [134, 137], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "bones #2 ribbon" },
 
-    { "wordRange": [139, 146], "kind": "key", "emphasis": 1.2, "color": "mixed", "note": "We are intersecting lines, we crash and fly — bridge, signals collide" },
-    { "wordRange": [147, 150], "kind": "key", "emphasis": 1.3, "color": "cyan", "note": "Like a rogue machine — title moment" },
-    { "wordRange": [151, 158], "kind": "key", "emphasis": 1.2, "color": "cyan", "note": "You are ultraviolet light, it burns my eyes — cyan" },
-    { "wordRange": [159, 163], "kind": "key", "emphasis": 1.35, "color": "amber", "note": "And it's all I see — declaration, amber burn" },
+    { "wordRange": [139, 146], "kind": "ribbon", "emphasis": 1.15, "color": "mixed", "note": "intersecting lines — bridge setup, mixed ribbon" },
+    { "wordRange": [147, 150], "kind": "key", "emphasis": 1.35, "color": "cyan", "note": "Like a rogue machine — TITLE MOMENT, KEY" },
+    { "wordRange": [151, 158], "kind": "ribbon", "emphasis": 1.15, "color": "cyan", "note": "ultraviolet light — bridge ribbon, cyan" },
+    { "wordRange": [159, 163], "kind": "key", "emphasis": 1.45, "color": "amber", "note": "And it's all I see — declaration, amber burn, KEY" },
 
-    { "wordRange": [164, 174], "kind": "key", "emphasis": 1.15, "color": "amber", "note": "chorus #3 pt1" },
-    { "wordRange": [175, 177], "kind": "key", "emphasis": 1.1, "color": "amber", "note": "Let yourself go #3" },
-    { "wordRange": [178, 184], "kind": "key", "emphasis": 1.1, "color": "cyan", "note": "pretending feeling #3 (no 'bones' this time — abandoned)" },
+    { "wordRange": [164, 174], "kind": "ribbon", "emphasis": 1.05, "color": "amber", "note": "chorus #3 pt1 ribbon" },
+    { "wordRange": [175, 177], "kind": "ribbon", "emphasis": 1.0, "color": "amber", "note": "Let yourself go #3 ribbon" },
+    { "wordRange": [178, 184], "kind": "ribbon", "emphasis": 1.0, "color": "cyan", "note": "pretending feeling #3 ribbon (no bones — abandoned)" },
 
-    { "wordRange": [185, 187], "kind": "key", "emphasis": 1.0, "color": "cyan", "note": "(Let yourself go) outro repeat #1" },
-    { "wordRange": [188, 190], "kind": "key", "emphasis": 1.0, "color": "cyan", "note": "(Let yourself go) outro repeat #2 — dissolving" }
+    { "wordRange": [185, 187], "kind": "ribbon", "emphasis": 0.95, "color": "cyan", "note": "(Let yourself go) outro #1, quiet ribbon" },
+    { "wordRange": [188, 190], "kind": "ribbon", "emphasis": 0.9, "color": "cyan", "note": "(Let yourself go) outro #2, dissolving ribbon" }
   ],
   "moments": []
 }
