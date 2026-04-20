@@ -4,7 +4,7 @@
 
   // ── TRACKS ──────────────────────────────────────────
   const TRACKS = [
-    { file: 'music/rr-4 - Fender Bender.mp3',                              title: 'Fender Bender',                         album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. GLYF',         bpm: 141 },
+    { file: 'music/rr-4 - Fender Bender.mp3',                              title: 'Fender Bender',                         album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. GLYF',         bpm: 141, hasLyrics: false },
     { file: 'music/rr-1 - Clockwork Infinity.mp3',                         title: 'Clockwork Infinity',                    album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. joeY',         bpm: 131 },
     { file: 'music/rr-2 - Waiting for the Waymo.mp3',                      title: 'Waiting for the Waymo',                 album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. KISTONE',      bpm: 134 },
     { file: "music/rr-2 - Today is Yesterday x Make 'em say Errr.mp3",     title: "Today is Yesterday x Make 'em say Errr", album: 'Robots & Remixes',  cover:'rr', artist:'HORIZ3N feat. THE DAYLIGHTS', bpm: 120 },
@@ -306,6 +306,10 @@
     lyricState.chunkCursor = 0;
     lyricState.direction = null;
     if (!file) return;
+    // Tracks without lyrics yet (see TRACKS[].hasLyrics === false) skip
+    // the fetch entirely — avoids a guaranteed 404 in the console.
+    var trk = TRACKS.find(function(x){ return x.file === file; });
+    if (trk && trk.hasLyrics === false) return;
     var token = ++lyricState.loadToken;
     var stem = file.replace(/^.*\//, '').replace(/\.mp3$/i, '');
     var lyricsUrl = 'music/lyrics/' + encodeURIComponent(stem) + '.json';
@@ -1160,7 +1164,7 @@
   // Key phrases use the same letter layout + splash system but render
   // centered, stationary, and large-dark. Eclipse chunks never spawn
   // sprites — they're rendered directly by drawEclipses().
-  function spawnChunkSprite(chunk, c, dpr, w, h) {
+  function spawnChunkSprite(chunk, c, dpr, w, h, audioTime) {
     var isKey = chunk.placement.kind === 'key';
     // Emphasis: authored 0..2 multiplier on size (default 1). Clamp to
     // [0.6, 2.0] so authors can't accidentally size a chunk to nothing
@@ -1218,13 +1222,35 @@
 
     var flightTime = 0.7;
     var hits = [];
+    // If the sprite spawns mid-sung-window (e.g. mid-song resume, seek, or
+    // lyrics loading late), mark any hits whose fireAt is already in the
+    // past as pre-fired and pre-reveal their letters. Without this, every
+    // past-due primary drop rains in bulk the frame the sprite spawns,
+    // splashing the entire line at once.
+    var spawnT = typeof audioTime === 'number' ? audioTime : -Infinity;
+    var suppressBefore = spawnT - 0.2;
     for (var li = 0; li < letters.length; li++) {
+      var fireAt = letters[li].sungAt - flightTime;
+      var preFired = fireAt < suppressBefore;
       hits.push({
-        fireAt: letters[li].sungAt - flightTime,
+        fireAt: fireAt,
         letterIdx: li,
-        fired: false,
+        fired: preFired,
         kind: 'primary',
       });
+      if (preFired) {
+        // Letter was already "sung" by the time the sprite spawned.
+        // Show it already revealed so the line reads as ongoing, not
+        // blank. Reveal decays naturally via the render loop.
+        var elapsed = spawnT - letters[li].sungAt;
+        if (elapsed < 0.4) {
+          letters[li].revealed = 0.85;
+        } else if (elapsed < 1.5) {
+          letters[li].revealed = 0.55;
+        } else {
+          letters[li].revealed = 0.3;
+        }
+      }
     }
 
     lyricState.sprites.push({
@@ -1267,7 +1293,7 @@
       var next = lyricState.chunks[lyricState.chunkCursor];
       if (audioTime >= next.startT - 0.1) {
         if (next.placement.kind === 'ribbon' || next.placement.kind === 'key') {
-          spawnChunkSprite(next, c, dpr, w, h);
+          spawnChunkSprite(next, c, dpr, w, h, audioTime);
         }
         lyricState.chunkCursor++;
       } else break;
@@ -1671,7 +1697,7 @@
 
   // ── ECLIPSE RENDERER ─────────────────────────────────
   // When both lanes are occupied at a chunk's startT, the scheduler marks
-  // A chunk is marked placement.kind='eclipse' only when all 6 y-bands
+  // A chunk is marked placement.kind='eclipse' only when all LYRIC_BANDS_N y-bands
   // are occupied at its startT — a last-resort overflow. These flash
   // centered italic, fading in before t and out after tEnd. Fraunces
   // italic gives them a distinct "moment of emphasis" feel vs the
@@ -1716,19 +1742,22 @@
       // Fraunces italic for the moment-of-emphasis feel. If Fraunces
       // hasn't loaded, falls back to serif italic — still readable.
       c.font = 'italic 400 ' + fontPx + 'px "Fraunces", Georgia, serif';
-      c.textAlign = 'center';
+      c.textAlign = 'right';
       c.textBaseline = 'middle';
 
-      // Auto-scale down if text too wide.
+      // Auto-scale down if text too wide for the reading zone.
       var m = c.measureText(ch.text);
       if (m.width > w * 0.85) {
         fontPx = fontPx * (w * 0.85 / m.width);
         c.font = 'italic 400 ' + fontPx + 'px "Fraunces", Georgia, serif';
       }
 
-      // Eclipse lives in the captions zone, not screen center.
-      var cx = w * 0.5;
-      var cy = h * 0.70;
+      // Eclipse lives in the captions zone, right-anchored at the
+      // reading zone (same x as the ribbon's scrolling anchor) so the
+      // screen center stays clear. Vertically in band 0 (0.66h) — above
+      // the key-phrase y (0.75h) so they don't stack.
+      var cx = w * LYRIC_ANCHOR_FRAC;
+      var cy = h * 0.66;
 
       c.shadowColor = 'rgba(255,240,220,' + (alpha * 0.7) + ')';
       c.shadowBlur = 24 * dpr;
@@ -1769,8 +1798,12 @@
         glowRGB = '120,255,140';
         fillRGB = '180,255,180';
       } else if (s.isKey) {
-        glowRGB = '255,200,120';
-        fillRGB = '60,35,18';
+        // Bright warm amber on dark cosmos. Previous dark-fill/bright-glow
+        // model assumed a luminous event behind the key; the captions-zone
+        // placement doesn't have that, so the dark fill read as near-
+        // invisible. Bright fill + bright glow reads cleanly on dark bg.
+        glowRGB = '255,210,130';
+        fillRGB = '255,238,195';
       } else if (colorOverride === 'cyan') {
         glowRGB = '78,201,212';
         fillRGB = '188,238,245';
@@ -1789,6 +1822,12 @@
       }
 
       var glowMul = s.isKey ? 2.4 : 1.0;
+      // Fixed per-sprite glow radius. Previous implementation set
+      // shadowBlur per letter, which forces the compositor to flush
+      // before every fillText — the single biggest lag source on
+      // dense lines. Now shadowBlur is set once per sprite; per-letter
+      // brightness comes from alpha alone.
+      var glowR = 14 * dpr * glowMul;
 
       // Distance-from-anchor fade. Revealed letters glow brightest near
       // the reading anchor and fade toward both edges. Without this,
@@ -1799,6 +1838,11 @@
       var anchorAbsX = w * LYRIC_ANCHOR_FRAC;
       var fadeRadius = w * 0.42;  // half-width of the reading zone
 
+      // Two-pass render: glow pass (shadowBlur once) then sharp pass.
+      // We precompute each visible letter's alpha + color so we don't
+      // recompute proximity/reveal twice.
+      var visible = [];
+      var mixed = colorOverride === 'mixed';
       for (var li = 0; li < s.letters.length; li++) {
         var L = s.letters[li];
         var rev = L.revealed;
@@ -1817,30 +1861,54 @@
           var letterCenterX = lx + L.w * 0.5;
           var dist = Math.abs(letterCenterX - anchorAbsX);
           proximity = Math.max(0, 1 - dist / fadeRadius);
-          // Soften the falloff with a gentle curve — sharper near the
-          // edges, flat-ish near the anchor. Looks like focus falloff.
           proximity = proximity * proximity * (3 - 2 * proximity);
         }
         if (proximity < 0.02) continue;
 
         var amberA = Math.min(1, rev * 1.1) * expand * proximity;
-        var glowR = 18 * dpr * rev * glowMul * Math.max(0.3, proximity);
-
-        // Mixed-color override: alternate per letter so the chunk
-        // reads as a duet of signals rather than a single color.
-        var lGlow = glowRGB, lFill = fillRGB;
-        if (!lGlow && colorOverride === 'mixed') {
-          if (li & 1) { lGlow = '78,201,212'; lFill = '188,238,245'; }
-          else        { lGlow = '232,184,88'; lFill = '255,232,188'; }
-        }
-
-        c.shadowColor = 'rgba(' + lGlow + ',' + (amberA * 0.85) + ')';
-        c.shadowBlur = glowR;
-        c.fillStyle = 'rgba(' + lFill + ',' + (amberA * (s.isKey ? 1 : 0.95)) + ')';
-        c.fillText(L.ch, lx, ly);
-        c.shadowBlur = 0;
+        visible.push({
+          ch: L.ch, x: lx, y: ly, a: amberA,
+          parity: mixed ? (li & 1) : 0,
+        });
       }
+      if (!visible.length) continue;
+
+      // Single pass per color group. Shadow state (blur + color) is set
+      // once per group, not per letter — that's where the compositor
+      // flushes lived. Per-letter brightness comes from globalAlpha so
+      // the color strings stay constant and the paint stays batched.
+      // Canvas paints both the fill glyph AND the shadow in one fillText
+      // as long as both fillStyle and shadowColor have non-zero alpha.
+      c.shadowBlur = glowR;
+      var isKeyMul = s.isKey ? 1 : 0.95;
+      if (mixed) {
+        // Mixed sprites: two color groups (amber + cyan) alternate per
+        // letter. Two sub-passes, still constant state within each.
+        var groups = [
+          { g: '232,184,88', f: '255,232,188' },
+          { g: '78,201,212', f: '188,238,245' },
+        ];
+        for (var gi = 0; gi < 2; gi++) {
+          c.shadowColor = 'rgba(' + groups[gi].g + ',0.85)';
+          c.fillStyle = 'rgba(' + groups[gi].f + ',1)';
+          for (var vi = 0; vi < visible.length; vi++) {
+            if (visible[vi].parity !== gi) continue;
+            c.globalAlpha = visible[vi].a * isKeyMul;
+            c.fillText(visible[vi].ch, visible[vi].x, visible[vi].y);
+          }
+        }
+      } else {
+        c.shadowColor = 'rgba(' + glowRGB + ',0.85)';
+        c.fillStyle = 'rgba(' + fillRGB + ',1)';
+        for (var vi2 = 0; vi2 < visible.length; vi2++) {
+          c.globalAlpha = visible[vi2].a * isKeyMul;
+          c.fillText(visible[vi2].ch, visible[vi2].x, visible[vi2].y);
+        }
+      }
+      c.globalAlpha = 1;
     }
+    c.shadowBlur = 0;
+    c.shadowColor = 'rgba(0,0,0,0)';
     c.font = prevFont;
     c.textAlign = prevAlign;
     c.textBaseline = prevBaseline;
