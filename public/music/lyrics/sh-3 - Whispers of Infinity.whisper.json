@@ -1,149 +1,114 @@
 {
   "lines": [
     {
-      "t": 0.0,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "t": 10.32,
+      "text": "Thank you.",
       "words": [
         {
-          "t": 0.0,
-          "d": 1.12,
-          "w": "\ud83c\udfb5"
+          "t": 10.32,
+          "d": 1.4,
+          "w": "Thank"
         },
         {
-          "t": 1.12,
+          "t": 11.72,
+          "d": 1.4,
+          "w": "you."
+        }
+      ]
+    },
+    {
+      "t": 30.0,
+      "text": "Thank you.",
+      "words": [
+        {
+          "t": 30.0,
+          "d": 0.78,
+          "w": "Thank"
+        },
+        {
+          "t": 30.78,
+          "d": 1.26,
+          "w": "you."
+        }
+      ]
+    },
+    {
+      "t": 71.42,
+      "text": "Thank you.",
+      "words": [
+        {
+          "t": 71.42,
+          "d": 1.4,
+          "w": "Thank"
+        },
+        {
+          "t": 72.82,
+          "d": 1.16,
+          "w": "you."
+        }
+      ]
+    },
+    {
+      "t": 99.66,
+      "text": "Thank you.",
+      "words": [
+        {
+          "t": 99.66,
+          "d": 1.4,
+          "w": "Thank"
+        },
+        {
+          "t": 101.06,
+          "d": 1.4,
+          "w": "you."
+        }
+      ]
+    },
+    {
+      "t": 126.76,
+      "text": "Thank you.",
+      "words": [
+        {
+          "t": 126.76,
+          "d": 1.4,
+          "w": "Thank"
+        },
+        {
+          "t": 128.16,
+          "d": 1.4,
+          "w": "you."
+        }
+      ]
+    },
+    {
+      "t": 161.9,
+      "text": "Thank you.",
+      "words": [
+        {
+          "t": 161.9,
+          "d": 1.4,
+          "w": "Thank"
+        },
+        {
+          "t": 163.3,
+          "d": 1.4,
+          "w": "you."
+        }
+      ]
+    },
+    {
+      "t": 193.1,
+      "text": "Thank you.",
+      "words": [
+        {
+          "t": 193.1,
+          "d": 1.4,
+          "w": "Thank"
+        },
+        {
+          "t": 194.5,
           "d": 0.0,
-          "w": "Music"
-        },
-        {
-          "t": 1.12,
-          "d": 2.06,
-          "w": "\ud83c\udfb5"
-        }
-      ]
-    },
-    {
-      "t": 34.68,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
-      "words": [
-        {
-          "t": 34.68,
-          "d": 1.4,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 36.08,
-          "d": 1.4,
-          "w": "Music"
-        },
-        {
-          "t": 37.48,
-          "d": 1.42,
-          "w": "\ud83c\udfb5"
-        }
-      ]
-    },
-    {
-      "t": 87.16,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
-      "words": [
-        {
-          "t": 87.16,
-          "d": 1.4,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 88.56,
-          "d": 1.4,
-          "w": "Music"
-        },
-        {
-          "t": 89.96,
-          "d": 0.02,
-          "w": "\ud83c\udfb5"
-        }
-      ]
-    },
-    {
-      "t": 90.0,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
-      "words": [
-        {
-          "t": 90.0,
-          "d": 1.02,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 91.02,
-          "d": 4.88,
-          "w": "Music"
-        },
-        {
-          "t": 95.9,
-          "d": 2.0,
-          "w": "\ud83c\udfb5"
-        }
-      ]
-    },
-    {
-      "t": 125.06,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
-      "words": [
-        {
-          "t": 125.06,
-          "d": 1.4,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 126.46,
-          "d": 0.0,
-          "w": "Music"
-        },
-        {
-          "t": 126.46,
-          "d": 0.04,
-          "w": "\ud83c\udfb5"
-        }
-      ]
-    },
-    {
-      "t": 153.44,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
-      "words": [
-        {
-          "t": 153.44,
-          "d": 1.4,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 154.84,
-          "d": 1.4,
-          "w": "Music"
-        },
-        {
-          "t": 156.24,
-          "d": 3.0,
-          "w": "\ud83c\udfb5"
-        }
-      ]
-    },
-    {
-      "t": 187.2,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
-      "words": [
-        {
-          "t": 187.2,
-          "d": 0.32,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 187.52,
-          "d": 0.02,
-          "w": "Music"
-        },
-        {
-          "t": 187.54,
-          "d": 0.16,
-          "w": "\ud83c\udfb5"
+          "w": "you."
         }
       ]
     }
@@ -151,10 +116,10 @@
   "meta": {
     "input": "sh-3 - Whispers of Infinity.mp3",
     "model": "large-v3",
-    "demucs": false,
+    "demucs": true,
     "language": "en",
-    "elapsed_sec": 111.4,
+    "elapsed_sec": 239.5,
     "num_lines": 7,
-    "num_words": 21
+    "num_words": 14
   }
 }

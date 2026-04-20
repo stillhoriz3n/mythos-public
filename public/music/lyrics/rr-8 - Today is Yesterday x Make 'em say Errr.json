@@ -1426,8 +1426,8 @@
     }
   ],
   "meta": {
-    "source_canonical": "rr-2 - Today is Yesterday x Make 'em say Errr.txt",
-    "source_whisper": "rr-2 - Today is Yesterday x Make 'em say Errr.whisper.json",
+    "source_canonical": "rr-8 - Today is Yesterday x Make 'em say Errr.txt",
+    "source_whisper": "rr-8 - Today is Yesterday x Make 'em say Errr.whisper.json",
     "num_lines": 39,
     "num_words": 238,
     "matched_pct": 87.0,

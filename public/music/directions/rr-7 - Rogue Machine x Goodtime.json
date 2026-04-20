@@ -1,6 +1,6 @@
 {
-  "track": "rr-8 - Rogue Machine x Goodtime",
-  "notes": "Longing. Hook: 'Don't say that you want me, say that you need me / Let yourself go'. Bridge is the title moment \u2014 'Like a rogue machine / You are ultraviolet light, it burns my eyes / And it's all I see'. Final chorus collapses to 'Let yourself go' dissolving. AUDITED 2026-04-20: every chorus bar was a key which turned the screen into a billboard wall. Demoted to ribbons (direction-aware chorus will breathe amber/cyan naturally). Kept only the title moment ('Like a rogue machine') and the declaration ('And it's all I see') as keys.",
+  "track": "rr-7 - Rogue Machine x Goodtime",
+  "notes": "Longing. Hook: 'Don't say that you want me, say that you need me / Let yourself go'. Bridge is the title moment — 'Like a rogue machine / You are ultraviolet light, it burns my eyes / And it's all I see'. Final chorus collapses to 'Let yourself go' dissolving. AUDITED 2026-04-20: every chorus bar was a key which turned the screen into a billboard wall. Demoted to ribbons (direction-aware chorus will breathe amber/cyan naturally). Kept only the title moment ('Like a rogue machine') and the declaration ('And it's all I see') as keys.",
   "defaults": {
     "intensity": 1.0,
     "colorBias": "neutral"
@@ -14,7 +14,7 @@
       "kind": "ribbon",
       "emphasis": 1.05,
       "color": "amber",
-      "note": "Don't say that you want me \u2014 chorus #1 ribbon"
+      "note": "Don't say that you want me — chorus #1 ribbon"
     },
     {
       "wordRange": [
@@ -34,7 +34,7 @@
       "kind": "ribbon",
       "emphasis": 1.0,
       "color": "cyan",
-      "note": "no feeling \u2014 cyan ribbon"
+      "note": "no feeling — cyan ribbon"
     },
     {
       "wordRange": [
@@ -44,7 +44,7 @@
       "kind": "ribbon",
       "emphasis": 1.05,
       "color": "amber",
-      "note": "Left in your bones \u2014 chorus #1 landing ribbon"
+      "note": "Left in your bones — chorus #1 landing ribbon"
     },
     {
       "wordRange": [
@@ -94,7 +94,7 @@
       "kind": "ribbon",
       "emphasis": 1.15,
       "color": "mixed",
-      "note": "intersecting lines \u2014 bridge setup, mixed ribbon"
+      "note": "intersecting lines — bridge setup, mixed ribbon"
     },
     {
       "wordRange": [
@@ -104,7 +104,7 @@
       "kind": "key",
       "emphasis": 1.35,
       "color": "cyan",
-      "note": "Like a rogue machine \u2014 TITLE MOMENT, KEY"
+      "note": "Like a rogue machine — TITLE MOMENT, KEY"
     },
     {
       "wordRange": [
@@ -114,7 +114,7 @@
       "kind": "ribbon",
       "emphasis": 1.15,
       "color": "cyan",
-      "note": "ultraviolet light \u2014 bridge ribbon, cyan"
+      "note": "ultraviolet light — bridge ribbon, cyan"
     },
     {
       "wordRange": [
@@ -124,7 +124,7 @@
       "kind": "key",
       "emphasis": 1.45,
       "color": "amber",
-      "note": "And it's all I see \u2014 declaration, amber burn, KEY"
+      "note": "And it's all I see — declaration, amber burn, KEY"
     },
     {
       "wordRange": [
@@ -154,7 +154,7 @@
       "kind": "ribbon",
       "emphasis": 1.0,
       "color": "cyan",
-      "note": "pretending feeling #3 ribbon (no bones \u2014 abandoned)"
+      "note": "pretending feeling #3 ribbon (no bones — abandoned)"
     },
     {
       "wordRange": [

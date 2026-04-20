@@ -1,0 +1,121 @@
+{
+  "track": "rr-8 - Today is Yesterday x Make 'em say Errr",
+  "notes": "Groundhog-day anxiety. Tight AAB triplets. 'You're on your way to nowhere now' is the thesis — final section collapses to 'nowhere' without 'now'. 1.84s hold on 'You're' mid-collapse. AUDITED 2026-04-20: the three 'hook' iterations are ribbons so the 'You're on your way to nowhere now' payoff at each section lands as the actual moment. Final sustained 'You're' becomes the key; everything else rides the ribbon lanes.",
+  "defaults": {
+    "intensity": 1.0,
+    "colorBias": "neutral"
+  },
+  "chunks": [
+    {
+      "wordRange": [
+        46,
+        51
+      ],
+      "kind": "ribbon",
+      "emphasis": 1.1,
+      "color": "mixed",
+      "note": "Today is yesterday over, over — hook #1 pt1 ribbon, mixed"
+    },
+    {
+      "wordRange": [
+        52,
+        59
+      ],
+      "kind": "ribbon",
+      "emphasis": 1.05,
+      "color": "amber",
+      "note": "Press rewind and play — hook #1 pt2 ribbon"
+    },
+    {
+      "wordRange": [
+        69,
+        75
+      ],
+      "kind": "ribbon",
+      "emphasis": 1.15,
+      "color": "amber",
+      "note": "You're on your way to nowhere now #1 — first payoff ribbon"
+    },
+    {
+      "wordRange": [
+        126,
+        131
+      ],
+      "kind": "ribbon",
+      "emphasis": 1.1,
+      "color": "mixed",
+      "note": "hook #2 pt1 ribbon"
+    },
+    {
+      "wordRange": [
+        132,
+        139
+      ],
+      "kind": "ribbon",
+      "emphasis": 1.05,
+      "color": "amber",
+      "note": "hook #2 pt2 ribbon"
+    },
+    {
+      "wordRange": [
+        148,
+        154
+      ],
+      "kind": "ribbon",
+      "emphasis": 1.2,
+      "color": "amber",
+      "note": "You're on your way to nowhere now #2 — ribbon"
+    },
+    {
+      "wordRange": [
+        155,
+        159
+      ],
+      "kind": "ribbon",
+      "emphasis": 1.05,
+      "color": "amber",
+      "note": "Today is yesterday over — bridge ribbon"
+    },
+    {
+      "wordRange": [
+        190,
+        196
+      ],
+      "kind": "key",
+      "emphasis": 1.5,
+      "color": "amber",
+      "note": "You're on your way to nowhere now — 1.84s 'You're' hold, biggest mid-song moment, KEY"
+    },
+    {
+      "wordRange": [
+        197,
+        202
+      ],
+      "kind": "ribbon",
+      "emphasis": 1.1,
+      "color": "mixed",
+      "note": "final hook pt1 ribbon (held 'over')"
+    },
+    {
+      "wordRange": [
+        203,
+        210
+      ],
+      "kind": "ribbon",
+      "emphasis": 1.05,
+      "color": "amber",
+      "note": "final hook pt2 ribbon"
+    },
+    {
+      "wordRange": [
+        219,
+        225
+      ],
+      "kind": "key",
+      "emphasis": 1.35,
+      "color": "amber",
+      "note": "final payoff with 'now' — closing KEY, return of the word"
+    }
+  ],
+  "moments": []
+}
