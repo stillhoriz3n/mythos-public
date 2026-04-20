@@ -1951,13 +1951,11 @@
           var h0 = s.hits[hi];
           if (h0.fired) continue;
           if (audioTime < h0.fireAt) break;
-          // Vocal gate: Whisper's per-letter sungAt is a best guess.
-          // If the vocalist hasn't actually started singing yet, hold
-          // the primary up to 150 ms so the splash lands on the real
-          // vocal onset instead of phantom silence. After the hold we
-          // fire anyway — letting stale hits back up forever would
-          // pile on one frame once the singer comes in.
-          if (vocalGate < 0.3 && audioTime < h0.fireAt + 0.15) break;
+          // Primaries fire on schedule — no vocal-gate hold. Offline
+          // vocal-snap (tools/vocal-snap.py) already moves these hits
+          // onto real vocal onsets during ingest. A runtime hold on top
+          // just stacks lag on already-corrected timing and makes
+          // letters miss their splash window on quiet-mix tracks.
           h0.fired = true;
           var letter = s.letters[h0.letterIdx];
           if (!letter) continue;
@@ -2016,12 +2014,13 @@
         // decoration). Previously dense verses could leave a letter at
         // 0.75 reveal still reading as half-ink.
         //
-        // Vocal-gated: splashes landing in silence (Whisper mis-timing)
-        // only pre-reveal dimly. Once real vocal energy rises and
-        // another splash lands, the letter snaps to full ink. Floor at
-        // 0.25 so splashes never go completely ghost — small splash
-        // still reads as intent.
-        var gate = Math.max(0.25, Math.min(1, vocalGate));
+        // Vocal gate modulates slightly — silent-moment splashes pull
+        // ~15% less reveal, real-vocal splashes ~10% more. High floor
+        // (0.85) because on quiet-mix tracks the gate sits near zero
+        // even during singing; we still want a primary strike to
+        // visibly light its letter. The offline vocal-snap handles the
+        // actual timing; this is a tint, not a kill switch.
+        var gate = 0.85 + 0.15 * Math.min(1, vocalGate);
         hitLetter.revealed = Math.min(1, hitLetter.revealed + (0.95 + d.brightness * 0.15) * gate);
         s.splashEnergy = Math.min(1, s.splashEnergy + 0.15);
         // Color derives from the sprite's y-band (top half = amber,
