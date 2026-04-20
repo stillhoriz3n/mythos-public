@@ -260,6 +260,7 @@
     containers: [],      // DOM roots
     trackFile: null,     // e.g. "music/sh-1 - askJarvis.mp3"
     trackDuration: 0,    // seconds, from mythos:audio broadcast; 0 = unknown
+    trackIsInstrumental: false, // if true, show "(instrumental)" and skip fetch
     data: null,          // { lines: [ { t, words: [...] } ] }
     flatWords: [],       // flat index for fast cursor
     flatLineIdx: [],     // parallel line index for each flat word
@@ -305,7 +306,9 @@
       lyricsState.currentLineIdx = -1;
       var empty = document.createElement('div');
       empty.className = 'm-lyrics-line is-future';
-      empty.textContent = '— no lyrics —';
+      empty.textContent = lyricsState.trackIsInstrumental
+        ? '(instrumental)'
+        : '— no lyrics —';
       host.appendChild(empty);
       return;
     }
@@ -353,6 +356,14 @@
     if (lyricsState.trackFile === file) return;
     lyricsState.trackFile = file;
     var token = ++lyricsState.loadToken;
+    // Explicit instrumentals skip the fetch (avoids a guaranteed 404 and
+    // lets buildLyricsDom render an "(instrumental)" state that reads as
+    // intentional rather than "we failed to find lyrics".
+    if (lyricsState.trackIsInstrumental) {
+      lyricsState.data = null;
+      lyricsState.containers.forEach(buildLyricsDom);
+      return;
+    }
     var url = lyricsPath(file);
     if (!url) { lyricsState.data = null; lyricsState.containers.forEach(buildLyricsDom); return; }
     fetch(url).then(function(r){
@@ -506,6 +517,9 @@
     var d = e.data;
     if (!d || typeof d !== 'object') return;
     if (d.type === 'mythos:audio' && d.track && d.track.file) {
+      // Cache per-track context before load so buildLyricsDom can branch
+      // on it. hasLyrics === false = intentional instrumental (rr-4 today).
+      lyricsState.trackIsInstrumental = (d.track.hasLyrics === false);
       if (lyricsState.containers.length) loadLyricsForTrack(d.track.file);
       // Cache duration — used by the low-alignment line-cursor fallback so
       // we can map currentTime → line index across the ACTUAL song length

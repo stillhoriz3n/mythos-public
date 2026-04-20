@@ -3241,7 +3241,7 @@
     var t = TRACKS[current];
     var msg = {
       type: 'mythos:audio',
-      track: { title: t.title, album: t.album, cover: t.cover, index: current, file: t.file, bpm: t.bpm },
+      track: { title: t.title, album: t.album, cover: t.cover, index: current, file: t.file, bpm: t.bpm, hasLyrics: t.hasLyrics },
       playing: playing, volume: volume, muted: muted, loop: loop, shuffle: shuffle,
       currentTime: audio.currentTime || 0,
       duration: audio.duration || 0,
