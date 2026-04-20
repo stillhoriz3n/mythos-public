@@ -1423,7 +1423,7 @@
   // frame; letter offsets are constant.
   //
   var LYRIC_LEAD = 3.5;       // seconds before line's first word the line appears on right
-  var LYRIC_TAIL = 2.5;       // seconds after line's last word the line persists on left
+  var LYRIC_TAIL = 1.2;       // seconds after line's last word the line persists on left (cubic ease-in: ~0.5s hold then accelerates)
   var LYRIC_FONT_PX = 24;     // base size in CSS pixels (multiplied by dpr inside)
   var LYRIC_TRAVEL_SECS = LYRIC_LEAD + LYRIC_TAIL;
   // Ribbon font: JetBrains Mono. Monospace = deterministic measurement
