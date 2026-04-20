@@ -526,7 +526,9 @@ html[data-audio-playing] .topnav-right .pill .dot{animation:none}
     height:auto;
     min-height:var(--shell-player-h);
   }
-  .player-right{display:none}
+  .player-right{display:flex;align-items:center;gap:6px}
+  .player-right .queue-btn{display:none}
+  .vol-bar{display:none}
   .progress-row{max-width:none}
   .player-btns .shuffle,.player-btns .loop{display:none}
   .player-art{width:44px;height:44px}
@@ -551,7 +553,7 @@ html[data-audio-playing] .topnav-right .pill .dot{animation:none}
   .nav-link{font-size:10px;padding:8px 8px}
 
   .player{
-    grid-template-columns:auto 1fr;
+    grid-template-columns:auto 1fr auto;
     padding:6px 10px;gap:8px;
     height:auto;
     min-height:var(--shell-player-h);
@@ -564,7 +566,6 @@ html[data-audio-playing] .topnav-right .pill .dot{animation:none}
   .player-center{display:flex;flex-direction:column;align-items:stretch;gap:2px}
   .player-btns{gap:6px;justify-content:center}
   .player-btns .shuffle,.player-btns .loop{display:none}
-  .player-right{display:none}
   .pb{padding:4px}
   .pb.pp{width:28px;height:28px}
   .pb.pp svg{width:11px;height:11px}
@@ -735,7 +736,7 @@ html[data-audio-playing] .topnav-right .pill .dot{animation:none}
       </div>
       <div class="progress-row">
         <span class="time" id="t-cur">0:00</span>
-        <div class="bar" id="bar" onclick="seek(event)">
+        <div class="bar" id="bar">
           <div class="buf" id="buf"></div>
           <div class="fill" id="fill"></div>
           <div class="thumb" id="thumb"></div>

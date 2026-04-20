@@ -182,7 +182,7 @@
   // your ear sequences what lands when, your eye catches motion from
   // both sides. Keys live above the bands at 0.70h with their own
   // anchored-ribbon treatment (see updateLyricSprites).
-  var LYRIC_BANDS_Y = [0.76, 0.81, 0.86, 0.91];
+  var LYRIC_BANDS_Y = [0.72, 0.76, 0.80, 0.84];
   var LYRIC_BANDS_N = LYRIC_BANDS_Y.length;
   var lyricWaveBufs = new Array(LYRIC_BANDS_N);
   var lyricWaveBufStride = 40;
@@ -929,6 +929,7 @@
   });
   audio.addEventListener('timeupdate', function() {
     if (!audio.duration || !isFinite(audio.duration)) return;
+    if (seekDragging) return;
     var pct = (audio.currentTime / audio.duration) * 100;
     document.getElementById('fill').style.width = pct + '%';
     document.getElementById('thumb').style.left = pct + '%';
@@ -962,12 +963,44 @@
     return m + ':' + String(sec).padStart(2, '0');
   }
 
-  function seek(e) {
-    var bar = document.getElementById('bar');
+  var seekDragging = false;
+  function seekPctFromEvent(bar, e) {
     var r = bar.getBoundingClientRect();
-    var pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-    if (audio.duration) audio.currentTime = pct * audio.duration;
+    return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
   }
+  function paintSeek(pct) {
+    document.getElementById('fill').style.width = (pct * 100) + '%';
+    document.getElementById('thumb').style.left = (pct * 100) + '%';
+    if (audio.duration) document.getElementById('t-cur').textContent = fmt(pct * audio.duration);
+  }
+  (function setupScrubber() {
+    var bar = document.getElementById('bar');
+    if (!bar) return;
+    var pendingPct = 0;
+    bar.addEventListener('pointerdown', function(e) {
+      if (!audio.duration || !isFinite(audio.duration)) return;
+      seekDragging = true;
+      try { bar.setPointerCapture(e.pointerId); } catch(_) {}
+      pendingPct = seekPctFromEvent(bar, e);
+      paintSeek(pendingPct);
+      document.getElementById('thumb').style.opacity = '1';
+      e.preventDefault();
+    });
+    bar.addEventListener('pointermove', function(e) {
+      if (!seekDragging) return;
+      pendingPct = seekPctFromEvent(bar, e);
+      paintSeek(pendingPct);
+    });
+    function commit(e) {
+      if (!seekDragging) return;
+      seekDragging = false;
+      try { bar.releasePointerCapture(e.pointerId); } catch(_) {}
+      if (audio.duration) audio.currentTime = pendingPct * audio.duration;
+      document.getElementById('thumb').style.opacity = '';
+    }
+    bar.addEventListener('pointerup', commit);
+    bar.addEventListener('pointercancel', commit);
+  })();
 
   function setVol(e) {
     var bar = e.currentTarget;
@@ -3291,7 +3324,6 @@
   window.togglePlay = togglePlay;
   window.nextTrack = nextTrack;
   window.prevTrack = prevTrack;
-  window.seek = seek;
   window.setVol = setVol;
   window.toggleMute = toggleMute;
   window.toggleShuffle = toggleShuffle;
