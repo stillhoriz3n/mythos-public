@@ -488,19 +488,30 @@
           return 0;
         }
 
+        // Minimum piece size after splitting — no tiny orphans.
+        var SPLIT_MIN_WORDS = 3;
+        var SPLIT_MIN_CHARS = 12;
+
         function splitOneChunk(wordsArr) {
           var txt = wordsArr.map(function(w){return w.w;}).join(' ');
           if (txt.length <= SPLIT_THRESHOLD) return [wordsArr];
-          if (wordsArr.length < 4) return [wordsArr];
+          if (wordsArr.length < SPLIT_MIN_WORDS * 2) return [wordsArr];
           var n = wordsArr.length;
-          var jMin = Math.max(1, Math.floor(n * 0.25));
-          var jMax = Math.min(n - 2, Math.ceil(n * 0.75));
+          var jMin = Math.max(SPLIT_MIN_WORDS - 1, Math.floor(n * 0.25));
+          var jMax = Math.min(n - SPLIT_MIN_WORDS - 1, Math.ceil(n * 0.75) - 1);
+          if (jMax < jMin) return [wordsArr];
           var best = { j: -1, score: -1 };
           for (var j = jMin; j <= jMax; j++) {
             var sp = innerSplitScore(wordsArr, j);
             if (sp <= 0) continue;
-            var leftLen = wordsArr.slice(0, j + 1).map(function(x){return x.w;}).join(' ').length;
-            var rightLen = wordsArr.slice(j + 1).map(function(x){return x.w;}).join(' ').length;
+            var leftWords = wordsArr.slice(0, j + 1);
+            var rightWords = wordsArr.slice(j + 1);
+            var leftLen = leftWords.map(function(x){return x.w;}).join(' ').length;
+            var rightLen = rightWords.map(function(x){return x.w;}).join(' ').length;
+            // Reject splits that orphan either side (too few words or too
+            // few characters).
+            if (leftWords.length < SPLIT_MIN_WORDS || rightWords.length < SPLIT_MIN_WORDS) continue;
+            if (leftLen < SPLIT_MIN_CHARS || rightLen < SPLIT_MIN_CHARS) continue;
             var maxHalf = Math.max(leftLen, rightLen);
             var imbalance = Math.abs(leftLen - rightLen);
             if (maxHalf > SPLIT_THRESHOLD * 1.2) continue;
@@ -508,14 +519,19 @@
             if (total > best.score) best = { j: j, score: total };
           }
           if (best.j < 0) {
-            // Fallback: split at midpoint by char count.
+            // Fallback: split at midpoint by char count — but still
+            // respect the minimum-piece constraints.
             var half = txt.length / 2, cumul = 0, mj = -1;
             for (var mi = 0; mi < n - 1; mi++) {
               cumul += wordsArr[mi].w.length + 1;
               if (cumul >= half) { mj = mi; break; }
             }
-            if (mj < 1 || mj >= n - 1) return [wordsArr];
-            return [wordsArr.slice(0, mj + 1), wordsArr.slice(mj + 1)];
+            if (mj < SPLIT_MIN_WORDS - 1 || mj > n - SPLIT_MIN_WORDS - 1) return [wordsArr];
+            var lhs = wordsArr.slice(0, mj + 1);
+            var rhs = wordsArr.slice(mj + 1);
+            if (lhs.map(function(x){return x.w;}).join(' ').length < SPLIT_MIN_CHARS) return [wordsArr];
+            if (rhs.map(function(x){return x.w;}).join(' ').length < SPLIT_MIN_CHARS) return [wordsArr];
+            return [lhs, rhs];
           }
           // Recurse — a long chunk may split into 3+ pieces.
           return splitOneChunk(wordsArr.slice(0, best.j + 1))
@@ -552,6 +568,46 @@
         // edits ranges by hand.
         if (direction && Array.isArray(direction.chunks)) {
           chunks = applyDirectionChunks(chunks, allWords, direction.chunks);
+
+          // Run the phone-fit splitter again over direction-authored
+          // chunks so an author-forced long ribbon range still fits.
+          // Preserves directed-* metadata onto the split pieces so the
+          // scheduler (kind/emphasis/color/preferBands) still applies.
+          // Key/eclipse chunks are left alone — splitting a key phrase
+          // would break the "one moment, centered" contract.
+          var splitAfterDir = [];
+          for (var dci = 0; dci < chunks.length; dci++) {
+            var dc = chunks[dci];
+            if (dc.directedKind === 'key' || dc.directedKind === 'eclipse') {
+              splitAfterDir.push(dc);
+              continue;
+            }
+            var dParts = splitOneChunk(dc.words);
+            if (dParts.length === 1) {
+              splitAfterDir.push(dc);
+              continue;
+            }
+            for (var dpi = 0; dpi < dParts.length; dpi++) {
+              var dpWords = dParts[dpi];
+              var dpF = dpWords[0], dpL = dpWords[dpWords.length - 1];
+              var np = {
+                words: dpWords,
+                chars: dpWords.map(function(w){return w.w;}).join(' ').length,
+                t: dpF.t,
+                tEnd: dpL.t + dpL.d,
+                text: dpWords.map(function(w){return w.w;}).join(' '),
+                directedKind: dc.directedKind,
+                directedEmphasis: dc.directedEmphasis,
+                directedColor: dc.directedColor,
+                directedPreferBands: dc.directedPreferBands,
+                directedNote: dc.directedNote,
+              };
+              np.startT = np.t - LYRIC_LEAD;
+              np.endT = np.tEnd + LYRIC_TAIL;
+              splitAfterDir.push(np);
+            }
+          }
+          chunks = splitAfterDir;
         }
 
         // ── Key phrase detection ──
