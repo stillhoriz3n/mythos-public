@@ -1152,8 +1152,22 @@
   // regardless of web-font load timing.
   var LYRIC_FONT = '"JetBrains Mono", monospace';
   // Reading anchor: fraction of viewport width where the currently-sung
-  // letter is pinned. 0 = left, 1 = right. Tune this to taste.
-  var LYRIC_ANCHOR_FRAC = 0.86;
+  // letter is pinned. 0 = left, 1 = right.
+  //
+  // Desktop (wide) wants the anchor far right so the already-sung
+  // letters trail across the screen for readability. Phone portrait
+  // (narrow) needs the anchor pulled much further left — otherwise the
+  // NEXT letters of the word being sung clip past the right viewport
+  // edge (you see "'s the medium I *sp" with everything after "sp" cut
+  // off). Recompute per frame from canvas width so rotating the device
+  // or resizing the window retunes automatically.
+  function lyricAnchorFrac(widthPx) {
+    // widthPx is canvas pixels (already scaled by dpr). Use logical px.
+    var w = widthPx / (window.devicePixelRatio || 1);
+    if (w < 480) return 0.58;   // narrow phone
+    if (w < 720) return 0.70;   // large phone / small tablet
+    return 0.86;                 // desktop / tablet landscape
+  }
 
   // Layout a single CHUNK as one sprite. Chunks are pre-grouped phrases
   // with spatial placement assigned by the scheduler at lyric-load time
@@ -1183,7 +1197,11 @@
       if (mi < chunk.words.length - 1) measureTotal += spaceW;
     }
     var fontPx = baseFontPx;
-    var maxW = w * (isKey ? 0.78 : 0.9);
+    // Cap sprite width so long chunks auto-shrink to fit. Tighter cap
+    // (0.82 vs the old 0.9) leaves room for the ribbon to scroll past
+    // the reading anchor without immediately clipping the right edge on
+    // narrow phones where the anchor sits further left.
+    var maxW = w * (isKey ? 0.78 : 0.82);
     if (measureTotal > maxW && measureTotal > 0) {
       fontPx = Math.max(baseFontPx * 0.5, baseFontPx * (maxW / measureTotal));
     }
@@ -1289,10 +1307,17 @@
     // Spawn chunks whose startT has arrived. Placement baked at load.
     // kind = 'ribbon' → on a y-band sprite; 'key' → centered big-dark
     // sprite; 'eclipse' → rendered directly by drawEclipses (no sprite).
+    // Skip any chunk whose sung window has already ended — on a big
+    // forward jump (page resume mid-track, seek), multiple chunks can
+    // have startT in the past; spawning all of them at once sends a
+    // group of already-past sprites flying across the screen into their
+    // tail/retire animation. Don't. Only spawn chunks still actively
+    // sung or just-ending. Past chunks are fast-forwarded-past.
     while (lyricState.chunkCursor < lyricState.chunks.length) {
       var next = lyricState.chunks[lyricState.chunkCursor];
       if (audioTime >= next.startT - 0.1) {
-        if (next.placement.kind === 'ribbon' || next.placement.kind === 'key') {
+        var stale = audioTime > next.tEnd + 0.2;
+        if (!stale && (next.placement.kind === 'ribbon' || next.placement.kind === 'key')) {
           spawnChunkSprite(next, c, dpr, w, h, audioTime);
         }
         lyricState.chunkCursor++;
@@ -1321,7 +1346,7 @@
     // sprite ramps in from the right edge over LEAD; after it ends it
     // ramps out to the left over TAIL. Words being sung stay in a
     // consistent reading zone regardless of line length or viewport.
-    var anchorFrac = LYRIC_ANCHOR_FRAC;
+    var anchorFrac = lyricAnchorFrac(w);
     for (var i = lyricState.sprites.length - 1; i >= 0; i--) {
       var s = lyricState.sprites[i];
       if (audioTime > s.endT + 0.3) {
@@ -1471,7 +1496,7 @@
       targetX = sprite.x + letter.x + letter.w * 0.5;
       targetY = sprite.y + letter.y;
     } else {
-      targetX = w * LYRIC_ANCHOR_FRAC;
+      targetX = w * lyricAnchorFrac(w);
       targetY = sprite.y + letter.y;
     }
     if (targetX < 20 || targetX > w - 20) return;
@@ -1756,7 +1781,7 @@
       // reading zone (same x as the ribbon's scrolling anchor) so the
       // screen center stays clear. Vertically in band 0 (0.66h) — above
       // the key-phrase y (0.75h) so they don't stack.
-      var cx = w * LYRIC_ANCHOR_FRAC;
+      var cx = w * lyricAnchorFrac(w);
       var cy = h * 0.66;
 
       c.shadowColor = 'rgba(255,240,220,' + (alpha * 0.7) + ')';
@@ -1794,10 +1819,12 @@
       //   Matrix mode folds everything to green.
       var glowRGB, fillRGB;
       var colorOverride = s.placement && s.placement.colorOverride;
-      if (mT > 0.5) {
-        glowRGB = '120,255,140';
-        fillRGB = '180,255,180';
-      } else if (s.isKey) {
+      // Note: lyric letters stay amber/cyan/mixed even in matrix mode.
+      // Matrix green applies to plinko rain + stars for atmosphere, but
+      // tinting the lyric glyphs green reads as a Windows-95 "rainbow"
+      // collision on top of the per-band amber/cyan palette. Keep the
+      // letters on-brand.
+      if (s.isKey) {
         // Bright warm amber on dark cosmos. Previous dark-fill/bright-glow
         // model assumed a luminous event behind the key; the captions-zone
         // placement doesn't have that, so the dark fill read as near-
@@ -1835,7 +1862,7 @@
       // ribbon scrolls — "everything, I f" with the rest clipped.
       // With this, letters dissolve smoothly as they flow out of the
       // reading zone.
-      var anchorAbsX = w * LYRIC_ANCHOR_FRAC;
+      var anchorAbsX = w * lyricAnchorFrac(w);
       var fadeRadius = w * 0.42;  // half-width of the reading zone
 
       // Two-pass render: glow pass (shadowBlur once) then sharp pass.
