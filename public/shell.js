@@ -813,15 +813,24 @@
   dataArray.fill(128);
 
   // ── RESTORE STATE ────────────────────────────────────
+  // Saved state keys by track FILE (not array index) — the TRACKS list is
+  // mutable across sessions (reordered, inserted, removed). Indexing by
+  // file survives those. Fall back to the legacy integer `current` field
+  // if that's what's in storage from a pre-fix session.
   var savedTime = 0;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
-    if (typeof saved.current === 'number' && saved.current >= 0 && saved.current < TRACKS.length) current = saved.current;
-    if (typeof saved.volume === 'number') volume = saved.volume;
+    if (typeof saved.currentFile === 'string') {
+      var idxByFile = TRACKS.findIndex(function(t){ return t.file === saved.currentFile; });
+      if (idxByFile >= 0) current = idxByFile;
+    } else if (typeof saved.current === 'number' && saved.current >= 0 && saved.current < TRACKS.length) {
+      current = saved.current;
+    }
+    if (typeof saved.volume === 'number') volume = Math.max(0, Math.min(1, saved.volume));
     if (typeof saved.shuffle === 'boolean') shuffle = saved.shuffle;
     if (typeof saved.loop === 'boolean') loop = saved.loop;
     if (typeof saved.muted === 'boolean') muted = saved.muted;
-    savedTime = typeof saved.time === 'number' ? saved.time : 0;
+    savedTime = typeof saved.time === 'number' && saved.time >= 0 ? saved.time : 0;
   } catch(e) {}
 
   audio.volume = volume;
@@ -830,7 +839,9 @@
   function saveState() {
     try {
       localStorage.setItem(KEY, JSON.stringify({
-        current, volume, shuffle, loop, muted,
+        current,                                    // legacy — kept for back-compat
+        currentFile: TRACKS[current] ? TRACKS[current].file : null,
+        volume, shuffle, loop, muted,
         time: audio.currentTime || 0,
       }));
     } catch(e){}
@@ -3290,11 +3301,17 @@
 
   // ── KEYBOARD ─────────────────────────────────────────
   document.addEventListener('keydown', function(e) {
-    if (e.target.matches('input, textarea')) return;
-    if (e.target.tagName === 'IFRAME') return;
-    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    if (e.target.matches('input, textarea, [contenteditable="true"]')) return;
+    // Don't hijack Space on focusable controls — that's how users activate
+    // the focused button via keyboard. Tabbing to Next-track + pressing
+    // Space should advance the track, not toggle play.
+    if (e.code === 'Space' &&
+        !e.target.matches('button, a, select, [role="button"], [tabindex]')) {
+      e.preventDefault();
+      togglePlay();
+    }
     else if (e.code === 'ArrowRight' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); nextTrack(); }
-    else if (e.code === 'ArrowLeft' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); prevTrack(); }
+    else if (e.code === 'ArrowLeft'  && (e.metaKey || e.ctrlKey)) { e.preventDefault(); prevTrack(); }
   });
 
   // ── INIT ─────────────────────────────────────────────

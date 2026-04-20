@@ -36,11 +36,13 @@
     overflow:hidden;
   }
 
-  /* Lyric surface — wide, centered, windowed, lives here */
+  /* Lyric surface — wide, centered, windowed, lives here.
+     Note: the meters stylesheet sets height from --m-lyrics-lines on
+     windowed containers. Don't fight it with min-height — it will
+     expand the container past the clip window and show the whole song. */
   .m-lyrics {
     width:100%;
     max-width:1100px;
-    min-height:60vh;
   }
 
   footer{
@@ -62,7 +64,7 @@
 </header>
 
 <main>
-  <div class="m-lyrics" data-lyrics-window data-lyrics-lines="5"></div>
+  <div class="m-lyrics" data-lyrics-window data-lyrics-lines="9"></div>
 </main>
 
 <footer>

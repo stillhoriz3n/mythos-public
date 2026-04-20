@@ -282,6 +282,13 @@
 
   function buildLyricsDom(container) {
     var windowed = container.hasAttribute('data-lyrics-window');
+    // Honour data-lyrics-lines="N" by pushing it to the CSS custom property
+    // the meters stylesheet reads. Without this, the attribute is dead.
+    var linesAttr = container.getAttribute('data-lyrics-lines');
+    var linesN = parseInt(linesAttr, 10);
+    if (linesN && linesN > 0 && linesN < 50) {
+      container.style.setProperty('--m-lyrics-lines', linesN);
+    }
     var track = document.createElement('div');
     track.className = 'm-lyrics-track';
     container.innerHTML = '';
@@ -289,6 +296,12 @@
     var host = windowed ? track : container;
 
     if (!lyricsState.data || !lyricsState.data.lines || !lyricsState.data.lines.length) {
+      // Critical: reset flat indices so updateLyricsCursor doesn't try to
+      // style orphaned DOM nodes from the previous track.
+      lyricsState.flatWords = [];
+      lyricsState.flatLineIdx = [];
+      lyricsState.currentWordIdx = -1;
+      lyricsState.currentLineIdx = -1;
       var empty = document.createElement('div');
       empty.className = 'm-lyrics-line is-future';
       empty.textContent = '— no lyrics —';
@@ -370,24 +383,53 @@
     var activeEnd = idx >= 0 ? words[idx].t + words[idx].d : 0;
     var isCurrent = idx >= 0 && t >= words[idx].t && t <= activeEnd + 0.05;
 
-    // Per-word progress for the current word (0..1 karaoke sweep)
+    // Per-word progress for the current word (0..1 karaoke sweep).
+    // When alignment quality is poor, pin progress to 1 instead of animating
+    // the sweep — wrong words pulsing gold is worse than static illumination.
+    // Line-level .is-active still shows the cursor; this just stops lying
+    // about sub-line timing. Tracks with bad Whisper match (e.g. instrumental
+    // breaks transcribed as "music" tokens) land here.
+    var alignmentOK = !(lyricsState.data &&
+                        lyricsState.data.meta &&
+                        typeof lyricsState.data.meta.matched_pct === 'number' &&
+                        lyricsState.data.meta.matched_pct < 30);
     if (idx >= 0) {
       var w = words[idx];
-      var p = w.d > 0 ? Math.max(0, Math.min(1, (t - w.t) / w.d)) : (isCurrent ? 1 : 0);
+      var p;
+      if (alignmentOK) {
+        p = w.d > 0 ? Math.max(0, Math.min(1, (t - w.t) / w.d)) : (isCurrent ? 1 : 0);
+      } else {
+        p = 1; // no animation — just solid illumination
+      }
       w.el.style.setProperty('--word-progress', p.toFixed(3));
     }
 
     if (idx !== lyricsState.currentWordIdx) {
-      // Demote old
-      if (lyricsState.currentWordIdx >= 0 && words[lyricsState.currentWordIdx]) {
-        var prev = words[lyricsState.currentWordIdx].el;
-        prev.classList.remove('is-current');
-        prev.classList.add('is-past');
-        prev.style.setProperty('--word-progress', '1');
+      var oldIdx = lyricsState.currentWordIdx;
+      // Demote every word from old cursor through idx-1 to .is-past.
+      // When ticks arrive at 1 Hz (mythos:audio fallback) or we seek, the
+      // cursor can jump several words at once; without this loop, the
+      // skipped-over words stay stuck as .is-future.
+      var demoteStart = Math.max(0, oldIdx);
+      var demoteEnd   = Math.min(words.length, idx); // exclusive
+      for (var di = demoteStart; di < demoteEnd; di++) {
+        var delEl = words[di].el;
+        delEl.classList.remove('is-current', 'is-future');
+        delEl.classList.add('is-past');
+        delEl.style.setProperty('--word-progress', '1');
+      }
+      // Handle reverse seek: if idx < oldIdx, re-future words (idx, oldIdx].
+      if (idx < oldIdx) {
+        for (var ri = idx + 1; ri <= oldIdx && ri < words.length; ri++) {
+          var relEl = words[ri].el;
+          relEl.classList.remove('is-current', 'is-past');
+          relEl.classList.add('is-future');
+          relEl.style.setProperty('--word-progress', '0');
+        }
       }
       // Promote new
       if (idx >= 0) {
-        words[idx].el.classList.remove('is-future');
+        words[idx].el.classList.remove('is-future', 'is-past');
         words[idx].el.classList.add('is-current');
       }
       lyricsState.currentWordIdx = idx;
@@ -401,11 +443,23 @@
             ld.classList.toggle('is-past',   li < newLine);
             ld.classList.toggle('is-future', li > newLine);
           });
-          // Windowed scroll — translate the active line to centre
-          if (c.hasAttribute('data-lyrics-window')) {
-            var lineH = parseFloat(getComputedStyle(c).getPropertyValue('--m-lyrics-line-h')) || 0;
-            if (lineH && newLine >= 0) {
-              var offset = -(newLine + 0.5) * lineH;
+          // Windowed scroll — translate so the active line lands at container centre.
+          // The track is centered via `top:50%; translateY(-50% + <this>)`, which
+          // puts the track's middle at the container's middle when offset is 0.
+          // Measuring the active line's actual offset inside the track handles
+          // wrapped lines correctly (a long lyric line that breaks across two
+          // visual rows counts as two heights worth of track, not one).
+          // Earlier formula used -(newLine + 0.5) * lineH, which was off by
+          // roughly half the track's height on every song.
+          if (c.hasAttribute('data-lyrics-window') && newLine >= 0) {
+            var track = c.querySelector('.m-lyrics-track');
+            var activeLine = track ? track.children[newLine] : null;
+            if (track && activeLine) {
+              var trackH = track.offsetHeight || 0;
+              var lineCenter = activeLine.offsetTop + activeLine.offsetHeight / 2;
+              // To move lineCenter to trackH/2 (track centre, which is also
+              // container centre given top:50%+translateY(-50%)), shift by:
+              var offset = (trackH / 2) - lineCenter;
               c.style.setProperty('--m-lyrics-translate', offset + 'px');
             }
           }
