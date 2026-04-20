@@ -319,13 +319,8 @@
     },
     {
       "t": 59.28,
-      "text": "Ooh baby",
+      "text": "baby",
       "words": [
-        {
-          "t": 59.28,
-          "d": 0.8,
-          "w": "Ooh"
-        },
         {
           "t": 60.08,
           "d": 0.48,
@@ -386,7 +381,7 @@
     },
     {
       "t": 66.8,
-      "text": "You should not have done that to me (hee-hee)",
+      "text": "You should not have done that to me",
       "words": [
         {
           "t": 66.8,
@@ -427,11 +422,6 @@
           "t": 69.44,
           "d": 0.44,
           "w": "me"
-        },
-        {
-          "t": 71.115,
-          "d": 2.223,
-          "w": "(hee-hee)"
         }
       ]
     },
@@ -748,22 +738,12 @@
     },
     {
       "t": 101.1,
-      "text": "Yeah (huh, huh, ooh!)",
+      "text": "Yeah ooh!)",
       "words": [
         {
           "t": 101.1,
           "d": 1.06,
           "w": "Yeah"
-        },
-        {
-          "t": 103.502,
-          "d": 2.417,
-          "w": "(huh,"
-        },
-        {
-          "t": 106.188,
-          "d": 2.417,
-          "w": "huh,"
         },
         {
           "t": 108.873,
@@ -1316,7 +1296,7 @@
     },
     {
       "t": 177.3,
-      "text": "My world, huh, bring it back",
+      "text": "My world, bring it back",
       "words": [
         {
           "t": 177.3,
@@ -1327,11 +1307,6 @@
           "t": 178.34,
           "d": 0.74,
           "w": "world,"
-        },
-        {
-          "t": 179.105,
-          "d": 0.045,
-          "w": "huh,"
         },
         {
           "t": 179.105,

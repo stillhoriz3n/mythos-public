@@ -394,17 +394,6 @@
       ]
     },
     {
-      "t": 71.07,
-      "text": "(Ooh-ooh)",
-      "words": [
-        {
-          "t": 71.07,
-          "d": 12.69,
-          "w": "(Ooh-ooh)"
-        }
-      ]
-    },
-    {
       "t": 92.22,
       "text": "Chase the rabbit in the ground and wait for hours, no sight or sound",
       "words": [
@@ -793,17 +782,6 @@
       ]
     },
     {
-      "t": 163.143,
-      "text": "(Ooh-ooh)",
-      "words": [
-        {
-          "t": 163.143,
-          "d": 4.57,
-          "w": "(Ooh-ooh)"
-        }
-      ]
-    },
-    {
       "t": 170.76,
       "text": "We are intersecting lines, we crash and fly",
       "words": [
@@ -1114,17 +1092,6 @@
           "t": 207.68,
           "d": 0.74,
           "w": "go)"
-        }
-      ]
-    },
-    {
-      "t": 208.42,
-      "text": "(Ooh-ooh)",
-      "words": [
-        {
-          "t": 208.42,
-          "d": 0.25,
-          "w": "(Ooh-ooh)"
         }
       ]
     }

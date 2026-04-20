@@ -410,7 +410,7 @@
     },
     {
       "t": 36.425,
-      "text": "I'm out here looking for a good time (uh-huh)",
+      "text": "I'm out here looking for a good time",
       "words": [
         {
           "t": 36.425,
@@ -451,11 +451,6 @@
           "t": 36.775,
           "d": 0.045,
           "w": "time"
-        },
-        {
-          "t": 36.825,
-          "d": 0.045,
-          "w": "(uh-huh)"
         }
       ]
     },
@@ -819,7 +814,7 @@
     },
     {
       "t": 132.28,
-      "text": "And I'm like, that looks like Grant.. it's Grant, what the f—",
+      "text": "And I'm like, that looks like Grant.. it's Grant, what the f\u2014",
       "words": [
         {
           "t": 132.28,
@@ -879,13 +874,13 @@
         {
           "t": 136.445,
           "d": 0.477,
-          "w": "f—"
+          "w": "f\u2014"
         }
       ]
     },
     {
       "t": 137.24,
-      "text": "I'm out here looking for a good time (uh-huh)",
+      "text": "I'm out here looking for a good time",
       "words": [
         {
           "t": 137.24,
@@ -926,11 +921,6 @@
           "t": 139.44,
           "d": 0.4,
           "w": "time"
-        },
-        {
-          "t": 140.16,
-          "d": 0.576,
-          "w": "(uh-huh)"
         }
       ]
     },

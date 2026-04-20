@@ -1,14 +1,31 @@
 {
   "track": "rr-5 - Goodtime",
-  "notes": "Party song with a concert-story monologue breakdown. Hook: 'I'm out here looking for a good time.' The spoken bridge is casual and breathless — let the auto-chunker carry it (natural breaks on the ellipses). Just elevate the punchline 'it's Grant, what the f—' as key. 'Make some fucking noise!!' is the call before the final chorus.",
+  "notes": "Party song with a concert-story monologue breakdown. Hook: 'I'm out here looking for a good time.' The spoken bridge is casual and breathless \u2014 let the auto-chunker carry it (natural breaks on the ellipses). Just elevate the punchline 'it's Grant, what the f\u2014' as key. 'Make some fucking noise!!' is the call before the final chorus.",
   "defaults": {
     "intensity": 1.1,
     "colorBias": "amber"
   },
   "chunks": [
-    { "wordRange": [150, 154], "kind": "key", "emphasis": 1.3, "color": "amber", "note": "it's Grant, what the f— — monologue punchline" },
-
-    { "wordRange": [197, 200], "kind": "key", "emphasis": 1.4, "color": "mixed", "note": "make some fucking noise!! — the call, biggest moment in the song" }
+    {
+      "wordRange": [
+        149,
+        153
+      ],
+      "kind": "key",
+      "emphasis": 1.3,
+      "color": "amber",
+      "note": "it's Grant, what the f\u2014 \u2014 monologue punchline"
+    },
+    {
+      "wordRange": [
+        195,
+        198
+      ],
+      "kind": "key",
+      "emphasis": 1.4,
+      "color": "mixed",
+      "note": "make some fucking noise!! \u2014 the call, biggest moment in the song"
+    }
   ],
   "moments": []
 }
