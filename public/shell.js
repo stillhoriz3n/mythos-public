@@ -461,6 +461,78 @@
           chunks.push(tail);
         }
 
+        // ── Phone-fit in-phrase split ──
+        // Linguistically clean chunks can still be too long for a phone
+        // screen. Chunks over SPLIT_THRESHOLD chars get bisected at the
+        // best available in-phrase hook: internal commas/em-dashes
+        // first, then coordinating conjunctions (and/but/or), then
+        // subordinators (when/while/because), then weak connectives
+        // (now/then), then prepositions (on/in/at/of/to…). Only splits
+        // at a point that keeps both halves under the phone budget.
+        var SPLIT_THRESHOLD = 48;
+        var COORD_WORDS = ['and','but','or','so','yet','nor'];
+        var SUBORD_WORDS = ['when','while','though','because','since','if','as','until','before','after','unless','till'];
+        var WEAK_WORDS = ['now','then'];
+        var PREP_WORDS = ['on','in','at','of','to','from','by','with','for','into','onto','upon'];
+
+        function innerSplitScore(words, j) {
+          var w = words[j];
+          var stripped = w.w.replace(/['"”’)]+$/, '');
+          var last = stripped.charAt(stripped.length - 1);
+          if (last === ',' || last === ';' || last === '—') return 10;
+          var next = words[j + 1] ? words[j + 1].w.toLowerCase().replace(/[^a-z']/g, '') : '';
+          if (COORD_WORDS.indexOf(next) >= 0) return 6;
+          if (SUBORD_WORDS.indexOf(next) >= 0) return 5;
+          if (WEAK_WORDS.indexOf(next) >= 0) return 4;
+          if (PREP_WORDS.indexOf(next) >= 0) return 3;
+          return 0;
+        }
+
+        function splitOneChunk(wordsArr) {
+          var txt = wordsArr.map(function(w){return w.w;}).join(' ');
+          if (txt.length <= SPLIT_THRESHOLD) return [wordsArr];
+          if (wordsArr.length < 4) return [wordsArr];
+          var n = wordsArr.length;
+          var jMin = Math.max(1, Math.floor(n * 0.25));
+          var jMax = Math.min(n - 2, Math.ceil(n * 0.75));
+          var best = { j: -1, score: -1 };
+          for (var j = jMin; j <= jMax; j++) {
+            var sp = innerSplitScore(wordsArr, j);
+            if (sp <= 0) continue;
+            var leftLen = wordsArr.slice(0, j + 1).map(function(x){return x.w;}).join(' ').length;
+            var rightLen = wordsArr.slice(j + 1).map(function(x){return x.w;}).join(' ').length;
+            var maxHalf = Math.max(leftLen, rightLen);
+            var imbalance = Math.abs(leftLen - rightLen);
+            if (maxHalf > SPLIT_THRESHOLD * 1.2) continue;
+            var total = sp * 10 - imbalance * 0.1;
+            if (total > best.score) best = { j: j, score: total };
+          }
+          if (best.j < 0) {
+            // Fallback: split at midpoint by char count.
+            var half = txt.length / 2, cumul = 0, mj = -1;
+            for (var mi = 0; mi < n - 1; mi++) {
+              cumul += wordsArr[mi].w.length + 1;
+              if (cumul >= half) { mj = mi; break; }
+            }
+            if (mj < 1 || mj >= n - 1) return [wordsArr];
+            return [wordsArr.slice(0, mj + 1), wordsArr.slice(mj + 1)];
+          }
+          // Recurse — a long chunk may split into 3+ pieces.
+          return splitOneChunk(wordsArr.slice(0, best.j + 1))
+            .concat(splitOneChunk(wordsArr.slice(best.j + 1)));
+        }
+
+        var splitChunks = [];
+        for (var sci = 0; sci < chunks.length; sci++) {
+          var parts = splitOneChunk(chunks[sci].words);
+          for (var pi = 0; pi < parts.length; pi++) {
+            var sc = { words: parts[pi], chars: 0 };
+            sc.chars = sc.words.map(function(w){return w.w;}).join(' ').length;
+            splitChunks.push(sc);
+          }
+        }
+        chunks = splitChunks;
+
         // Finalize each chunk with timing + text.
         for (var ci = 0; ci < chunks.length; ci++) {
           var c0 = chunks[ci];
