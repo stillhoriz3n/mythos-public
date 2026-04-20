@@ -1,181 +1,146 @@
 {
   "lines": [
     {
-      "t": 0.0,
-      "text": "\ud83c\udfb5",
+      "t": 12.86,
+      "text": "Thank you.",
       "words": [
         {
-          "t": 0.0,
-          "d": 1.36,
-          "w": "\ud83c\udfb5"
-        }
-      ]
-    },
-    {
-      "t": 30.0,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
-      "words": [
+          "t": 12.86,
+          "d": 1.4,
+          "w": "Thank"
+        },
         {
-          "t": 30.0,
+          "t": 14.26,
           "d": 0.0,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 30.0,
-          "d": 0.34,
-          "w": "Music"
-        },
-        {
-          "t": 30.34,
-          "d": 2.52,
-          "w": "\ud83c\udfb5"
+          "w": "you."
         }
       ]
     },
     {
-      "t": 60.0,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "t": 37.04,
+      "text": "Thank you.",
       "words": [
         {
-          "t": 60.0,
+          "t": 37.04,
+          "d": 1.4,
+          "w": "Thank"
+        },
+        {
+          "t": 38.44,
           "d": 0.0,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 60.0,
-          "d": 1.44,
-          "w": "Music"
-        },
-        {
-          "t": 61.44,
-          "d": 0.62,
-          "w": "\ud83c\udfb5"
+          "w": "you."
         }
       ]
     },
     {
-      "t": 93.52,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "t": 60.64,
+      "text": "Thank you.",
       "words": [
         {
-          "t": 93.52,
-          "d": 1.4,
-          "w": "\ud83c\udfb5"
+          "t": 60.64,
+          "d": 0.52,
+          "w": "Thank"
         },
         {
-          "t": 94.92,
-          "d": 1.12,
-          "w": "Music"
-        },
-        {
-          "t": 96.04,
-          "d": 0.02,
-          "w": "\ud83c\udfb5"
+          "t": 61.16,
+          "d": 0.26,
+          "w": "you."
         }
       ]
     },
     {
-      "t": 147.16,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "t": 91.36,
+      "text": "Thank you.",
       "words": [
         {
-          "t": 147.16,
+          "t": 91.36,
           "d": 1.4,
-          "w": "\ud83c\udfb5"
+          "w": "Thank"
         },
         {
-          "t": 148.56,
-          "d": 1.4,
-          "w": "Music"
-        },
-        {
-          "t": 149.96,
-          "d": 0.02,
-          "w": "\ud83c\udfb5"
+          "t": 92.76,
+          "d": 0.0,
+          "w": "you."
         }
       ]
     },
     {
-      "t": 150.0,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "t": 132.38,
+      "text": "Thank you.",
       "words": [
         {
-          "t": 150.0,
-          "d": 0.5,
-          "w": "\ud83c\udfb5"
+          "t": 132.38,
+          "d": 0.48,
+          "w": "Thank"
         },
         {
-          "t": 150.5,
-          "d": 0.92,
-          "w": "Music"
+          "t": 132.86,
+          "d": 0.24,
+          "w": "you."
+        }
+      ]
+    },
+    {
+      "t": 150.66,
+      "text": "Thank you.",
+      "words": [
+        {
+          "t": 150.66,
+          "d": 0.76,
+          "w": "Thank"
         },
         {
           "t": 151.42,
-          "d": 2.48,
-          "w": "\ud83c\udfb5"
+          "d": 0.38,
+          "w": "you."
         }
       ]
     },
     {
       "t": 180.0,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
+      "text": "Thank you.",
       "words": [
         {
           "t": 180.0,
+          "d": 0.76,
+          "w": "Thank"
+        },
+        {
+          "t": 180.76,
+          "d": 0.34,
+          "w": "you."
+        }
+      ]
+    },
+    {
+      "t": 226.86,
+      "text": "Thank you.",
+      "words": [
+        {
+          "t": 226.86,
+          "d": 1.4,
+          "w": "Thank"
+        },
+        {
+          "t": 228.26,
+          "d": 1.4,
+          "w": "you."
+        }
+      ]
+    },
+    {
+      "t": 240.86,
+      "text": "Thank you.",
+      "words": [
+        {
+          "t": 240.86,
+          "d": 0.76,
+          "w": "Thank"
+        },
+        {
+          "t": 241.62,
           "d": 0.38,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 180.38,
-          "d": 0.96,
-          "w": "Music"
-        },
-        {
-          "t": 181.34,
-          "d": 1.16,
-          "w": "\ud83c\udfb5"
-        }
-      ]
-    },
-    {
-      "t": 213.62,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
-      "words": [
-        {
-          "t": 213.62,
-          "d": 1.4,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 215.02,
-          "d": 0.0,
-          "w": "Music"
-        },
-        {
-          "t": 215.02,
-          "d": 0.08,
-          "w": "\ud83c\udfb5"
-        }
-      ]
-    },
-    {
-      "t": 240.56,
-      "text": "\ud83c\udfb5 Music \ud83c\udfb5",
-      "words": [
-        {
-          "t": 240.56,
-          "d": 1.4,
-          "w": "\ud83c\udfb5"
-        },
-        {
-          "t": 241.96,
-          "d": 0.0,
-          "w": "Music"
-        },
-        {
-          "t": 241.96,
-          "d": 6.52,
-          "w": "\ud83c\udfb5"
+          "w": "you."
         }
       ]
     }
@@ -183,10 +148,10 @@
   "meta": {
     "input": "sh-4 - Very Well.mp3",
     "model": "large-v3",
-    "demucs": false,
+    "demucs": true,
     "language": "en",
-    "elapsed_sec": 142.0,
+    "elapsed_sec": 276.9,
     "num_lines": 9,
-    "num_words": 25
+    "num_words": 18
   }
 }
