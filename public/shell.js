@@ -34,6 +34,7 @@
     'waitlist.html':                              { title: 'Join the Waitlist',       group: 'Transmissions', dark: true  },
     '_lyrics-preview.html':                       { title: 'Lyrics (preview)',        group: 'Transmissions', dark: true, hidden: true },
     '_labeler.html':                              { title: 'Section Labeler',         group: 'Transmissions', dark: true, hidden: true },
+    'neverland-nocturnal-001.html':            { title: 'The Immune System',      group: 'NeverlandNocturnal', dark: true  },
   };
 
   // ── DOM ──────────────────────────────────────────────
@@ -3359,7 +3360,9 @@
 
   // Determine initial page
   var initialPage = 'landing.html';
+  var HASH_ALIASES = { 'theimmunesystem': 'neverland-nocturnal-001' };
   var hash = location.hash.replace('#', '');
+  if (HASH_ALIASES[hash]) hash = HASH_ALIASES[hash];
   if (hash && PAGE_META[hash + '.html']) initialPage = hash + '.html';
   else if (hash && PAGE_META[hash]) initialPage = hash;
   else {
