@@ -3370,7 +3370,7 @@
   else if (hash && PAGE_META[hash]) initialPage = hash;
   else {
     try {
-      var s = localStorage.getItem(PAGE_KEY);
+      var s = localStorage.getItem(PAGE_KEY); if (s === 'landing.html') s = null;
       if (s && PAGE_META[s]) initialPage = s;
     } catch(e){}
   }
