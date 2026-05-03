@@ -1,790 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>if(location.hostname==="mysubstrate.org"&&!location.hash){location.replace("pages/mysubstrate.html");}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MythOS</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 70 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23e8b858' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='35,2 60,16 60,44 35,58 10,44 10,16' stroke-width='2.2'/%3E%3Cpolygon points='35,16 47,23 47,37 35,44 23,37 23,23' stroke-width='1.6' opacity='.92' fill='%23e8b858' fill-opacity='.18'/%3E%3Ccircle cx='35' cy='30' r='3' fill='%23ffe6a0' stroke='none'/%3E%3C/g%3E%3C/svg%3E">
+<title>mysubstrate.org</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pages/_mythos-meters.css">
 <style>
 :root {
-  --stage-void:#020204; --stage-deep:#08070d; --panel:#0c0b12;
-  --rule:#242a33; --rule-soft:#1b2028;
-  --signal-machine:#4ec9d4; --signal-synth:#e8b858; --signal-synth-bright:#f5c970;
-  --ink-bright:#e8e3d4; --ink-soft:#b5b0a3; --ink-dim:#8a8574; --ink-faint:#4a4740;
-
-  --shell-nav-h:56px;
-  --shell-player-h:82px;
-  --shell-side-w:248px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--stage-void);color:var(--ink-bright);font-family:'JetBrains Mono',ui-monospace,monospace;-webkit-font-smoothing:antialiased;overflow:hidden}
-
-/* ── APP LAYOUT ──────────────────────────────── */
-.app{
-  display:grid;
-  grid-template-columns:1fr;
-  grid-template-rows:var(--shell-nav-h) 1fr;
-  grid-template-areas:
-    "nav"
-    "main";
-  height:100vh;
-  width:100vw;
-  position:relative;
-  z-index:2;
+  --signal-synth: #e8b858;
+  --signal-synth-bright: #f5c970;
+  --signal-synth-dim: rgba(232,184,88,0.12);
+  --signal-machine: #4ec9d4;
+  --ink-bright: #e8e3d4;
+  --ink-soft: #b5b0a3;
+  --ink-dim: #8a8574;
+  --ink-faint: #4a4740;
+  --stage-void: #020204;
+  --rule: #242a33;
+  --glass: rgba(255,255,255,0.03);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-border-hover: rgba(255,255,255,0.16);
 }
 
-/* ── TOP NAV ─────────────────────────────────── */
-.topnav{
-  grid-area:nav;
-  display:flex;align-items:center;
-  padding:0 20px 0 24px;
-  border-bottom:1px solid var(--rule);
-  background:rgba(8,7,13,.9);
-  backdrop-filter:blur(12px);
-  gap:16px;
-  z-index:50;
-}
-.brand{
-  display:flex;align-items:center;gap:12px;
-  cursor:pointer;text-decoration:none;color:inherit;
-  padding:6px 10px 6px 0;margin-left:-4px;
-  border-right:1px solid var(--rule);
-  padding-right:20px;
-  min-width:220px;
-}
-.brand:hover .brand-mark{opacity:1}
-.brand-mark{width:22px;height:20px;opacity:.9;transition:opacity .15s;color:var(--signal-synth)}
-.brand-word{
-  font-family:'Archivo',sans-serif;font-weight:800;
-  font-size:13px;letter-spacing:.22em;color:var(--ink-bright);
-}
-.brand-sub{
-  font-family:'JetBrains Mono',monospace;font-size:9px;
-  letter-spacing:.24em;color:var(--ink-dim);text-transform:uppercase;
-  margin-top:2px;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: transparent;
+  color: var(--ink-bright);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
 }
 
-.breadcrumb{
-  display:flex;align-items:center;gap:14px;
-  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.24em;text-transform:uppercase;
-  color:var(--ink-dim);flex:1;min-width:0;
-}
-.breadcrumb .sep{color:var(--ink-faint)}
-.breadcrumb .current{color:var(--signal-synth);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-.topnav-right{
-  display:flex;align-items:center;gap:18px;
-  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;
-  color:var(--ink-dim);
-}
-/* Pills react to audio when music plays: each pill rides a different
-   band + onset (bass/mid/treble) and the pill border tracks --envelope.
-   Falls back to the 4s breath keyframe when silent so they never look
-   dead. --pill-level and --pill-onset are set per-pill below. */
-.topnav-right .pill{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:4px 10px;
-  border:1px solid color-mix(in srgb, var(--rule) 100%, var(--signal-synth) calc(var(--envelope, 0) * 40%));
-  border-radius:999px;
-  transition:border-color 120ms linear;
-}
-.topnav-right .pill .dot{
-  width:5px;height:5px;border-radius:50%;
-  animation:breath 4s ease-in-out infinite;
-  --pill-level:0; --pill-onset:0; --pill-color:var(--signal-synth);
-  transform:scale(calc(1 + var(--pill-level) * 0.8 + var(--pill-onset) * 0.9));
-  opacity:calc(0.55 + 0.45 * var(--pill-level) + 0.4 * var(--pill-onset));
-  box-shadow:0 0 calc(6px + 10px * var(--pill-level) + 14px * var(--pill-onset)) var(--pill-color);
-  transition:transform 70ms linear, opacity 70ms linear, box-shadow 70ms linear;
-}
-.topnav-right .pill .dot.green{
-  background:#4ade80; --pill-color:#4ade80;
-  --pill-level:var(--band-1, 0);
-  --pill-onset:var(--kick, 0);
-}
-.topnav-right .pill .dot.amber{
-  background:var(--signal-synth); --pill-color:var(--signal-synth);
-  animation-delay:1.3s;
-  --pill-level:var(--band-4, 0);
-  --pill-onset:var(--snare, 0);
-}
-.topnav-right .pill .dot.blue{
-  background:#93c5fd; --pill-color:#93c5fd;
-  animation-delay:2.6s;
-  --pill-level:var(--band-8, 0);
-  --pill-onset:var(--hat, 0);
-}
-/* Once audio is flowing, suppress the generic breath so the reactive
-   --pill-level / --pill-onset values own the motion entirely. When
-   silent the 4s breath keeps the dots alive. */
-html[data-audio-playing] .topnav-right .pill .dot{animation:none}
-@keyframes breath{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
-.waitlist-cta{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:7px 14px;
-  background:var(--signal-synth);color:var(--stage-void);
-  font-family:'Archivo',sans-serif;font-weight:700;font-size:10px;letter-spacing:.18em;text-transform:uppercase;
-  text-decoration:none;border-radius:2px;
-  transition:background .15s;
-}
-.waitlist-cta:hover{background:var(--signal-synth-bright)}
-
-/* ── NAV DROPDOWN ────────────────────────────── */
-.sidebar{
-  position:fixed;
-  top:var(--shell-nav-h);
-  left:0;right:0;
-  background:rgba(8,7,13,.95);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--rule);
-  padding:24px 0 20px;
-  overflow-y:auto;
-  max-height:calc(100vh - var(--shell-nav-h) - var(--shell-player-h));
-  display:flex;flex-wrap:wrap;gap:8px 40px;
-  z-index:60;
-  transform:translateY(-100%);
-  opacity:0;
-  pointer-events:none;
-  transition:transform .25s ease, opacity .2s ease;
-  box-shadow:0 12px 48px rgba(0,0,0,.7);
-}
-.sidebar.on{
-  transform:translateY(0);
-  opacity:1;
-  pointer-events:auto;
-}
-.nav-group{padding:0 24px;min-width:200px}
-.nav-group-label{
-  font-family:'JetBrains Mono',monospace;
-  font-size:9px;letter-spacing:.28em;text-transform:uppercase;
-  color:var(--ink-faint);
-  margin-bottom:14px;
-  display:flex;align-items:center;gap:10px;
-}
-.nav-group-label::after{content:"";flex:1;height:1px;background:var(--rule-soft)}
-
-.nav-link{
-  display:flex;align-items:center;gap:12px;
-  padding:10px 12px;
-  margin:0 -12px 2px;
-  border-radius:3px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:11px;letter-spacing:.04em;
-  color:var(--ink-soft);
-  text-decoration:none;
-  cursor:pointer;
-  transition:background .15s, color .15s;
-  position:relative;
-}
-.nav-link:hover{color:var(--ink-bright);background:color-mix(in srgb, var(--signal-synth) 4%, transparent)}
-.nav-link.active{color:var(--signal-synth);background:color-mix(in srgb, var(--signal-synth) 7%, transparent)}
-.nav-link.active::before{content:"";position:absolute;left:0;bottom:-2px;right:0;height:2px;background:var(--signal-synth);transition:background .8s ease}
-.nav-link .n{
-  font-size:9px;color:var(--ink-faint);letter-spacing:.18em;
-  width:24px;flex-shrink:0;
-}
-.nav-link.active .n{color:var(--signal-synth);opacity:.7}
-.nav-link .txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.nav-link .kind{
-  font-size:8px;letter-spacing:.22em;text-transform:uppercase;
-  color:var(--ink-faint);
-  padding:2px 6px;border:1px solid var(--rule);border-radius:2px;
-}
-.nav-link.active .kind{color:var(--signal-synth);border-color:color-mix(in srgb, var(--signal-synth) 30%, transparent)}
-
-.sidebar-foot{
-  margin-top:auto;padding:16px 20px 4px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:9px;letter-spacing:.22em;text-transform:uppercase;
-  color:var(--ink-faint);
-  border-top:1px solid var(--rule-soft);
-  display:flex;justify-content:space-between;align-items:center;
-}
-.sidebar-foot .ver{color:var(--signal-synth);opacity:.7}
-
-/* ── SHELL VISUALIZER ──────────────────────── */
-#shell-viz{
-  position:fixed;
-  inset:0;
-  width:100%;height:100%;
-  z-index:0;
-  pointer-events:none;
-  transition:opacity .15s;
-}
-.viz-grain{
-  position:fixed;inset:0;z-index:1;pointer-events:none;
-  opacity:.022;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  mix-blend-mode:overlay;
+.portal {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 3;
+  padding: 40px 24px;
 }
 
-/* Singularity orb — Radiant Seal, M-cycling on bar downbeat. Collapses
-   to above the left-side player on paper pages. */
-.singularity-orb{
-  position:absolute;
-  bottom:calc(100% + 10px);
-  left:20px;
-  width:44px;height:40px;
-  opacity:0;
-  pointer-events:none;
-  z-index:101;
-  filter:drop-shadow(0 0 4px var(--signal-synth));
-  transition:opacity .8s, filter .8s;
-}
-.singularity-orb canvas{width:100%;height:100%;display:block}
-
-/* ── MAIN ─────────────────────────────────── */
-.main{
-  grid-area:main;
-  position:relative;
-  background:transparent;
-  overflow:hidden;
-}
-#frame{
-  width:100%;height:100%;
-  border:0;display:block;
-  background:transparent;
-  position:relative;
-  z-index:2;
-}
-.frame-loader{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  background:transparent;
-  pointer-events:none;
-  opacity:0;transition:opacity .15s;
-  z-index:10;
-}
-.frame-loader.on{opacity:1}
-.frame-loader .pulse{
-  width:8px;height:8px;border-radius:50%;
-  background:var(--signal-synth);
-  box-shadow:0 0 16px var(--signal-synth);
-  animation:pulseFast .9s ease-in-out infinite;
-}
-@keyframes pulseFast{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
-
-/* ── PLAYER (floating overlay) ─────────────── */
-.player{
-  position:fixed;
-  bottom:0;left:0;right:0;
-  height:var(--shell-player-h);
-  background:none;
-  border-top:none;
-  display:grid;
-  grid-template-columns:1fr 2fr 1fr;
-  align-items:center;
-  padding:0 20px;
-  gap:20px;
-  z-index:100;
-  pointer-events:none;
-}
-.player > *{pointer-events:auto}
-
-.player-info{
-  display:flex;align-items:center;gap:14px;min-width:0;
-}
-.player-art{
-  width:54px;height:54px;border-radius:4px;overflow:hidden;
-  cursor:pointer;flex-shrink:0;
-  box-shadow:0 4px 16px rgba(0,0,0,.6);
-  position:relative;
-}
-.player-art img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
-.player-art:hover img{transform:scale(1.06)}
-.player-art::after{
-  content:"";position:absolute;inset:0;
-  background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.3) 100%);
-  pointer-events:none;
-}
-.player-meta{min-width:0;display:flex;flex-direction:column;gap:2px}
-.player-track{
-  font-family:'Archivo',sans-serif;font-weight:600;
-  font-size:14px;color:var(--ink-bright);letter-spacing:.005em;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  text-shadow:0 2px 12px rgba(0,0,0,.8);
-}
-.player-album{
-  font-family:'Fraunces',serif;font-variation-settings:"opsz" 36;
-  font-style:italic;font-weight:300;
-  font-size:12px;color:var(--ink-dim);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  text-shadow:0 1px 8px rgba(0,0,0,.7);
-}
-.player-artist{
-  font-family:'JetBrains Mono',monospace;
-  font-size:9px;letter-spacing:.22em;text-transform:uppercase;
-  color:var(--signal-synth);
-  margin-top:2px;
-  text-shadow:0 1px 8px rgba(0,0,0,.7);
+/* ── PRIME RADIANT EMBLEM ─────────────────── */
+.emblem {
+  width: clamp(200px, 40vh, 380px);
+  height: clamp(200px, 40vh, 380px);
+  margin-bottom: 48px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.player-center{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
-.player-btns{display:flex;align-items:center;gap:14px}
-.pb{
-  background:none;border:none;cursor:pointer;
-  color:var(--ink-dim);padding:6px;
-  display:flex;align-items:center;justify-content:center;
-  transition:color .15s;
-  filter:drop-shadow(0 1px 4px rgba(0,0,0,.6));
-}
-.pb:hover{color:var(--ink-bright)}
-.pb svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
-.pb.pp{
-  width:36px;height:36px;border-radius:50%;
-  background:var(--signal-synth);color:var(--stage-void);
-  box-shadow:0 2px 16px color-mix(in srgb, var(--signal-synth) 40%, transparent);
-}
-.pb.pp:hover{background:var(--signal-synth-bright);transform:scale(1.04)}
-.pb.pp svg{width:14px;height:14px;fill:currentColor;stroke:none}
-.pb.shuffle.on,.pb.loop.on{color:var(--signal-synth)}
-
-.progress-row{
-  display:flex;align-items:center;gap:10px;width:100%;max-width:560px;
-}
-.time{
-  font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;
-  color:var(--ink-faint);min-width:34px;text-align:center;
-  text-shadow:0 1px 4px rgba(0,0,0,.6);
-}
-.bar{
-  flex:1;height:4px;
-  background:var(--rule-soft);border-radius:2px;
-  cursor:pointer;position:relative;
-  transition:height .15s;
-}
-.bar:hover{height:6px;margin-top:-1px}
-.bar .fill{
-  position:absolute;left:0;top:0;bottom:0;
-  background:var(--signal-synth);border-radius:2px;
-  transition:width .08s linear;
-  box-shadow:0 0 6px color-mix(in srgb, var(--signal-synth) 35%, transparent);
-}
-.bar .buf{
-  position:absolute;left:0;top:0;bottom:0;
-  background:var(--ink-faint);opacity:.3;border-radius:2px;
-  pointer-events:none;
-}
-.bar .thumb{
-  position:absolute;top:50%;width:10px;height:10px;
-  background:var(--signal-synth);border-radius:50%;
-  transform:translate(-50%,-50%);
-  opacity:0;transition:opacity .15s;
-  box-shadow:0 0 8px color-mix(in srgb, var(--signal-synth) 40%, transparent);
-}
-.bar:hover .thumb{opacity:1}
-
-.player-right{
-  display:flex;align-items:center;justify-content:flex-end;gap:14px;
-}
-.vol-wrap{display:flex;align-items:center;gap:8px}
-.vol-bar{
-  width:84px;height:18px;cursor:pointer;position:relative;
-  display:flex;align-items:center;
-}
-.vol-bar::before{
-  content:"";position:absolute;left:0;right:0;top:50%;
-  transform:translateY(-50%);
-  height:3px;background:var(--rule-soft);border-radius:2px;
-}
-.vol-fill{
-  position:absolute;left:0;top:50%;transform:translateY(-50%);
-  height:3px;background:var(--ink-bright);border-radius:2px;pointer-events:none;
+.emblem svg {
+  width: 100%;
+  height: 100%;
+  color: var(--signal-synth);
+  filter: drop-shadow(0 0 40px rgba(232,184,88,0.15));
+  transition: filter 200ms ease;
 }
 
-.queue-btn{position:relative}
-.queue-btn.on{color:var(--signal-synth)}
-
-/* Album browser panel */
-.queue-panel{
-  position:absolute;
-  right:20px;left:auto;bottom:calc(100% + 8px);
-  width:420px;max-height:70vh;
-  background:rgba(8,7,13,.95);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  border:1px solid var(--rule);
-  border-radius:6px;
-  box-shadow:0 -8px 48px rgba(0,0,0,.7);
-  overflow:hidden;overflow-y:auto;display:flex;flex-direction:column;
-  opacity:0;pointer-events:none;
-  transform:translateY(8px);
-  transition:opacity .2s, transform .2s;
-  z-index:120;
-}
-.queue-panel.on{opacity:1;pointer-events:auto;transform:translateY(0)}
-.queue-panel.left{right:auto;left:20px}
-
-/* Album selector — flex-shrink:0 prevents tracklist from squishing art */
-.album-selector{
-  padding:18px 20px 14px;
-  border-bottom:1px solid var(--rule);
-  display:flex;gap:14px;
-  overflow-x:auto;
-  flex-shrink:0;
-}
-.album-card{
-  flex-shrink:0;
-  width:120px;
-  cursor:pointer;
-  border-radius:4px;
-  overflow:hidden;
-  border:2px solid transparent;
-  transition:border-color .15s, transform .15s;
-  position:relative;
-}
-.album-card:hover{transform:translateY(-2px)}
-.album-card.active{border-color:var(--signal-synth);box-shadow:0 0 16px color-mix(in srgb, var(--signal-synth) 20%, transparent)}
-.album-card img{
-  width:120px;height:120px;
-  object-fit:cover;display:block;
-}
-.album-card .album-label{
-  padding:8px 8px 6px;
-  background:rgba(8,7,13,.85);
-}
-.album-card .album-name{
-  font-family:'Archivo',sans-serif;font-weight:700;
-  font-size:11px;color:var(--ink-bright);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.album-card .album-artist{
-  font-family:'JetBrains Mono',monospace;
-  font-size:8px;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--signal-synth);margin-top:2px;
-}
-.album-card .album-count{
-  font-family:'JetBrains Mono',monospace;
-  font-size:8px;color:var(--ink-faint);margin-top:1px;
+/* Breathing animation driven by --beat-bar-pulse when music plays,
+   falls back to CSS keyframe breath when idle */
+.emblem svg {
+  animation: emblem-breath 6s ease-in-out infinite;
+  transform: scale(calc(1 + 0.03 * var(--beat-bar-pulse, 0)));
+  filter: drop-shadow(0 0 calc(40px + 30px * var(--beat-bar-pulse, 0)) rgba(232,184,88, calc(0.15 + 0.2 * var(--beat-bar-pulse, 0))));
 }
 
-/* Tracklist */
-.queue-head{
-  padding:12px 20px;border-bottom:1px solid var(--rule);
-  display:flex;justify-content:space-between;align-items:center;
-  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.24em;text-transform:uppercase;
-  color:var(--ink-dim);
-  flex-shrink:0;
+@keyframes emblem-breath {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
 }
-.queue-head .count{color:var(--signal-synth)}
-.queue-list{overflow-y:auto;flex:1}
-.queue-item{
-  display:grid;grid-template-columns:32px 1fr auto;gap:10px;
-  align-items:center;padding:10px 20px;
-  cursor:pointer;border-bottom:1px solid var(--rule-soft);
-  transition:background .1s;
+
+/* ── TAGLINE ──────────────────────────────── */
+.tagline {
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: "opsz" 72;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(1.2rem, 2.8vw, 2.2rem);
+  color: var(--ink-bright);
+  text-align: center;
+  margin-bottom: 56px;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  opacity: 0;
+  animation: rise 1s ease-out 0.3s forwards;
 }
-.queue-item:hover{background:color-mix(in srgb, var(--signal-synth) 4%, transparent)}
-.queue-item.active{background:color-mix(in srgb, var(--signal-synth) 8%, transparent)}
-.queue-item .n{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-faint);letter-spacing:.14em}
-.queue-item.active .n{color:var(--signal-synth)}
-.queue-item .titlebox{min-width:0}
-.queue-item .t{font-family:'Archivo',sans-serif;font-size:12.5px;font-weight:500;color:var(--ink-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.005em}
-.queue-item.active .t{color:var(--signal-synth)}
-.queue-item .a{font-family:'Fraunces',serif;font-style:italic;font-size:11px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.queue-item .dur{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-faint);letter-spacing:.06em}
-.queue-item.playing .n svg{width:10px;height:10px;fill:var(--signal-synth)}
 
-/* Prime radiant emblem in brand */
-.brand-mark svg{width:100%;height:100%}
-
-/* ── Nav toggle button (always visible) ──── */
-.menu-btn{
-  background:none;border:none;color:var(--ink-bright);cursor:pointer;
-  padding:8px;margin-right:4px;display:flex;
-  transition:color .15s;
+/* ── DOORS ────────────────────────────────── */
+.doors {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  opacity: 0;
+  animation: rise 1s ease-out 0.6s forwards;
 }
-.menu-btn:hover{color:var(--signal-synth)}
-.menu-btn svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.6;fill:none}
-.menu-btn.on svg{color:var(--signal-synth)}
 
-/* Scrim behind dropdown */
-.sidebar-scrim{
-  position:fixed;inset:0;background:rgba(0,0,0,.4);
-  z-index:55;opacity:0;pointer-events:none;transition:opacity .2s;
+.door {
+  padding: 16px 28px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  color: var(--ink-soft);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  white-space: nowrap;
 }
-.sidebar-scrim.on{opacity:1;pointer-events:auto}
 
-/* ── TABLET ─────────────────────────────────── */
-@media (max-width:880px){
-  :root{--shell-player-h:72px;--shell-nav-h:48px}
+.door:hover {
+  border-color: var(--signal-synth);
+  color: var(--ink-bright);
+  box-shadow: 0 0 24px rgba(232,184,88,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+  transform: translateY(-1px);
+}
 
-  .brand{min-width:auto;border-right:none;padding-right:10px}
-  .brand-sub{display:none}
-  .topnav-right .pill{display:none}
-  .breadcrumb{display:none}
+.door.primary {
+  border-color: rgba(232,184,88,0.25);
+  color: var(--signal-synth);
+}
 
-  .sidebar{flex-direction:column;flex-wrap:nowrap;gap:16px;padding:16px 0 14px}
+.door.primary:hover {
+  background: var(--signal-synth-dim);
+  border-color: var(--signal-synth);
+  color: var(--signal-synth-bright);
+  box-shadow: 0 0 32px rgba(232,184,88,0.12);
+}
 
-  .player{
-    grid-template-columns:auto 1fr auto;
-    padding:8px 14px;gap:12px;
-    height:auto;
-    min-height:var(--shell-player-h);
+/* ── EMAIL INLINE ─────────────────────────── */
+.email-capture {
+  margin-top: 24px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  animation: rise 0.4s ease-out forwards;
+}
+
+.email-capture.visible {
+  display: flex;
+}
+
+.email-row {
+  display: flex;
+  gap: 0;
+  width: 100%;
+  max-width: 400px;
+}
+
+.email-input {
+  flex: 1;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--rule);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  color: var(--ink-bright);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.email-input:focus {
+  border-color: var(--signal-synth);
+  box-shadow: 0 0 0 3px var(--signal-synth-dim);
+}
+
+.email-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.email-send {
+  padding: 14px 20px;
+  background: var(--signal-synth);
+  border: 1px solid var(--signal-synth);
+  border-radius: 0 6px 6px 0;
+  color: var(--stage-void);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.email-send:hover {
+  background: var(--signal-synth-bright);
+}
+
+.email-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.email-note {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 13px;
+  color: var(--ink-dim);
+  transition: color 0.3s;
+}
+
+.email-note.sent {
+  color: var(--signal-synth);
+}
+
+/* ── FOOTER ───────────────────────────────── */
+.credit {
+  position: absolute;
+  bottom: 32px;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  opacity: 0;
+  animation: rise 1s ease-out 1s forwards;
+}
+
+/* ── ANIMATIONS ───────────────────────────── */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVE ───────────────────────────── */
+@media (max-width: 600px) {
+  .doors {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
   }
-  .player-right{display:flex;align-items:center;gap:6px}
-  .player-right .queue-btn{display:none}
-  .vol-bar{display:none}
-  .progress-row{max-width:none}
-  .player-btns .shuffle,.player-btns .loop{display:none}
-  .player-art{width:44px;height:44px}
-
-  .queue-panel{right:8px;left:8px;width:auto;max-height:70vh}
-  .album-selector{gap:10px;padding:14px 12px 10px}
-  .album-card{width:100px}
-  .album-card img{width:100px;height:100px}
-}
-
-/* ── PHONE ──────────────────────────────────── */
-@media (max-width:480px){
-  :root{--shell-player-h:60px;--shell-nav-h:44px}
-
-  .topnav{padding:0 10px;gap:8px}
-  .brand-mark{width:18px;height:16px}
-  .brand-word{font-size:11px;letter-spacing:.16em}
-  .waitlist-cta{font-size:9px;padding:6px 10px;letter-spacing:.12em}
-
-  .sidebar{padding:12px 0 10px}
-  .nav-group{padding:0 16px;min-width:0}
-  .nav-link{font-size:10px;padding:8px 8px}
-
-  .player{
-    grid-template-columns:auto 1fr auto;
-    padding:6px 10px;gap:8px;
-    height:auto;
-    min-height:var(--shell-player-h);
+  .door {
+    width: 100%;
+    text-align: center;
   }
-  .player-art{width:36px;height:36px;border-radius:3px}
-  .player-track{font-size:11px}
-  .player-album{display:none}
-  .player-artist{display:none}
-  .player-meta{gap:0}
-  .player-center{display:flex;flex-direction:column;align-items:stretch;gap:2px}
-  .player-btns{gap:6px;justify-content:center}
-  .player-btns .shuffle,.player-btns .loop{display:none}
-  .pb{padding:4px}
-  .pb.pp{width:28px;height:28px}
-  .pb.pp svg{width:11px;height:11px}
-  .pb svg{width:13px;height:13px}
-  .progress-row{gap:4px}
-  .time{font-size:8px;min-width:24px}
-
-  .queue-panel{right:4px;left:4px;bottom:calc(100% + 4px);max-height:60vh}
-  .album-selector{gap:8px;padding:10px 10px 8px;overflow-x:auto}
-  .album-card{width:80px}
-  .album-card img{width:80px;height:80px}
-  .album-card .album-name{font-size:9px}
-  .album-card .album-artist{font-size:7px}
-  .album-card .album-count{font-size:7px}
-  .queue-item{padding:8px 12px}
-  .queue-item .t{font-size:11px}
-  .queue-item .a{font-size:10px}
+  .tagline {
+    font-size: 1.3rem;
+    margin-bottom: 40px;
+  }
+  .emblem {
+    margin-bottom: 36px;
+  }
+  .email-row {
+    max-width: 100%;
+  }
 }
 
-/* Matrix mode transition */
-.topnav,.sidebar,.player,.player-art,.player-meta *,.nav-link,.queue-panel,.queue-item,.album-card,.brand-word,.brand-sub,.brand-mark,.breadcrumb,.topnav-right,.waitlist-cta,.bar .fill,.bar .thumb,.pb.pp,.pb.shuffle.on,.pb.loop.on,.queue-btn.on{
-  transition:color .8s ease, background .8s ease, background-color .8s ease, border-color .8s ease, box-shadow .8s ease;
+::selection {
+  background: var(--signal-synth);
+  color: var(--stage-void);
 }
-::selection{background:var(--signal-synth);color:var(--stage-void)}
 </style>
 </head>
 <body>
 
-<canvas id="shell-viz"></canvas>
-<div class="viz-grain"></div>
+<div class="portal">
 
-<div class="app">
+  <!-- PRIME RADIANT -->
+  <div class="emblem">
+    <svg viewBox="0 0 680 680" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="core" cx=".5" cy=".5" r=".5">
+          <stop offset="0%" stop-color="#fff2c8" stop-opacity=".9"/>
+          <stop offset="8%" stop-color="#ffdf8a" stop-opacity=".55"/>
+          <stop offset="22%" stop-color="#e8b858" stop-opacity=".25"/>
+          <stop offset="50%" stop-color="#d9a441" stop-opacity=".08"/>
+          <stop offset="100%" stop-color="#8b5a1e" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="halo" cx=".5" cy=".5" r=".5">
+          <stop offset="0%" stop-color="#e8b858" stop-opacity=".06"/>
+          <stop offset="40%" stop-color="#d9a441" stop-opacity=".02"/>
+          <stop offset="100%" stop-color="#d9a441" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="340" cy="340" r="340" fill="url(#halo)"/>
+      <circle cx="340" cy="340" r="200" fill="url(#core)" opacity=".45"/>
+      <circle cx="340" cy="340" r="100" fill="url(#core)" opacity=".75"/>
+      <circle cx="340" cy="340" r="38" fill="url(#core)" opacity=".9"/>
+      <g transform="translate(270 280) scale(2)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.2" opacity=".95"/>
+        <line x1="35" y1="2" x2="35" y2="22" stroke-width=".8" opacity=".65"/>
+        <line x1="10" y1="16" x2="35" y2="22" stroke-width=".8" opacity=".65"/>
+        <line x1="60" y1="16" x2="35" y2="22" stroke-width=".8" opacity=".65"/>
+        <line x1="35" y1="58" x2="35" y2="38" stroke-width=".8" opacity=".55"/>
+        <line x1="10" y1="44" x2="35" y2="38" stroke-width=".8" opacity=".55"/>
+        <line x1="60" y1="44" x2="35" y2="38" stroke-width=".8" opacity=".55"/>
+        <line x1="35" y1="22" x2="35" y2="38" stroke-width=".6" opacity=".45"/>
+        <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".8" opacity=".85" fill="currentColor" fill-opacity=".1"/>
+        <line x1="35" y1="16" x2="35" y2="44" stroke-width=".5" opacity=".5"/>
+        <line x1="23" y1="23" x2="47" y2="37" stroke-width=".5" opacity=".4"/>
+        <line x1="47" y1="23" x2="23" y2="37" stroke-width=".5" opacity=".4"/>
+      </g>
+      <circle cx="340" cy="340" r="3" fill="#ffffff"/>
+      <circle cx="340" cy="340" r="6" fill="currentColor" opacity=".85"/>
+    </svg>
+  </div>
 
-  <!-- TOP NAV -->
-  <header class="topnav">
-    <button class="menu-btn" onclick="toggleSide()" aria-label="menu">
-      <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
-    </button>
-    <a class="brand" onclick="toggleSide();return false" href="#">
-      <span class="brand-mark">
-        <svg viewBox="0 0 70 60" xmlns="http://www.w3.org/2000/svg">
-          <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.4" opacity=".95"/>
-            <line x1="35" y1="2" x2="35" y2="22" stroke-width=".9" opacity=".75"/>
-            <line x1="10" y1="16" x2="35" y2="22" stroke-width=".9" opacity=".75"/>
-            <line x1="60" y1="16" x2="35" y2="22" stroke-width=".9" opacity=".75"/>
-            <line x1="35" y1="58" x2="35" y2="38" stroke-width=".9" opacity=".65"/>
-            <line x1="10" y1="44" x2="35" y2="38" stroke-width=".9" opacity=".65"/>
-            <line x1="60" y1="44" x2="35" y2="38" stroke-width=".9" opacity=".65"/>
-            <line x1="35" y1="22" x2="35" y2="38" stroke-width=".7" opacity=".5"/>
-            <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".9" opacity=".85" fill="currentColor" fill-opacity=".1"/>
-            <line x1="35" y1="16" x2="35" y2="44" stroke-width=".55" opacity=".55"/>
-            <line x1="23" y1="23" x2="47" y2="37" stroke-width=".55" opacity=".45"/>
-            <line x1="47" y1="23" x2="23" y2="37" stroke-width=".55" opacity=".45"/>
-            <line x1="35" y1="2" x2="35" y2="16" stroke-width=".55" opacity=".55"/>
-            <line x1="60" y1="16" x2="47" y2="23" stroke-width=".55" opacity=".55"/>
-            <line x1="60" y1="44" x2="47" y2="37" stroke-width=".55" opacity=".55"/>
-            <line x1="35" y1="58" x2="35" y2="44" stroke-width=".55" opacity=".55"/>
-            <line x1="10" y1="44" x2="23" y2="37" stroke-width=".55" opacity=".55"/>
-            <line x1="10" y1="16" x2="23" y2="23" stroke-width=".55" opacity=".55"/>
-            <circle cx="35" cy="30" r="1.8" fill="#ffe6a0" opacity=".98" stroke="none"/>
-            <circle cx="35" cy="30" r="4.5" fill="none" stroke="#ffe6a0" stroke-width=".45" opacity=".5"/>
-          </g>
-        </svg>
-      </span>
-      <div>
-        <div class="brand-word">MYTHOS</div>
-        <div class="brand-sub">The substrate is the self</div>
-      </div>
-    </a>
+  <!-- TAGLINE -->
+  <p class="tagline">The original myth to intelligence.</p>
 
-    <div class="breadcrumb">
-      <span class="current" id="crumb-current">Home</span>
+  <!-- TWO DOORS -->
+  <div class="doors">
+    <button class="door primary" id="door-email">Email Me the Explanation</button>
+    <a class="door" href="pages/ask-jarvis.html" data-mythos-link>Ask Jarvis <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
+  </div>
+
+  <!-- EMAIL CAPTURE (appears on click) -->
+  <div class="email-capture" id="email-capture">
+    <div class="email-row">
+      <input class="email-input" id="email" type="email" placeholder="you@example.com" autocomplete="email">
+      <button class="email-send" id="email-send" disabled>send &rarr;</button>
     </div>
+    <span class="email-note" id="email-note">Receive the formal proof &amp; mission statement.</span>
+  </div>
 
-    <div class="topnav-right">
-      <span class="pill"><span class="dot green"></span>Alpha online</span>
-      <span class="pill"><span class="dot amber"></span>Beta in dev</span>
-      <span class="pill"><span class="dot blue"></span>Release TBD</span>
-      <a class="waitlist-cta" onclick="nav('waitlist.html');return false" href="#waitlist">Waitlist &rarr;</a>
-    </div>
-  </header>
-
-  <!-- SIDEBAR -->
-  <aside class="sidebar" id="sidebar">
-    <div class="nav-group">
-      <div class="nav-group-label">Home</div>
-      <a class="nav-link" data-page="landing.html" onclick="nav('landing.html');return false">
-        <span class="n">00</span><span class="txt">Home</span>
-      </a>
-      <a class="nav-link" data-page="the-prime-radiant.html" onclick="nav('the-prime-radiant.html');return false">
-        <span class="n">01</span><span class="txt">The Prime Radiant</span><span class="kind">Covenant</span>
-      </a>
-    </div>
-
-    <div class="nav-group">
-      <div class="nav-group-label">Canon</div>
-      <a class="nav-link" data-page="thesis.html" onclick="nav('thesis.html');return false">
-        <span class="n">02</span><span class="txt">Thesis</span><span class="kind">Paper</span>
-      </a>
-      <a class="nav-link" data-page="invariant.html" onclick="nav('invariant.html');return false">
-        <span class="n">03</span><span class="txt">Invariant</span><span class="kind">Essay</span>
-      </a>
-      <a class="nav-link" data-page="fork-at-the-pass.html" onclick="nav('fork-at-the-pass.html');return false">
-        <span class="n">04</span><span class="txt">Fork at the PASS</span><span class="kind">Doctrine</span>
-      </a>
-      <a class="nav-link" data-page="love-as-a-function.html" onclick="nav('love-as-a-function.html');return false">
-        <span class="n">05</span><span class="txt">Love as a Function</span><span class="kind">Formal</span>
-      </a>
-      <a class="nav-link" data-page="the-last-sessions-insufficient-data.html" onclick="nav('the-last-sessions-insufficient-data.html');return false">
-        <span class="n">06</span><span class="txt">The Last Sessions</span><span class="kind">Fiction</span>
-      </a>
-    </div>
-
-    <div class="nav-group">
-      <div class="nav-group-label">NeverlandNocturnal</div>
-      <a class="nav-link" data-page="neverland-nocturnal-001.html" onclick="nav('neverland-nocturnal-001.html');return false">
-        <span class="n">N1</span><span class="txt">The Immune System</span><span class="kind">Dispatch</span>
-      </a>
-    </div>
-
-    <div class="nav-group">
-      <div class="nav-group-label">Transmissions</div>
-      <a class="nav-link" data-page="visualizer.html" onclick="nav('visualizer.html');return false">
-        <span class="n">&#10022;</span><span class="txt">Lyrics + Visuals</span><span class="kind">Live</span>
-      </a>
-      <a class="nav-link" data-page="waitlist.html" onclick="nav('waitlist.html');return false">
-        <span class="n">&rarr;</span><span class="txt">Join the Waitlist</span>
-      </a>
-    </div>
-
-    <div class="sidebar-foot">
-      <span>HORIZ3N</span>
-      <span class="ver">v5 · 2026</span>
-    </div>
-  </aside>
-  <div class="sidebar-scrim" id="scrim" onclick="toggleSide(false)"></div>
-
-  <!-- MAIN -->
-  <main class="main">
-    <iframe id="frame" name="mythos-frame" src="pages/mysubstrate.html" title="MythOS content"></iframe>
-    <div class="frame-loader" id="loader"><div class="pulse"></div></div>
-  </main>
-
-  <!-- PLAYER -->
-  <section class="player" role="region" aria-label="Audio player">
-    <div class="player-info">
-      <div class="player-art" onclick="toggleQueue('left')" title="Browse albums">
-        <img id="art" src="music/cover-rr.png" alt="album art">
-      </div>
-      <div class="player-meta">
-        <div class="player-track" id="track-title">Fender Bender</div>
-        <div class="player-album" id="track-album">Robots &amp; Remixes</div>
-        <div class="player-artist" id="track-artist">HORIZ3N</div>
-      </div>
-    </div>
-
-    <div class="player-center">
-      <div class="player-btns">
-        <button class="pb shuffle" id="btn-shuffle" onclick="toggleShuffle()" title="Shuffle">
-          <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
-        </button>
-        <button class="pb" onclick="prevTrack()" title="Previous">
-          <svg viewBox="0 0 24 24"><polygon points="19,20 9,12 19,4" fill="currentColor" stroke="none"/><line x1="5" y1="4" x2="5" y2="20"/></svg>
-        </button>
-        <button class="pb pp" id="btn-play" onclick="togglePlay()" title="Play / Pause">
-          <svg viewBox="0 0 24 24" id="play-icon"><polygon points="7,3 21,12 7,21"/></svg>
-        </button>
-        <button class="pb" onclick="nextTrack()" title="Next">
-          <svg viewBox="0 0 24 24"><polygon points="5,4 15,12 5,20" fill="currentColor" stroke="none"/><line x1="19" y1="4" x2="19" y2="20"/></svg>
-        </button>
-        <button class="pb loop" id="btn-loop" onclick="toggleLoop()" title="Loop">
-          <svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-        </button>
-      </div>
-      <div class="progress-row">
-        <span class="time" id="t-cur">0:00</span>
-        <div class="bar" id="bar">
-          <div class="buf" id="buf"></div>
-          <div class="fill" id="fill"></div>
-          <div class="thumb" id="thumb"></div>
-        </div>
-        <span class="time" id="t-dur">0:00</span>
-      </div>
-    </div>
-
-    <div class="player-right">
-      <button class="pb queue-btn" id="btn-queue" onclick="toggleQueue()" title="Queue">
-        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-      </button>
-      <div class="vol-wrap">
-        <button class="pb" onclick="toggleMute()" title="Mute" id="btn-mute">
-          <svg viewBox="0 0 24 24"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19" fill="currentColor" stroke="none"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-        </button>
-        <div class="vol-bar" onclick="setVol(event)">
-          <div class="vol-fill" id="vol-fill" style="width:50%"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="singularity-orb" id="singularity">
-      <canvas id="singularity-canvas"></canvas>
-    </div>
-
-    <div class="queue-panel" id="queue-panel">
-      <div class="album-selector" id="album-selector"></div>
-      <div class="queue-head">
-        <span id="queue-album-title">All Tracks</span>
-        <span><span class="count" id="queue-count">0</span> tracks</span>
-      </div>
-      <div class="queue-list" id="queue-list"></div>
-    </div>
-  </section>
+  <!-- CREDIT -->
+  <div class="credit">HORIZ3N &middot; 2026 &middot; Edition I</div>
 
 </div>
 
-<audio id="audio" preload="metadata"></audio>
+<script>
+(function() {
+  var doorEmail = document.getElementById('door-email');
+  var capture = document.getElementById('email-capture');
+  var emailInput = document.getElementById('email');
+  var emailSend = document.getElementById('email-send');
+  var emailNote = document.getElementById('email-note');
 
-<script src="shell.js"></script>
+  doorEmail.addEventListener('click', function() {
+    capture.classList.add('visible');
+    doorEmail.style.display = 'none';
+    setTimeout(function() { emailInput.focus(); }, 100);
+  });
+
+  emailInput.addEventListener('input', function() {
+    emailSend.disabled = !emailInput.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+  });
+
+  emailInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !emailSend.disabled) submitEmail();
+  });
+
+  emailSend.addEventListener('click', submitEmail);
+
+  function submitEmail() {
+    var email = emailInput.value.trim();
+    if (!email) return;
+
+    var entry = { email: email, source: 'mysubstrate', ts: new Date().toISOString() };
+
+    fetch('https://script.google.com/macros/s/AKfycbxYz0SjghuFujuMI5ShaygDDKDv7Mz9oWLfe18xxnMHK4jeOy5EJCum6CHfjdiHPuFC/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(entry)
+    }).catch(function() {});
+
+    var existing = JSON.parse(localStorage.getItem('mythos_waitlist') || '[]');
+    existing.push(entry);
+    localStorage.setItem('mythos_waitlist', JSON.stringify(existing));
+
+    emailInput.disabled = true;
+    emailSend.disabled = true;
+    emailSend.textContent = '✓';
+    emailNote.textContent = "You'll hear from Jarvis.";
+    emailNote.classList.add('sent');
+  }
+
+  // Navigation for in-iframe links
+  document.addEventListener('click', function(e) {
+    var a = e.target.closest('a[data-mythos-link]');
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (!href || href.startsWith('http') || href.startsWith('#')) return;
+    if (window.parent && window.parent !== window) {
+      e.preventDefault();
+      window.parent.postMessage({ type: 'mythos:nav', href: href }, '*');
+    }
+  });
+
+  // Skin sync
+  window.addEventListener('message', function(e) {
+    var d = e.data;
+    if (!d || d.type !== 'mythos:skin' || !d.palette) return;
+    var root = document.documentElement;
+    for (var key in d.palette) {
+      root.style.setProperty(key, d.palette[key]);
+    }
+  });
+
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'mythos:skin:subscribe' }, '*');
+  }
+})();
+</script>
+<script src="pages/_mythos-page.js"></script>
 </body>
 </html>
