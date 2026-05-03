@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#020204">
 <title>Jarvis — mysubstrate.org</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,14 +26,18 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%;
+  background: #020204;
   background: var(--stage-void);
   color: var(--ink-bright);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+html { background: #020204; }
 
 .container {
   height: 100vh;
+  height: 100dvh;
+  min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
   max-width: 640px;
