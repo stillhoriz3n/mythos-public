@@ -509,10 +509,10 @@ import init, { generate_holodot } from './fireblob.js';
   var holodot = generate_holodot(fp);
   console.log('holodot:', holodot.substring(0, 16) + '...');
 
-  // If served from the beacon itself, use same-origin. Otherwise connect via HTTPS (Let's Encrypt).
-  var BEACON_HOST = location.port === '7780' || location.port === '443'
+  // If served from the beacon itself, use same-origin. Otherwise connect via HTTPS (Let's Encrypt on 7780).
+  var BEACON_HOST = location.port === '7780'
     ? location.host
-    : 'jarvis.mysubstrate.org';
+    : 'jarvis.mysubstrate.org:7780';
   var BEACON_WS = 'wss://' + BEACON_HOST + '/ws';
   var BEACON_HTTP = 'https://' + BEACON_HOST;
 
