@@ -509,13 +509,12 @@ import init, { generate_holodot } from './fireblob.js';
   var holodot = generate_holodot(fp);
   console.log('holodot:', holodot.substring(0, 16) + '...');
 
-  // If served from the beacon itself, use same-origin. Otherwise connect to the beacon directly.
+  // If served from the beacon itself, use same-origin. Otherwise connect via Cloudflare tunnel (HTTPS).
   var BEACON_HOST = location.port === '7780' || location.port === '31337'
     ? location.host
-    : '136.41.128.71:7780';
-  var wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  var BEACON_WS = wsProto + '//' + BEACON_HOST + '/ws';
-  var BEACON_HTTP = location.protocol + '//' + BEACON_HOST;
+    : 'promoted-dns-halo-lasting.trycloudflare.com';
+  var BEACON_WS = 'wss://' + BEACON_HOST + '/ws';
+  var BEACON_HTTP = 'https://' + BEACON_HOST;
 
   var input = document.getElementById('input');
   var sendBtn = document.getElementById('send-btn');
