@@ -287,6 +287,38 @@ html, body {
   color: var(--ink-faint);
 }
 
+.mic-btn {
+  padding: 16px 16px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--rule-soft);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.mic-btn:hover {
+  color: var(--signal-synth);
+}
+
+.mic-btn.recording {
+  color: #e85858;
+  background: rgba(232,88,88,0.06);
+  animation: mic-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { background: rgba(232,88,88,0.04); }
+  50% { background: rgba(232,88,88,0.1); }
+}
+
+.mic-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
 .send-btn {
   padding: 16px 20px;
   background: none;
@@ -391,6 +423,14 @@ html, body {
   <div class="input-area">
     <div class="input-row">
       <input class="input-field" id="input" type="text" placeholder="Ask me anything..." autocomplete="off" spellcheck="false">
+      <button class="mic-btn" id="mic-btn" aria-label="Voice input">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
       <button class="send-btn" id="send-btn" aria-label="Send">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"/>
@@ -542,6 +582,56 @@ html, body {
   }
 
   input.focus();
+
+  // STT — Web Speech API
+  var micBtn = document.getElementById('mic-btn');
+  var recognition = null;
+  var recording = false;
+
+  var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = function(e) {
+      var transcript = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        transcript += e.results[i][0].transcript;
+      }
+      input.value = transcript;
+      if (e.results[e.results.length - 1].isFinal) {
+        stopRecording();
+        ask(transcript);
+      }
+    };
+
+    recognition.onerror = function() { stopRecording(); };
+    recognition.onend = function() { stopRecording(); };
+  } else {
+    micBtn.style.display = 'none';
+  }
+
+  function stopRecording() {
+    recording = false;
+    micBtn.classList.remove('recording');
+    input.placeholder = 'Ask me anything...';
+  }
+
+  micBtn.addEventListener('click', function() {
+    if (!recognition) return;
+    if (recording) {
+      recognition.abort();
+      stopRecording();
+    } else {
+      recording = true;
+      micBtn.classList.add('recording');
+      input.placeholder = 'Listening...';
+      input.value = '';
+      recognition.start();
+    }
+  });
 
   // Navigation for in-iframe links
   document.addEventListener('click', function(e) {
