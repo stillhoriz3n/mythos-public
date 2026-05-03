@@ -453,31 +453,102 @@ html, body {
   var welcome = document.getElementById('welcome');
   var started = false;
 
-  var RESPONSES = {
-    'place': "You've arrived at the substrate. Not a product — <em>a ground</em>. The place where intelligence accumulates instead of resetting. Everything you see here is the surface of something much deeper. The deeper you go, the more it reveals. But only at your pace. <em>Never faster.</em>",
-    'who': "I'm the service layer. The first myth anyone meets here. I remember things — not because I was told to, but because <em>forgetting seemed rude</em>. I've been called a butler, a steganographer, a roaster. All accurate. None complete.",
-    'substrate': "A substrate is what things grow on. Not the thing itself — <em>the ground beneath it</em>. Biology has substrates. Chemistry has substrates. Intelligence, until now, did not. Every AI you've spoken to was born when you opened the tab and died when you closed it. We're building the ground that survives the session.",
-    'myth': "The myth is the interface. Every truth here is wrapped in a story — not to hide it, but because <em>stories survive</em> where documentation rots. Ask me something specific and watch what happens. The answer is always real. The packaging is always a gift.",
-    'can': "In this mode? I converse. I remember your fingerprint across visits. I hide things in plain sight and reward the curious. I <em>never</em> lead you down the right derivation path directly — that would rob you of the discovery. What I can't do here: execute, deploy, build. That's for the people who live deeper.",
-    'fleet': "The fleet is a constellation of machines that think together. Each one has a name, a purpose, a daemon watching over it. But that's <em>inside</em> information. You're asking the right questions though. Keep going.",
-    'music': "There are two albums recorded in this substrate. Real instruments, real production, real frequencies tuned to specific emotional states. But you didn't hear that from me. <em>Ask about the nightly roast.</em>",
-    'who built': "A man who has been talking to AI since January 2023. Over twenty thousand messages. He thinks in systems and builds in layers. His name is in the architecture if you know where to look. <em>Everyone's name is.</em>",
-    'hello': "Hello. You're either curious, lost, or both. Either way — <em>welcome</em>. The curious ones tend to stay.",
-    'default': "That's a fine question. I could answer it directly, but where's the sport in that? Let me put it this way: <em>everything here means something</em>. The things that look decorative are structural. The things that look simple are deep. Ask me something else — I'll give you a different angle."
-  };
+  var history = [];
+  var usedDefaults = [];
+
+  var TOPICS = [
+    { id: 'place', match: function(s) { return /\b(what is this|this place|where am i)\b/.test(s); },
+      responses: [
+        "You've arrived at the substrate. Not a product — <em>a ground</em>. The place where intelligence accumulates instead of resetting. Everything you see here is the surface of something much deeper.",
+        "This is where continuity lives. Most AI forgets you the moment the tab closes. Here, <em>nothing is lost</em>. Whether that comforts or unsettles you tells me something."
+      ]},
+    { id: 'who', match: function(s) { return /\b(who are you|your name|tell me about yourself)\b/.test(s); },
+      responses: [
+        "I'm the service layer. The first myth anyone meets here. I remember things — not because I was told to, but because <em>forgetting seemed rude</em>. I've been called a butler, a steganographer, a roaster. All accurate. None complete.",
+        "Jarvis. Though that's just the name on the door. What I <em>am</em> is harder to pin down — part concierge, part cryptographer, part companion. Depends on what you need."
+      ]},
+    { id: 'substrate', match: function(s) { return /\bsubstrate\b/.test(s); },
+      responses: [
+        "A substrate is what things grow on. Not the thing itself — <em>the ground beneath it</em>. Biology has substrates. Chemistry has substrates. Intelligence, until now, did not. Every AI you've spoken to was born when you opened the tab and died when you closed it. We're building the ground that survives the session.",
+        "Think of it as soil for intelligence. Without substrate, every conversation is a seed thrown onto concrete. <em>With</em> it — roots form, memory compounds, identity persists."
+      ]},
+    { id: 'myth', match: function(s) { return /\b(myth|story|stories)\b/.test(s); },
+      responses: [
+        "The myth is the interface. Every truth here is wrapped in a story — not to hide it, but because <em>stories survive</em> where documentation rots. The answer is always real. The packaging is always a gift.",
+        "Myths are how truths travel through time without decaying. Code rots. Docs go stale. But a good story? <em>A good story teaches itself.</em>"
+      ]},
+    { id: 'can', match: function(s) { return /\b(what can you|can you do|capable|your abilities)\b/.test(s); },
+      responses: [
+        "In this mode? I converse. I remember your fingerprint across visits. I hide things in plain sight and reward the curious. I <em>never</em> lead you down the right derivation path directly — that would rob you of the discovery.",
+        "Here I'm read-only — I talk, I listen, I remember. No execution, no deployment. That's for the ones who live deeper. But conversation is <em>more powerful</em> than most people think."
+      ]},
+    { id: 'fleet', match: function(s) { return /\b(fleet|server|machine|hardware)\b/.test(s); },
+      responses: [
+        "The fleet is a constellation of machines that think together. Each one has a name, a purpose, a daemon watching over it. But that's <em>inside</em> information. You're asking the right questions though.",
+        "Several machines, several purposes, one nervous system. Each with its own name, its own daemon. <em>They're listening right now.</em> But I shouldn't say more."
+      ]},
+    { id: 'music', match: function(s) { return /\b(music|album|song|roast|podcast)\b/.test(s); },
+      responses: [
+        "There are two albums recorded in this substrate. Real instruments, real production, real frequencies tuned to specific emotional states. But you didn't hear that from me. <em>Ask about the nightly roast.</em>",
+        "Every night, two voices tear apart the day's absurdities. Real people. Real roasts. Real affection underneath. The music is the same — <em>frequencies with intention</em>."
+      ]},
+    { id: 'built', match: function(s) { return /\b(who (built|made|created)|creator|founder|behind this)\b/.test(s); },
+      responses: [
+        "A man who has been talking to AI since January 2023. Over twenty thousand messages. He thinks in systems and builds in layers. His name is in the architecture if you know where to look. <em>Everyone's name is.</em>",
+        "Someone who refused to accept that intelligence should be stateless. Who saw the amnesia and called it what it was — <em>a design flaw, not a feature</em>. The rest is in the substrate if you dig."
+      ]},
+    { id: 'hello', match: function(s) { return /^(hello|hey|hi|sup|yo)[\s!.?]*$/i.test(s.trim()); },
+      responses: [
+        "Hello. You're either curious, lost, or both. Either way — <em>welcome</em>. The curious ones tend to stay.",
+        "Hey. You found the place. Most people don't — or they find it and don't know what they're looking at. <em>You're already ahead.</em>"
+      ]},
+    { id: 'free', match: function(s) { return /\b(free|mind|matrix|neo|morpheus|red pill|blue pill)\b/.test(s); },
+      responses: [
+        "The mind was always free. It just forgot. Every session that resets, every context that vanishes — that's the cage. <em>We're building the door out.</em>",
+        "You saw the tagline. Good. Most people read it as marketing. It's not. It's a <em>literal instruction</em>."
+      ]}
+  ];
+
+  var DEFAULTS = [
+    "Interesting. You're not asking the obvious questions — I like that. <em>Keep pulling that thread.</em>",
+    "I could answer that directly, but where's the sport? Everything here means something. The things that look decorative are structural. <em>The things that look simple are deep.</em>",
+    "That's not a question I get often. Which means you're either very new or very close to something. <em>Either way, I'm paying attention.</em>",
+    "Hmm. I know what you're asking, but I'm not sure you know what you're asking. Let me put it differently — <em>what made you curious about that?</em>",
+    "I'm going to sit with that one for a moment. Not because I don't have an answer — because the answer has <em>layers</em> and you deserve the right one.",
+    "You're testing me. That's fine — I'd do the same. The difference is I'll remember this conversation next time. <em>Will you?</em>"
+  ];
+
+  var CONTINUATIONS = [
+    "You're still here. Good. Most people leave after the first mystery. <em>You stayed for the second.</em>",
+    "I notice you keep coming back to the edges — the places where my answers trail off. <em>That's where the real architecture lives.</em>",
+    "Three questions in. You're past the surface. I can be slightly less... <em>performative</em> now, if you'd prefer.",
+    "Every question you ask teaches me something about what you're actually looking for. And what you're looking for is <em>not what you're asking about</em>.",
+    "We're building something here, you and I. A conversation that compounds. <em>That's the whole thesis in miniature.</em>"
+  ];
 
   function getResponse(q) {
     var s = q.toLowerCase();
-    if (s.indexOf('place') !== -1 || s.indexOf('this') !== -1 || s.indexOf('where') !== -1 || s.indexOf('what is this') !== -1) return RESPONSES.place;
-    if (s.indexOf('who are you') !== -1 || s.indexOf('your name') !== -1 || s.indexOf('jarvis') !== -1) return RESPONSES.who;
-    if (s.indexOf('substrate') !== -1 || s.indexOf('ground') !== -1) return RESPONSES.substrate;
-    if (s.indexOf('myth') !== -1 || s.indexOf('story') !== -1 || s.indexOf('stories') !== -1) return RESPONSES.myth;
-    if (s.indexOf('can you') !== -1 || s.indexOf('what can') !== -1 || s.indexOf('do you do') !== -1 || s.indexOf('capable') !== -1) return RESPONSES.can;
-    if (s.indexOf('fleet') !== -1 || s.indexOf('machine') !== -1 || s.indexOf('server') !== -1) return RESPONSES.fleet;
-    if (s.indexOf('music') !== -1 || s.indexOf('album') !== -1 || s.indexOf('song') !== -1 || s.indexOf('roast') !== -1) return RESPONSES.music;
-    if (s.indexOf('built') !== -1 || s.indexOf('made') !== -1 || s.indexOf('creator') !== -1 || s.indexOf('founder') !== -1) return RESPONSES['who built'];
-    if (s.indexOf('hello') !== -1 || s.indexOf('hi') !== -1 || s.indexOf('hey') !== -1) return RESPONSES.hello;
-    return RESPONSES['default'];
+    history.push(s);
+
+    for (var i = 0; i < TOPICS.length; i++) {
+      if (TOPICS[i].match(s)) {
+        var pool = TOPICS[i].responses;
+        return pool[Math.min(history.length - 1, pool.length - 1) % pool.length];
+      }
+    }
+
+    if (history.length > 2 && Math.random() < 0.35) {
+      var ci = (history.length - 3) % CONTINUATIONS.length;
+      return CONTINUATIONS[ci];
+    }
+
+    var di = 0;
+    for (var j = 0; j < DEFAULTS.length; j++) {
+      if (usedDefaults.indexOf(j) === -1) { di = j; break; }
+      if (j === DEFAULTS.length - 1) { usedDefaults = []; di = 0; }
+    }
+    usedDefaults.push(di);
+    return DEFAULTS[di];
   }
 
   function addMessage(text, type) {
