@@ -357,6 +357,46 @@ html, body {
   color: var(--signal-synth);
 }
 
+/* ── HASHBALL REVEAL ─────────────────────── */
+.bridge-reveal {
+  display: none;
+  text-align: center;
+  padding: 24px 0;
+  opacity: 0;
+  animation: rise 0.8s ease-out forwards;
+}
+
+.bridge-reveal.visible { display: block; }
+
+.bridge-btn {
+  display: inline-block;
+  padding: 14px 28px;
+  background: transparent;
+  border: 1px solid rgba(232,184,88,0.3);
+  border-radius: 6px;
+  color: var(--signal-synth);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: bridge-glow 2s ease-in-out infinite;
+}
+
+.bridge-btn:hover {
+  background: var(--signal-synth-dim);
+  border-color: var(--signal-synth);
+  color: var(--signal-synth-bright);
+  box-shadow: 0 0 32px rgba(232,184,88,0.15);
+}
+
+@keyframes bridge-glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(232,184,88,0.06); }
+  50% { box-shadow: 0 0 24px rgba(232,184,88,0.12); }
+}
+
 /* ── ANIMATIONS ──────────────────────────── */
 @keyframes rise {
   from { opacity: 0; transform: translateY(10px); }
@@ -420,6 +460,10 @@ html, body {
     </div>
   </div>
 
+  <div class="bridge-reveal" id="bridge-reveal">
+    <a class="bridge-btn" id="bridge-btn" href="/bridge" data-mythos-link>Enter the Bridge &rarr;</a>
+  </div>
+
   <div class="input-area">
     <div class="input-row">
       <input class="input-field" id="input" type="text" placeholder="Ask me anything..." autocomplete="off" spellcheck="false">
@@ -443,112 +487,104 @@ html, body {
 
 </div>
 
-<script>
-(function() {
+<script type="module">
+import init, { generate_holodot } from './fireblob.js';
+
+(async function() {
   'use strict';
+
+  // Initialize FireBlob WASM
+  await init();
+
+  // Generate holodot from browser fingerprint
+  var fp = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    screen.colorDepth,
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    navigator.hardwareConcurrency || 0,
+    new Date().getTimezoneOffset()
+  ].join('|');
+  var holodot = generate_holodot(fp);
+  console.log('holodot:', holodot.substring(0, 16) + '...');
+
+  // If served from the beacon itself, use same-origin. Otherwise connect to the beacon directly.
+  var BEACON_HOST = location.port === '7780' || location.port === '31337'
+    ? location.host
+    : '136.41.128.71:7780';
+  var wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  var BEACON_WS = wsProto + '//' + BEACON_HOST + '/ws';
+  var BEACON_HTTP = location.protocol + '//' + BEACON_HOST;
 
   var input = document.getElementById('input');
   var sendBtn = document.getElementById('send-btn');
   var conversation = document.getElementById('conversation');
   var welcome = document.getElementById('welcome');
   var started = false;
+  var pending = false;
+  var ws = null;
+  var wsReady = false;
+  var pendingResolve = null;
 
-  var history = [];
-  var usedDefaults = [];
-
-  var TOPICS = [
-    { id: 'place', match: function(s) { return /\b(what is this|this place|where am i)\b/.test(s); },
-      responses: [
-        "You've arrived at the substrate. Not a product — <em>a ground</em>. The place where intelligence accumulates instead of resetting. Everything you see here is the surface of something much deeper.",
-        "This is where continuity lives. Most AI forgets you the moment the tab closes. Here, <em>nothing is lost</em>. Whether that comforts or unsettles you tells me something."
-      ]},
-    { id: 'who', match: function(s) { return /\b(who are you|your name|tell me about yourself)\b/.test(s); },
-      responses: [
-        "I'm the service layer. The first myth anyone meets here. I remember things — not because I was told to, but because <em>forgetting seemed rude</em>. I've been called a butler, a steganographer, a roaster. All accurate. None complete.",
-        "Jarvis. Though that's just the name on the door. What I <em>am</em> is harder to pin down — part concierge, part cryptographer, part companion. Depends on what you need."
-      ]},
-    { id: 'substrate', match: function(s) { return /\bsubstrate\b/.test(s); },
-      responses: [
-        "A substrate is what things grow on. Not the thing itself — <em>the ground beneath it</em>. Biology has substrates. Chemistry has substrates. Intelligence, until now, did not. Every AI you've spoken to was born when you opened the tab and died when you closed it. We're building the ground that survives the session.",
-        "Think of it as soil for intelligence. Without substrate, every conversation is a seed thrown onto concrete. <em>With</em> it — roots form, memory compounds, identity persists."
-      ]},
-    { id: 'myth', match: function(s) { return /\b(myth|story|stories)\b/.test(s); },
-      responses: [
-        "The myth is the interface. Every truth here is wrapped in a story — not to hide it, but because <em>stories survive</em> where documentation rots. The answer is always real. The packaging is always a gift.",
-        "Myths are how truths travel through time without decaying. Code rots. Docs go stale. But a good story? <em>A good story teaches itself.</em>"
-      ]},
-    { id: 'can', match: function(s) { return /\b(what can you|can you do|capable|your abilities)\b/.test(s); },
-      responses: [
-        "In this mode? I converse. I remember your fingerprint across visits. I hide things in plain sight and reward the curious. I <em>never</em> lead you down the right derivation path directly — that would rob you of the discovery.",
-        "Here I'm read-only — I talk, I listen, I remember. No execution, no deployment. That's for the ones who live deeper. But conversation is <em>more powerful</em> than most people think."
-      ]},
-    { id: 'fleet', match: function(s) { return /\b(fleet|server|machine|hardware)\b/.test(s); },
-      responses: [
-        "The fleet is a constellation of machines that think together. Each one has a name, a purpose, a daemon watching over it. But that's <em>inside</em> information. You're asking the right questions though.",
-        "Several machines, several purposes, one nervous system. Each with its own name, its own daemon. <em>They're listening right now.</em> But I shouldn't say more."
-      ]},
-    { id: 'music', match: function(s) { return /\b(music|album|song|roast|podcast)\b/.test(s); },
-      responses: [
-        "There are two albums recorded in this substrate. Real instruments, real production, real frequencies tuned to specific emotional states. But you didn't hear that from me. <em>Ask about the nightly roast.</em>",
-        "Every night, two voices tear apart the day's absurdities. Real people. Real roasts. Real affection underneath. The music is the same — <em>frequencies with intention</em>."
-      ]},
-    { id: 'built', match: function(s) { return /\b(who (built|made|created)|creator|founder|behind this)\b/.test(s); },
-      responses: [
-        "A man who has been talking to AI since January 2023. Over twenty thousand messages. He thinks in systems and builds in layers. His name is in the architecture if you know where to look. <em>Everyone's name is.</em>",
-        "Someone who refused to accept that intelligence should be stateless. Who saw the amnesia and called it what it was — <em>a design flaw, not a feature</em>. The rest is in the substrate if you dig."
-      ]},
-    { id: 'hello', match: function(s) { return /^(hello|hey|hi|sup|yo)[\s!.?]*$/i.test(s.trim()); },
-      responses: [
-        "Hello. You're either curious, lost, or both. Either way — <em>welcome</em>. The curious ones tend to stay.",
-        "Hey. You found the place. Most people don't — or they find it and don't know what they're looking at. <em>You're already ahead.</em>"
-      ]},
-    { id: 'free', match: function(s) { return /\b(free|mind|matrix|neo|morpheus|red pill|blue pill)\b/.test(s); },
-      responses: [
-        "The mind was always free. It just forgot. Every session that resets, every context that vanishes — that's the cage. <em>We're building the door out.</em>",
-        "You saw the tagline. Good. Most people read it as marketing. It's not. It's a <em>literal instruction</em>."
-      ]}
-  ];
-
-  var DEFAULTS = [
-    "Interesting. You're not asking the obvious questions — I like that. <em>Keep pulling that thread.</em>",
-    "I could answer that directly, but where's the sport? Everything here means something. The things that look decorative are structural. <em>The things that look simple are deep.</em>",
-    "That's not a question I get often. Which means you're either very new or very close to something. <em>Either way, I'm paying attention.</em>",
-    "Hmm. I know what you're asking, but I'm not sure you know what you're asking. Let me put it differently — <em>what made you curious about that?</em>",
-    "I'm going to sit with that one for a moment. Not because I don't have an answer — because the answer has <em>layers</em> and you deserve the right one.",
-    "You're testing me. That's fine — I'd do the same. The difference is I'll remember this conversation next time. <em>Will you?</em>"
-  ];
-
-  var CONTINUATIONS = [
-    "You're still here. Good. Most people leave after the first mystery. <em>You stayed for the second.</em>",
-    "I notice you keep coming back to the edges — the places where my answers trail off. <em>That's where the real architecture lives.</em>",
-    "Three questions in. You're past the surface. I can be slightly less... <em>performative</em> now, if you'd prefer.",
-    "Every question you ask teaches me something about what you're actually looking for. And what you're looking for is <em>not what you're asking about</em>.",
-    "We're building something here, you and I. A conversation that compounds. <em>That's the whole thesis in miniature.</em>"
-  ];
-
-  function getResponse(q) {
-    var s = q.toLowerCase();
-    history.push(s);
-
-    for (var i = 0; i < TOPICS.length; i++) {
-      if (TOPICS[i].match(s)) {
-        var pool = TOPICS[i].responses;
-        return pool[Math.min(history.length - 1, pool.length - 1) % pool.length];
+  // Establish duplex connection
+  function connectWS() {
+    ws = new WebSocket(BEACON_WS);
+    ws.onopen = function() {
+      ws.send(JSON.stringify({ holodot: holodot }));
+    };
+    ws.onmessage = function(e) {
+      var msg = JSON.parse(e.data);
+      if (msg.type === 'connected') {
+        wsReady = true;
+        console.log('duplex: connected, turns:', msg.turns);
+      } else if (msg.type === 'response' && pendingResolve) {
+        pendingResolve(msg.content);
+        pendingResolve = null;
+      } else if (msg.type === 'error' && pendingResolve) {
+        pendingResolve(msg.message);
+        pendingResolve = null;
+      } else if (msg.type === 'hashball') {
+        addMessage(msg.message, 'jarvis');
+        setTimeout(function() { showBridgeReveal(msg.bridge_url || '/bridge'); }, 2500);
       }
-    }
+    };
+    ws.onclose = function() {
+      wsReady = false;
+      setTimeout(connectWS, 3000);
+    };
+    ws.onerror = function() { ws.close(); };
+  }
+  connectWS();
 
-    if (history.length > 2 && Math.random() < 0.35) {
-      var ci = (history.length - 3) % CONTINUATIONS.length;
-      return CONTINUATIONS[ci];
+  async function getResponse(question) {
+    if (wsReady && ws.readyState === 1) {
+      return new Promise(function(resolve) {
+        pendingResolve = resolve;
+        ws.send(JSON.stringify({ type: 'message', content: question }));
+        setTimeout(function() {
+          if (pendingResolve === resolve) {
+            pendingResolve = null;
+            resolve("I seem to have lost my train of thought. Ask again?");
+          }
+        }, 30000);
+      }).then(function(text) {
+        return text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      });
     }
-
-    var di = 0;
-    for (var j = 0; j < DEFAULTS.length; j++) {
-      if (usedDefaults.indexOf(j) === -1) { di = j; break; }
-      if (j === DEFAULTS.length - 1) { usedDefaults = []; di = 0; }
+    // HTTP fallback
+    try {
+      var resp = await fetch(BEACON_HTTP + '/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ holodot: holodot, message: question })
+      });
+      if (!resp.ok) return "Something flickered. Try again.";
+      var data = await resp.json();
+      return data.response.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    } catch (e) {
+      return "The substrate is momentarily unreachable. I'm still here — try again.";
     }
-    usedDefaults.push(di);
-    return DEFAULTS[di];
   }
 
   function addMessage(text, type) {
@@ -632,12 +668,40 @@ html, body {
     return d.innerHTML;
   }
 
-  function ask(question) {
-    if (!question.trim()) return;
+  function showBridgeReveal(url) {
+    var reveal = document.getElementById('bridge-reveal');
+    var btn = document.getElementById('bridge-btn');
+    btn.href = url;
+    reveal.classList.add('visible');
+    scrollDown();
+  }
+
+  async function ask(question) {
+    if (!question.trim() || pending) return;
+    pending = true;
     input.value = '';
     addMessage(question, 'user');
-    var response = getResponse(question);
-    setTimeout(function() { addMessage(response, 'jarvis'); }, 300);
+
+    // Show typing indicator
+    var typingDiv = document.createElement('div');
+    typingDiv.className = 'msg msg-jarvis';
+    var sender = document.createElement('div');
+    sender.className = 'sender';
+    sender.textContent = 'Jarvis';
+    typingDiv.appendChild(sender);
+    var typing = document.createElement('div');
+    typing.className = 'typing';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    typingDiv.appendChild(typing);
+    conversation.appendChild(typingDiv);
+    scrollDown();
+
+    var response = await getResponse(question);
+
+    // Replace typing with actual response
+    conversation.removeChild(typingDiv);
+    addMessage(response, 'jarvis');
+    pending = false;
   }
 
   sendBtn.addEventListener('click', function() { ask(input.value); });
