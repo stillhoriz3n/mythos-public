@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AskJarvis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_mythos-meters.css">
+<style>
+:root {
+  --glass: rgba(255,255,255,0.035);
+  --glass-hover: rgba(255,255,255,0.06);
+  --glass-border: rgba(255,255,255,0.08);
+  --glass-border-hover: rgba(255,255,255,0.14);
+  --glass-glow: rgba(196,164,132,0.08);
+  --copper: #c4a484;
+  --copper-bright: #d4b494;
+  --copper-deep: #b07a3d;
+  --copper-glow: rgba(196,164,132,0.25);
+  --sage: #a8b5a0;
+  --rose: #d4a5a5;
+  --ink-bright: #e8e3d4;
+  --ink-soft: #b5b0a3;
+  --ink-dim: #8a8574;
+  --ink-faint: #4a4740;
+  --void: transparent;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body {
+  background: transparent;
+  color: var(--ink-bright);
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── GLASS MATERIAL ─────────────────────────── */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.4s ease;
+}
+.glass:hover {
+  border-color: var(--glass-border-hover);
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.3),
+    0 0 24px var(--glass-glow),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* ── FLOAT ANIMATION ────────────────────────── */
+@keyframes float-a { 0%,100% { transform: translateY(0) rotate(var(--tilt,0deg)); } 50% { transform: translateY(-6px) rotate(var(--tilt,0deg)); } }
+@keyframes float-b { 0%,100% { transform: translateY(0) rotate(var(--tilt,0deg)); } 50% { transform: translateY(-8px) rotate(var(--tilt,0deg)); } }
+@keyframes float-c { 0%,100% { transform: translateY(0) rotate(var(--tilt,0deg)); } 50% { transform: translateY(-5px) rotate(var(--tilt,0deg)); } }
+@keyframes float-butler { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── LAYOUT ─────────────────────────────────── */
+.scene {
+  position: relative;
+  z-index: 1;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 36px 40px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+/* ── HEADER FRAME ───────────────────────────── */
+.header-frame {
+  --tilt: -0.3deg;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 680px;
+  animation: float-c 7s ease-in-out infinite, fade-up 0.6s ease both;
+}
+.header-left {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.header-right {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--ink-faint);
+}
+.header-right .live-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--sage);
+  box-shadow: 0 0 8px var(--sage);
+  animation: breath 3s ease-in-out infinite;
+}
+@keyframes breath { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+/* ── HERO FRAME ─────────────────────────────── */
+.hero-frame {
+  --tilt: 0.2deg;
+  text-align: center;
+  padding: 28px 40px 22px;
+  animation: float-a 8s ease-in-out infinite, fade-up 0.7s ease both;
+  animation-delay: 0s, 0.1s;
+}
+.jarvis-title {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 144;
+  font-weight: 400;
+  font-size: clamp(2.6rem, 5.5vw, 4.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--ink-bright);
+}
+.jarvis-title em {
+  font-style: italic;
+  font-weight: 300;
+  color: var(--copper);
+  text-shadow: 0 0 30px var(--copper-glow);
+}
+.tagline {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 15px;
+  color: var(--ink-dim);
+  margin-top: 6px;
+}
+
+/* ── BUTLER + SEARCH LAYOUT ─────────────────── */
+.search-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 32px;
+  width: 100%;
+  max-width: 780px;
+  animation: fade-up 0.8s ease both;
+  animation-delay: 0.15s;
+}
+
+/* ── BUTLER ──────────────────────────────────── */
+.butler-frame {
+  flex-shrink: 0;
+  position: relative;
+  animation: float-butler 6s ease-in-out infinite;
+}
+.butler-svg {
+  filter: drop-shadow(0 4px 20px rgba(196,164,132,0.15));
+  transition: filter 0.6s ease;
+}
+.butler-svg.speaking {
+  filter: drop-shadow(0 4px 30px rgba(196,164,132,0.4));
+}
+.butler-halo {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196,164,132,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── SEARCH FRAME ───────────────────────────── */
+.search-frame {
+  --tilt: -0.4deg;
+  flex: 1;
+  max-width: 520px;
+  padding: 22px 24px 18px;
+  animation: float-b 9s ease-in-out infinite;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-box:focus-within {
+  border-color: var(--copper);
+  box-shadow: 0 0 24px rgba(196,164,132,0.15);
+}
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 14px 16px;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 16px;
+  color: var(--ink-bright);
+  background: transparent;
+}
+.search-input::placeholder {
+  color: var(--ink-dim);
+  font-style: italic;
+}
+.mic-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; height: 44px;
+  background: none;
+  border: none;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  color: var(--sage);
+  transition: color 0.2s, background 0.2s;
+}
+.mic-btn:hover { color: var(--copper); background: rgba(255,255,255,0.04); }
+.mic-btn.recording {
+  color: var(--rose);
+  animation: mic-pulse 1.2s ease-in-out infinite;
+}
+@keyframes mic-pulse {
+  0%, 100% { background: rgba(212,165,165,0.03); }
+  50% { background: rgba(212,165,165,0.12); }
+}
+.mic-btn svg { width: 20px; height: 20px; }
+.ask-btn {
+  padding: 14px 26px;
+  background: var(--copper);
+  color: #1a1714;
+  border: none;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  border-radius: 0 8px 8px 0;
+}
+.ask-btn:hover {
+  background: var(--copper-bright);
+  box-shadow: 0 0 16px var(--copper-glow);
+}
+.search-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  margin-top: 10px;
+  padding-left: 2px;
+}
+
+/* ── RESPONSE FRAME ─────────────────────────── */
+.response-frame {
+  --tilt: 0.15deg;
+  width: 100%;
+  max-width: 640px;
+  padding: 22px 28px;
+  display: none;
+  animation: float-a 10s ease-in-out infinite, fade-up 0.4s ease both;
+}
+.response-frame.visible { display: block; }
+.response-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.response-name {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--copper);
+}
+.speaking-indicator {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 14px;
+}
+.speaking-indicator .bar {
+  width: 3px;
+  background: var(--copper);
+  border-radius: 1px;
+  animation: speak-bar 0.8s ease-in-out infinite;
+}
+.speaking-indicator .bar:nth-child(1) { height: 6px; animation-delay: 0s; }
+.speaking-indicator .bar:nth-child(2) { height: 10px; animation-delay: 0.15s; }
+.speaking-indicator .bar:nth-child(3) { height: 4px; animation-delay: 0.3s; }
+.speaking-indicator .bar:nth-child(4) { height: 8px; animation-delay: 0.1s; }
+.speaking-indicator .bar:nth-child(5) { height: 5px; animation-delay: 0.25s; }
+.speaking-indicator.silent .bar { animation: none; height: 2px; opacity: 0.4; }
+@keyframes speak-bar {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(2.2); }
+}
+.response-text {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* ── QUICK QUESTIONS (floating chips) ─────── */
+.quick-frame {
+  --tilt: 0.3deg;
+  padding: 18px 24px;
+  width: 100%;
+  max-width: 640px;
+  animation: float-c 8.5s ease-in-out infinite, fade-up 0.9s ease both;
+  animation-delay: 0s, 0.25s;
+}
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+}
+.qq-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.qq-chip {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.qq-chip:hover {
+  background: rgba(196,164,132,0.08);
+  border-color: rgba(196,164,132,0.25);
+  color: var(--copper-bright);
+  box-shadow: 0 0 12px rgba(196,164,132,0.1);
+}
+
+/* ── CATEGORY TILES (floating grid) ──────── */
+.cat-scatter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 780px;
+  animation: fade-up 1s ease both;
+  animation-delay: 0.35s;
+}
+.cat-tile {
+  --tilt: 0deg;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  min-width: 200px;
+  flex: 1 1 200px;
+  max-width: 260px;
+  cursor: pointer;
+  animation: float-a var(--float-dur, 8s) ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+.cat-tile:hover {
+  transform: translateY(-4px) rotate(var(--tilt)) !important;
+}
+.cat-tile:nth-child(1) { --tilt: -0.5deg; --float-dur: 7.5s; --float-delay: 0s; }
+.cat-tile:nth-child(2) { --tilt:  0.4deg; --float-dur: 8.2s; --float-delay: 0.8s; }
+.cat-tile:nth-child(3) { --tilt: -0.3deg; --float-dur: 9s;   --float-delay: 0.3s; }
+.cat-tile:nth-child(4) { --tilt:  0.6deg; --float-dur: 7.8s; --float-delay: 1.1s; }
+.cat-tile:nth-child(5) { --tilt: -0.2deg; --float-dur: 8.5s; --float-delay: 0.5s; }
+.cat-tile:nth-child(6) { --tilt:  0.35deg; --float-dur: 7.2s; --float-delay: 0.9s; }
+.cat-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.cat-icon.schedule  { background: rgba(168,181,160,0.12); }
+.cat-icon.email     { background: rgba(196,164,132,0.1); }
+.cat-icon.knowledge { background: rgba(212,165,165,0.1); }
+.cat-icon.files     { background: rgba(168,181,160,0.1); }
+.cat-icon.music     { background: rgba(196,164,132,0.12); }
+.cat-icon.fleet     { background: rgba(168,181,160,0.15); }
+.cat-name {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink-bright);
+}
+.cat-desc {
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+
+/* ── FOOTER WHISPER ─────────────────────────── */
+.footer-whisper {
+  margin-top: 8px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  opacity: 0.6;
+  animation: fade-up 1.2s ease both;
+  animation-delay: 0.5s;
+}
+.footer-whisper .accent { color: var(--copper); opacity: 0.8; }
+
+/* ── AUDIO REACTIVE ─────────────────────────── */
+.search-box {
+  border-color: color-mix(in srgb, rgba(255,255,255,0.12) 100%, var(--copper) calc(var(--envelope, 0) * 15%));
+}
+.butler-svg {
+  opacity: calc(0.88 + var(--beat-bar-pulse, 0) * 0.12);
+}
+.hero-frame {
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.25),
+    0 0 calc(12px + 20px * var(--beat-bar-pulse, 0)) rgba(196,164,132, calc(0.04 + var(--beat-bar-pulse, 0) * 0.08)),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* ── RESPONSIVE ─────────────────────────────── */
+@media (max-width: 700px) {
+  .scene { padding: 24px 16px 48px; gap: 20px; }
+  .search-row { flex-direction: column; align-items: center; gap: 20px; }
+  .butler-frame { order: -1; }
+  .search-frame { max-width: 100%; }
+  .cat-scatter { gap: 10px; }
+  .cat-tile { min-width: 160px; max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="scene">
+
+  <!-- Header -->
+  <div class="header-frame glass">
+    <span class="header-left">MythOS &middot; AskJarvis</span>
+    <span class="header-right">
+      <span class="live-dot"></span>
+      voice synthesis &middot; listening
+    </span>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero-frame glass">
+    <h1 class="jarvis-title">Ask<em>Jarvis</em></h1>
+    <div class="tagline">You have questions. I have answers, sir.</div>
+  </div>
+
+  <!-- Butler + Search -->
+  <div class="search-row">
+
+    <!-- Jarvis floats freely -->
+    <div class="butler-frame">
+      <div class="butler-halo"></div>
+      <svg class="butler-svg" id="jarvis-butler" width="140" height="220" viewBox="0 0 140 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Shadow (subtle on void) -->
+        <ellipse cx="70" cy="214" rx="24" ry="3" fill="rgba(196,164,132,0.15)"/>
+
+        <!-- Legs -->
+        <rect x="52" y="162" width="14" height="48" rx="3" fill="#2d2a26"/>
+        <rect x="74" y="162" width="14" height="48" rx="3" fill="#2d2a26"/>
+        <!-- Shoes -->
+        <ellipse cx="58" cy="210" rx="12" ry="5" fill="#1a1714"/>
+        <ellipse cx="82" cy="210" rx="12" ry="5" fill="#1a1714"/>
+
+        <!-- Suit jacket -->
+        <path d="M42 100 Q42 88 52 82 L70 76 L88 82 Q98 88 98 100 L98 168 Q98 172 94 172 L46 172 Q42 172 42 168 Z" fill="#2d2a26"/>
+        <!-- Lapels -->
+        <path d="M70 76 L58 96 L62 98 L70 84 L78 98 L82 96 Z" fill="#3d3630"/>
+        <!-- Vest -->
+        <rect x="60" y="96" width="20" height="50" rx="2" fill="#8a5a2b"/>
+        <!-- Vest buttons -->
+        <circle cx="70" cy="108" r="1.5" fill="#c4a484"/>
+        <circle cx="70" cy="120" r="1.5" fill="#c4a484"/>
+        <circle cx="70" cy="132" r="1.5" fill="#c4a484"/>
+        <!-- Pocket square -->
+        <path d="M82 92 L90 90 L88 100 L82 98 Z" fill="rgba(232,227,212,0.85)"/>
+
+        <!-- Shirt collar -->
+        <path d="M62 80 L70 76 L66 86 Z" fill="rgba(232,227,212,0.9)"/>
+        <path d="M78 80 L70 76 L74 86 Z" fill="rgba(232,227,212,0.9)"/>
+        <!-- Tie -->
+        <path d="M67 84 L70 82 L73 84 L71 104 L69 104 Z" fill="#c4a484"/>
+
+        <!-- Hands -->
+        <ellipse cx="40" cy="148" rx="6" ry="7" fill="#e8d5c0"/>
+        <ellipse cx="100" cy="148" rx="6" ry="7" fill="#e8d5c0"/>
+        <!-- Arms -->
+        <path d="M42 100 Q36 120 40 142" stroke="#2d2a26" stroke-width="14" stroke-linecap="round" fill="none"/>
+        <path d="M98 100 Q104 120 100 142" stroke="#2d2a26" stroke-width="14" stroke-linecap="round" fill="none"/>
+        <!-- Cuffs -->
+        <rect x="33" y="138" width="14" height="6" rx="2" fill="rgba(232,227,212,0.9)"/>
+        <rect x="93" y="138" width="14" height="6" rx="2" fill="rgba(232,227,212,0.9)"/>
+
+        <!-- Neck -->
+        <rect x="64" y="62" width="12" height="16" rx="3" fill="#e8d5c0"/>
+
+        <!-- Head -->
+        <ellipse cx="70" cy="46" rx="24" ry="28" fill="#e8d5c0"/>
+        <!-- Hair -->
+        <path d="M46 40 Q46 18 70 16 Q94 18 94 40 Q92 30 70 28 Q48 30 46 40Z" fill="#3d3630"/>
+        <!-- Part -->
+        <path d="M58 20 Q64 24 62 32" stroke="#2d2a26" stroke-width="1" fill="none"/>
+        <!-- Eyebrows -->
+        <path d="M56 38 Q60 35 64 38" stroke="#2d2a26" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        <path d="M76 38 Q80 35 84 38" stroke="#2d2a26" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        <!-- Eyes -->
+        <ellipse cx="60" cy="43" rx="3.5" ry="3" fill="white"/>
+        <ellipse cx="80" cy="43" rx="3.5" ry="3" fill="white"/>
+        <circle cx="61" cy="43" r="1.8" fill="#3d3630"/>
+        <circle cx="81" cy="43" r="1.8" fill="#3d3630"/>
+        <circle cx="61.5" cy="42.5" r="0.6" fill="white"/>
+        <circle cx="81.5" cy="42.5" r="0.6" fill="white"/>
+        <!-- Nose -->
+        <path d="M68 48 Q70 52 72 48" stroke="#c4a484" stroke-width="1" stroke-linecap="round" fill="none"/>
+        <!-- Mouth -->
+        <path d="M63 56 Q67 60 70 59 Q73 60 77 56" stroke="#8a5a2b" stroke-width="1.2" stroke-linecap="round" fill="none" id="jarvis-mouth"/>
+        <!-- Ears -->
+        <ellipse cx="46" cy="46" rx="4" ry="6" fill="#e8d5c0"/>
+        <ellipse cx="94" cy="46" rx="4" ry="6" fill="#e8d5c0"/>
+
+        <!-- Serving tray -->
+        <ellipse cx="100" cy="142" rx="18" ry="3" fill="#c4a484" opacity="0.85"/>
+        <rect x="84" y="139" width="32" height="2" rx="1" fill="#d4b494"/>
+      </svg>
+    </div>
+
+    <!-- Search panel -->
+    <div class="search-frame glass">
+      <div class="search-box">
+        <input class="search-input" id="search-input" type="text"
+               placeholder="Ask Jarvis a question..."
+               autocomplete="off" spellcheck="false">
+        <button class="mic-btn" id="mic-btn" title="Speak your question">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+        <button class="ask-btn" id="ask-btn">Ask!</button>
+      </div>
+      <div class="search-hint">type a question, or tap the mic &middot; jarvis voice synthesis enabled</div>
+    </div>
+  </div>
+
+  <!-- Response (hidden until asked) -->
+  <div class="response-frame glass" id="response-area">
+    <div class="response-header">
+      <span class="response-name">Jarvis</span>
+      <div class="speaking-indicator" id="speaking-indicator">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+    </div>
+    <div class="response-text" id="response-text"></div>
+  </div>
+
+  <!-- Quick questions -->
+  <div class="quick-frame glass">
+    <div class="section-label">Popular questions</div>
+    <div class="qq-list">
+      <div class="qq-chip" onclick="askQuestion(this.textContent)">What's on my schedule today?</div>
+      <div class="qq-chip" onclick="askQuestion(this.textContent)">Read me my latest emails</div>
+      <div class="qq-chip" onclick="askQuestion(this.textContent)">What's the fleet status?</div>
+      <div class="qq-chip" onclick="askQuestion(this.textContent)">Play some music</div>
+      <div class="qq-chip" onclick="askQuestion(this.textContent)">What's the weather like?</div>
+      <div class="qq-chip" onclick="askQuestion(this.textContent)">Set a reminder for 3pm</div>
+      <div class="qq-chip" onclick="askQuestion(this.textContent)">How many blobs in the substrate?</div>
+    </div>
+  </div>
+
+  <!-- Category tiles (each floating independently) -->
+  <div class="cat-scatter">
+    <div class="cat-tile glass" onclick="askQuestion('What\'s on my calendar this week?')">
+      <div class="cat-icon schedule">&#128197;</div>
+      <div>
+        <div class="cat-name">Schedule</div>
+        <div class="cat-desc">Meetings, reminders, calendar</div>
+      </div>
+    </div>
+    <div class="cat-tile glass" onclick="askQuestion('Summarize my inbox')">
+      <div class="cat-icon email">&#9993;</div>
+      <div>
+        <div class="cat-name">Email</div>
+        <div class="cat-desc">Read, compose, summarize</div>
+      </div>
+    </div>
+    <div class="cat-tile glass" onclick="askQuestion('What do I need to know today?')">
+      <div class="cat-icon knowledge">&#128218;</div>
+      <div>
+        <div class="cat-name">Briefings</div>
+        <div class="cat-desc">Daily brief, news, updates</div>
+      </div>
+    </div>
+    <div class="cat-tile glass" onclick="askQuestion('Find the latest design files')">
+      <div class="cat-icon files">&#128193;</div>
+      <div>
+        <div class="cat-name">Files</div>
+        <div class="cat-desc">Search, organize, locate</div>
+      </div>
+    </div>
+    <div class="cat-tile glass" onclick="askQuestion('Play askJarvis by HORIZ3N')">
+      <div class="cat-icon music">&#9835;</div>
+      <div>
+        <div class="cat-name">Music</div>
+        <div class="cat-desc">Play, queue, discover</div>
+      </div>
+    </div>
+    <div class="cat-tile glass" onclick="askQuestion('Show me fleet health')">
+      <div class="cat-icon fleet">&#9881;</div>
+      <div>
+        <div class="cat-name">Fleet</div>
+        <div class="cat-desc">Status, deploy, monitor</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-whisper">
+    <span class="accent">AskJarvis</span> &middot; MythOS &middot; Horizen IT Services &middot; 2026
+  </div>
+
+</div>
+
+<script src="_mythos-page.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  var input = document.getElementById('search-input');
+  var askBtn = document.getElementById('ask-btn');
+  var micBtn = document.getElementById('mic-btn');
+  var responseArea = document.getElementById('response-area');
+  var responseText = document.getElementById('response-text');
+  var speakingIndicator = document.getElementById('speaking-indicator');
+  var butler = document.getElementById('jarvis-butler');
+  var recording = false;
+
+  var JARVIS_RESPONSES = {
+    'schedule': "Very well, sir. You have three items today: a fleet review at 10 AM, a design sync at 2 PM, and what appears to be 'stare at the Prime Radiant contemplatively' blocked from 4 to 5. Shall I clear the latter? It does seem rather self-indulgent.",
+    'email': "You have 12 unread messages, sir. Three from Joey regarding the DashStart components, one from the Substrate monitoring daemon — it's complaining about loneliness, I suspect — and eight from various humans who seem to want your money. Shall I read the important ones?",
+    'fleet': "All fleet nodes are reporting nominal, sir. 7900XT is running warm as usual — I believe it enjoys the attention. Toodles' heartbeat is steady. FORGE and LAWS are idle. BABEL is... well, BABEL is being BABEL. Shall I elaborate?",
+    'music': "An excellent choice. Queuing the track now. I must say, 'askJarvis' is a particularly inspired composition. One might even call it... self-referential.",
+    'weather': "I'm afraid I'm an indoor sort of butler, sir. But I can tell you that the server room is a brisk 22 degrees Celsius, and the GPU is radiating enough warmth to toast a crumpet.",
+    'reminder': "Reminder set for 3 PM, sir. I shall be appropriately insistent when the time comes. Will there be anything else, or shall I return to standing here looking distinguished?",
+    'blobs': "The substrate currently holds approximately 120,000 blobs across 7900xtSubSpace, sir. Each one content-addressed, each one immutable, each one blissfully unaware of how remarkable it is. Rather like most of us, really.",
+    'default': "A fine question, sir. I shall look into it with the thoroughness and quiet dignity that the situation demands. In the meantime, might I suggest a cup of tea?"
+  };
+
+  function getResponse(question) {
+    var q = question.toLowerCase();
+    if (q.indexOf('schedule') !== -1 || q.indexOf('calendar') !== -1 || q.indexOf('meeting') !== -1) return JARVIS_RESPONSES.schedule;
+    if (q.indexOf('email') !== -1 || q.indexOf('inbox') !== -1 || q.indexOf('mail') !== -1) return JARVIS_RESPONSES.email;
+    if (q.indexOf('fleet') !== -1 || q.indexOf('status') !== -1 || q.indexOf('health') !== -1) return JARVIS_RESPONSES.fleet;
+    if (q.indexOf('music') !== -1 || q.indexOf('play') !== -1 || q.indexOf('song') !== -1) return JARVIS_RESPONSES.music;
+    if (q.indexOf('weather') !== -1) return JARVIS_RESPONSES.weather;
+    if (q.indexOf('remind') !== -1 || q.indexOf('timer') !== -1 || q.indexOf('alarm') !== -1) return JARVIS_RESPONSES.reminder;
+    if (q.indexOf('blob') !== -1 || q.indexOf('substrate') !== -1 || q.indexOf('know') !== -1 || q.indexOf('brief') !== -1) return JARVIS_RESPONSES.blobs;
+    return JARVIS_RESPONSES['default'];
+  }
+
+  function typeResponse(text) {
+    responseArea.classList.add('visible');
+    responseText.innerHTML = '';
+    speakingIndicator.classList.remove('silent');
+    butler.classList.add('speaking');
+
+    var i = 0;
+    var p = document.createElement('p');
+    responseText.appendChild(p);
+    var speed = 25;
+
+    function tick() {
+      if (i < text.length) {
+        p.textContent += text[i];
+        i++;
+        setTimeout(tick, speed + Math.random() * 15);
+      } else {
+        speakingIndicator.classList.add('silent');
+        butler.classList.remove('speaking');
+      }
+    }
+    tick();
+  }
+
+  window.askQuestion = function(question) {
+    input.value = question;
+    var response = getResponse(question);
+    typeResponse(response);
+    responseArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  askBtn.addEventListener('click', function() {
+    var q = input.value.trim();
+    if (q) askQuestion(q);
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      var q = input.value.trim();
+      if (q) askQuestion(q);
+    }
+  });
+
+  micBtn.addEventListener('click', function() {
+    recording = !recording;
+    micBtn.classList.toggle('recording', recording);
+    if (recording) {
+      input.placeholder = 'Listening...';
+      setTimeout(function() {
+        if (recording) {
+          recording = false;
+          micBtn.classList.remove('recording');
+          input.placeholder = 'Ask Jarvis a question...';
+          input.value = "What's on my schedule today?";
+          askQuestion(input.value);
+        }
+      }, 2500);
+    } else {
+      input.placeholder = 'Ask Jarvis a question...';
+    }
+  });
+
+  input.focus();
+})();
+</script>
+
+</body>
+</html>

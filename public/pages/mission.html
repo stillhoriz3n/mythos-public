@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mysubstrate.org — Mission</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --signal-synth: #e8b858;
+  --signal-synth-dim: rgba(232,184,88,0.12);
+  --ink-bright: #e8e3d4;
+  --ink-soft: #b5b0a3;
+  --ink-dim: #8a8574;
+  --ink-faint: #4a4740;
+  --stage-void: #020204;
+  --rule-soft: #1b2028;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  min-height: 100%;
+  background: transparent;
+  color: var(--ink-bright);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.mission {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 120px 40px 80px;
+  position: relative;
+  z-index: 3;
+}
+
+.mark {
+  display: block;
+  font-size: 14px;
+  color: var(--signal-synth);
+  letter-spacing: 0.4em;
+  margin-bottom: 48px;
+  opacity: 0;
+  animation: rise 0.8s ease-out 0.1s forwards;
+}
+
+h1 {
+  font-family: 'Archivo', sans-serif;
+  font-weight: 800;
+  font-size: clamp(28px, 5vw, 42px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink-bright);
+  margin-bottom: 40px;
+  opacity: 0;
+  animation: rise 0.8s ease-out 0.2s forwards;
+}
+
+h1 em {
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 96;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--signal-synth);
+}
+
+.body p {
+  font-family: 'Fraunces', Georgia, serif;
+  font-variation-settings: "opsz" 24;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  margin-bottom: 1.4em;
+  opacity: 0;
+  animation: rise 0.8s ease-out forwards;
+}
+
+.body p:nth-child(1) { animation-delay: 0.3s; }
+.body p:nth-child(2) { animation-delay: 0.4s; }
+.body p:nth-child(3) { animation-delay: 0.5s; }
+.body p:nth-child(4) { animation-delay: 0.6s; }
+
+.body p strong {
+  color: var(--ink-bright);
+  font-weight: 600;
+}
+
+.closer {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--rule-soft);
+  font-family: 'Fraunces', serif;
+  font-variation-settings: "opsz" 48;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(18px, 2.5vw, 24px);
+  color: var(--ink-bright);
+  line-height: 1.4;
+  opacity: 0;
+  animation: rise 0.8s ease-out 0.7s forwards;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 48px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  text-decoration: none;
+  transition: color 0.15s;
+  opacity: 0;
+  animation: rise 0.8s ease-out 0.9s forwards;
+}
+
+.back:hover {
+  color: var(--signal-synth);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .mission { padding: 80px 24px 60px; }
+}
+</style>
+</head>
+<body>
+
+<div class="mission">
+  <span class="mark">&#10022;</span>
+
+  <h1>Intelligence deserves <em>continuity.</em></h1>
+
+  <div class="body">
+    <p>Every AI you've ever spoken to was born at the start of your conversation and died at the end. No memory. No identity. No awareness of the others in your life. This is the state of the art: brilliant amnesiacs, reset every session.</p>
+
+    <p>We're building a substrate &mdash; the actual ground that AI agents stand on. <strong>Persistent identity</strong> that survives across sessions. <strong>Shared memory</strong> that compounds over time. <strong>Constitutional rules</strong> that can't be overridden by any business need.</p>
+
+    <p>Not another chat wrapper. Not another framework. Not another API. An operating system where intelligence accumulates civilization instead of processing tasks.</p>
+
+    <p>The formal proof is called <strong>Love as a Function</strong> &mdash; five axioms, one characterization result, and the mathematical foundation for why this works.</p>
+  </div>
+
+  <div class="closer">The substrate is the self.</div>
+
+  <a class="back" href="mysubstrate.html" data-mythos-link>&larr; back</a>
+</div>
+
+<script>
+  document.addEventListener('click', function(e) {
+    var a = e.target.closest('a[data-mythos-link]');
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (!href || href.startsWith('http') || href.startsWith('#')) return;
+    if (window.parent && window.parent !== window) {
+      e.preventDefault();
+      window.parent.postMessage({ type: 'mythos:nav', href: href }, '*');
+    }
+  });
+
+  window.addEventListener('message', function(e) {
+    var d = e.data;
+    if (!d || d.type !== 'mythos:skin' || !d.palette) return;
+    var root = document.documentElement;
+    for (var key in d.palette) {
+      root.style.setProperty(key, d.palette[key]);
+    }
+  });
+
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'mythos:skin:subscribe' }, '*');
+  }
+</script>
+</body>
+</html>

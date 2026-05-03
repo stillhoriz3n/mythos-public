@@ -23,6 +23,9 @@
   ];
 
   const PAGE_META = {
+    'mysubstrate.html':                           { title: 'mysubstrate.org',         group: 'Home',          dark: true  },
+    'mission.html':                               { title: 'Mission',                 group: 'Home',          dark: true  },
+    'ask-jarvis.html':                            { title: 'Ask Jarvis',              group: 'Home',          dark: true  },
     'landing.html':                               { title: 'Home',                    group: 'Home',          dark: true  },
     'the-prime-radiant.html':                     { title: 'The Prime Radiant',       group: 'Home',          dark: true  },
     'thesis.html':                                { title: 'Thesis',                  group: 'Canon',         dark: false },
@@ -3359,7 +3362,7 @@
   updatePlayIcon();
 
   // Determine initial page
-  var initialPage = 'landing.html';
+  var initialPage = 'mysubstrate.html';
   var HASH_ALIASES = { 'theimmunesystem': 'neverland-nocturnal-001' };
   var hash = location.hash.replace('#', '');
   if (HASH_ALIASES[hash]) hash = HASH_ALIASES[hash];
