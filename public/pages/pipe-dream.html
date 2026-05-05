@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MythOS — Pipe Dream</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── PIPE DREAM — Maximum Intensity Engineering Canvas ─────────
+   Dedicated to Chris Lejeune. The Cage OA governs this surface.
+   This is not the default UI. This is the engine room.
+   Background: #020204 (pure void). Accents: amber + cyan.
+   ──────────────────────────────────────────────────────────── */
+:root {
+  --void:#020204; --deep:#08070d; --panel:#0b0a11; --panel-hi:#0f0e17;
+  --rule:#1e2430; --rule-soft:#161922;
+  --amber:#e8b858; --amber-hi:#f5c970; --amber-glow:rgba(232,184,88,.15);
+  --cyan:#4ec9d4; --cyan-glow:rgba(78,201,212,.12);
+  --ink-bright:#e8e3d4; --ink-soft:#b5b0a3; --ink-dim:#8a8574; --ink-faint:#3a3630;
+  --king-1:#e8b858; --king-2:#4ec9d4; --king-3:#a78bfa; --king-4:#60a5fa;
+  --king-5:#86efac; --king-6:#f472b6; --king-7:#fb923c; --king-8:#a3e635;
+  --king-9:#38bdf8; --king-10:#f87171;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--void);color:var(--ink-bright);
+  font-family:'JetBrains Mono',ui-monospace,monospace;-webkit-font-smoothing:antialiased;
+  overflow:hidden}
+
+/* ── THREE-PANE LAYOUT ──────────────────────────────
+   LEFT: Component palette (200px)
+   CENTER: Canvas (flex)
+   RIGHT: Properties panel (280px)
+   ──────────────────────────────────────────────────── */
+.pd-layout{
+  display:grid;
+  grid-template-columns:200px 1fr 280px;
+  grid-template-rows:44px 1fr 32px;
+  grid-template-areas:
+    "titlebar titlebar titlebar"
+    "palette  canvas   props"
+    "status   status   status";
+  height:100vh;
+  width:100vw;
+}
+
+/* ── TITLEBAR ────────────────────────────────────── */
+.pd-titlebar{
+  grid-area:titlebar;
+  display:flex;align-items:center;gap:0;
+  border-bottom:1px solid var(--rule);
+  background:var(--panel);
+  padding:0;
+  z-index:20;
+}
+.pd-logo{
+  display:flex;align-items:center;gap:10px;
+  padding:0 16px;
+  border-right:1px solid var(--rule);
+  height:100%;
+  min-width:200px;
+}
+.pd-logo-text{
+  font-family:'Archivo',sans-serif;font-weight:800;
+  font-size:12px;letter-spacing:.14em;
+  color:var(--amber);
+}
+.pd-logo-sub{
+  font-size:8px;letter-spacing:.22em;color:var(--ink-faint);
+  text-transform:uppercase;margin-top:1px;
+}
+.pd-titlebar-menu{
+  display:flex;height:100%;
+  font-size:10px;letter-spacing:.1em;
+}
+.pd-menu-item{
+  display:flex;align-items:center;
+  padding:0 16px;
+  color:var(--ink-dim);
+  cursor:pointer;
+  border-right:1px solid transparent;
+  transition:color .1s, background .1s;
+  position:relative;
+}
+.pd-menu-item:hover{color:var(--ink-bright);background:var(--panel-hi)}
+.pd-menu-item.active{color:var(--amber)}
+
+/* Beat indicator in titlebar */
+.pd-beat{
+  margin-left:auto;
+  display:flex;align-items:center;gap:8px;
+  padding:0 16px;
+  border-left:1px solid var(--rule);
+  height:100%;
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
+}
+.pd-beat .bpm-val{
+  color:var(--amber);
+  font-size:11px;letter-spacing:.06em;
+  opacity:calc(.5 + .5 * var(--beat-pulse, 0));
+  transition:opacity 60ms linear;
+}
+.pd-beat-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--amber);
+  box-shadow:0 0 calc(4px + 10px * var(--beat-pulse, 0)) var(--amber);
+  transition:box-shadow 60ms linear;
+}
+.pd-spectrogram{
+  width:60px;height:20px;
+  display:flex;align-items:flex-end;gap:1px;
+  margin-left:8px;
+}
+.pd-spectrogram span{
+  flex:1;
+  background:var(--amber);
+  transform-origin:bottom;
+  transition:transform 60ms linear;
+}
+
+/* ── PALETTE ─────────────────────────────────────── */
+.pd-palette{
+  grid-area:palette;
+  border-right:1px solid var(--rule);
+  background:var(--panel);
+  overflow-y:auto;
+  display:flex;flex-direction:column;
+}
+.pd-palette::-webkit-scrollbar{width:3px}
+.pd-palette::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+
+.palette-section-label{
+  padding:12px 12px 6px;
+  font-size:8px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--ink-faint);
+  display:flex;align-items:center;gap:8px;
+}
+.palette-section-label::after{content:"";flex:1;height:1px;background:var(--rule-soft)}
+
+/* Pipe King primitive tiles */
+.pk-tile{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 12px;
+  cursor:grab;
+  transition:background .1s;
+  border-left:2px solid transparent;
+  position:relative;
+  user-select:none;
+}
+.pk-tile:hover{background:var(--panel-hi);border-left-color:var(--tile-color, var(--amber))}
+.pk-tile:active{cursor:grabbing}
+.pk-tile.selected{background:color-mix(in srgb, var(--tile-color, var(--amber)) 8%, transparent);border-left-color:var(--tile-color, var(--amber))}
+
+.pk-icon{
+  width:24px;height:24px;border-radius:3px;
+  border:1px solid color-mix(in srgb, var(--tile-color, var(--amber)) 30%, transparent);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  color:var(--tile-color, var(--amber));
+  font-size:10px;
+  background:color-mix(in srgb, var(--tile-color, var(--amber)) 6%, transparent);
+}
+.pk-icon svg{width:12px;height:12px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round}
+.pk-label{
+  font-size:10px;letter-spacing:.04em;
+  color:var(--ink-dim);
+}
+.pk-tile:hover .pk-label{color:var(--ink-soft)}
+.pk-tile.selected .pk-label{color:var(--ink-bright)}
+
+/* ── CANVAS ──────────────────────────────────────── */
+.pd-canvas{
+  grid-area:canvas;
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(232,184,88,.015) 0%, transparent 60%),
+    var(--void);
+}
+
+/* Grid dots */
+.pd-canvas::before{
+  content:"";
+  position:absolute;inset:0;
+  background-image:radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1px);
+  background-size:24px 24px;
+  pointer-events:none;
+  z-index:0;
+}
+
+.canvas-inner{
+  position:absolute;inset:0;
+  z-index:1;
+}
+
+/* Placed nodes */
+.pd-node{
+  position:absolute;
+  min-width:140px;
+  background:var(--panel);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  cursor:move;
+  user-select:none;
+  transition:border-color .15s, box-shadow .15s;
+  box-shadow:
+    0 2px 12px rgba(0,0,0,.6),
+    0 0 calc(8px * var(--beat-pulse, 0)) color-mix(in srgb, var(--node-color, var(--amber)) 20%, transparent);
+}
+.pd-node:hover{border-color:color-mix(in srgb, var(--node-color, var(--amber)) 40%, var(--rule))}
+.pd-node.selected{
+  border-color:var(--node-color, var(--amber));
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--node-color, var(--amber)) 15%, transparent), 0 2px 12px rgba(0,0,0,.6);
+}
+
+.node-header{
+  padding:8px 10px;
+  border-bottom:1px solid var(--rule-soft);
+  display:flex;align-items:center;gap:8px;
+}
+.node-color-bar{
+  width:3px;height:16px;border-radius:1px;
+  background:var(--node-color, var(--amber));
+  flex-shrink:0;
+  box-shadow:0 0 calc(4px + 6px * var(--beat-pulse, 0)) var(--node-color, var(--amber));
+  transition:box-shadow 60ms linear;
+}
+.node-title{
+  font-family:'Archivo',sans-serif;font-weight:700;font-size:11px;
+  letter-spacing:.02em;color:var(--ink-bright);flex:1;
+}
+.node-kind{
+  font-size:7px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-faint);
+}
+.node-ports{
+  padding:6px 10px;
+  display:flex;flex-direction:column;gap:5px;
+}
+.node-port{
+  display:flex;align-items:center;gap:6px;
+  font-size:9px;letter-spacing:.08em;color:var(--ink-faint);
+}
+.node-port.output{justify-content:flex-end}
+.port-dot{
+  width:8px;height:8px;border-radius:50%;
+  border:1.5px solid var(--node-color, var(--amber));
+  background:transparent;
+  cursor:crosshair;
+  flex-shrink:0;
+  transition:background .1s, box-shadow .1s;
+}
+.port-dot:hover{
+  background:var(--node-color, var(--amber));
+  box-shadow:0 0 8px var(--node-color, var(--amber));
+}
+
+/* SVG wires */
+.wire-layer{
+  position:absolute;inset:0;
+  pointer-events:none;
+  z-index:0;
+  overflow:visible;
+}
+.wire{
+  fill:none;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  stroke:var(--amber);
+  stroke-width:1.5;
+  opacity:.45;
+  /* Animated dash */
+  stroke-dasharray:6 4;
+  stroke-dashoffset:0;
+  animation:wire-flow 2s linear infinite;
+}
+.wire.active{opacity:.85;stroke-width:2;animation-duration:1s}
+@keyframes wire-flow{to{stroke-dashoffset:-20}}
+
+/* Canvas toolbar */
+.canvas-toolbar{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  display:flex;gap:8px;
+  background:rgba(11,10,17,.9);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  padding:6px 10px;
+  z-index:10;
+  backdrop-filter:blur(8px);
+}
+.ctbtn{
+  background:none;border:1px solid var(--rule);border-radius:3px;
+  color:var(--ink-dim);cursor:pointer;
+  padding:5px 10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  display:flex;align-items:center;gap:6px;
+  transition:color .1s,border-color .1s;
+}
+.ctbtn:hover{color:var(--ink-bright);border-color:var(--rule)}
+.ctbtn.active{color:var(--amber);border-color:var(--amber-glow)}
+.ctbtn svg{width:11px;height:11px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round}
+
+/* Empty canvas hint */
+.canvas-hint{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  pointer-events:none;
+  gap:12px;
+  z-index:0;
+}
+.canvas-hint .hint-glyph{
+  font-size:42px;
+  color:rgba(232,184,88,.07);
+  opacity:calc(.4 + .3 * var(--beat-bar-pulse, 0));
+  transition:opacity 80ms linear;
+}
+.canvas-hint .hint-text{
+  font-size:9px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--ink-faint);text-align:center;line-height:1.8;
+}
+
+/* ── PROPERTIES ──────────────────────────────────── */
+.pd-props{
+  grid-area:props;
+  border-left:1px solid var(--rule);
+  background:var(--panel);
+  overflow-y:auto;
+  display:flex;flex-direction:column;
+}
+.pd-props::-webkit-scrollbar{width:3px}
+.pd-props::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+
+.props-header{
+  padding:14px 16px 12px;
+  border-bottom:1px solid var(--rule);
+}
+.props-title{
+  font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;
+  letter-spacing:.01em;color:var(--ink-bright);
+  margin-bottom:4px;
+}
+.props-sub{font-size:9px;letter-spacing:.14em;color:var(--ink-faint);text-transform:uppercase}
+
+.props-section{padding:12px 16px;border-bottom:1px solid var(--rule-soft)}
+.props-section-label{
+  font-size:8px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.props-section-label::after{content:"";flex:1;height:1px;background:var(--rule-soft)}
+
+/* Property fields */
+.prop-field{margin-bottom:10px}
+.prop-label{font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:5px;display:block}
+.prop-input{
+  width:100%;
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--rule-soft);
+  border-radius:2px;
+  padding:6px 10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:.04em;
+  color:var(--ink-soft);outline:none;
+  transition:border-color .12s;
+}
+.prop-input:focus{border-color:var(--amber);color:var(--ink-bright)}
+
+/* Reactive meter in props panel */
+.prop-meter{
+  height:3px;
+  background:var(--rule-soft);
+  border-radius:2px;
+  overflow:hidden;
+  position:relative;
+  margin-top:6px;
+}
+.prop-meter-fill{
+  position:absolute;inset:0;border-radius:2px;
+  background:var(--amber);
+  transform-origin:left;
+}
+
+/* Midi / OSC toggles */
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 0;
+}
+.toggle-label{font-size:10px;letter-spacing:.06em;color:var(--ink-dim)}
+.toggle-btn{
+  width:32px;height:16px;
+  background:var(--rule);border-radius:8px;
+  position:relative;cursor:pointer;
+  transition:background .15s;
+  border:none;
+  flex-shrink:0;
+}
+.toggle-btn.on{background:rgba(232,184,88,.3);border:1px solid var(--amber)}
+.toggle-btn::after{
+  content:"";
+  position:absolute;top:2px;left:2px;
+  width:10px;height:10px;border-radius:50%;
+  background:var(--ink-faint);
+  transition:transform .15s, background .15s;
+}
+.toggle-btn.on::after{transform:translateX(16px);background:var(--amber)}
+
+/* Reactive band display in props */
+.band-display{
+  display:grid;grid-template-columns:repeat(10,1fr);gap:2px;
+  height:32px;
+  margin-top:4px;
+}
+.band-cell{
+  border-radius:1px;
+  background:var(--rule);
+  position:relative;overflow:hidden;
+}
+.band-cell::after{
+  content:"";
+  position:absolute;bottom:0;left:0;right:0;
+  background:var(--amber);
+  transition:height 60ms linear;
+}
+.band-cell:nth-child(1)::after{height:calc(var(--band-0,0)*100%)}
+.band-cell:nth-child(2)::after{height:calc(var(--band-1,0)*100%)}
+.band-cell:nth-child(3)::after{height:calc(var(--band-2,0)*100%)}
+.band-cell:nth-child(4)::after{height:calc(var(--band-3,0)*100%)}
+.band-cell:nth-child(5)::after{height:calc(var(--band-4,0)*100%);background:var(--cyan)}
+.band-cell:nth-child(6)::after{height:calc(var(--band-5,0)*100%);background:var(--cyan)}
+.band-cell:nth-child(7)::after{height:calc(var(--band-6,0)*100%)}
+.band-cell:nth-child(8)::after{height:calc(var(--band-7,0)*100%)}
+.band-cell:nth-child(9)::after{height:calc(var(--band-8,0)*100%)}
+.band-cell:nth-child(10)::after{height:calc(var(--band-9,0)*100%)}
+
+/* ── STATUS BAR ──────────────────────────────────── */
+.pd-status{
+  grid-area:status;
+  border-top:1px solid var(--rule);
+  background:var(--panel);
+  display:flex;align-items:center;gap:0;
+  padding:0 12px;
+  font-size:9px;letter-spacing:.14em;
+  color:var(--ink-faint);
+}
+.pd-status span{padding:0 10px;border-right:1px solid var(--rule)}
+.pd-status span:last-child{border-right:none;margin-left:auto}
+.pd-status .hi{color:var(--amber)}
+.pd-status .cyan{color:var(--cyan)}
+
+/* ── DEDICATION ──────────────────────────────────── */
+.dedication{
+  position:absolute;bottom:48px;right:16px;
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+  font-size:10px;letter-spacing:.06em;
+  color:var(--ink-faint);
+  pointer-events:none;
+  z-index:5;
+  opacity:calc(.4 + .2 * var(--beat-bar-pulse, 0));
+  transition:opacity 200ms ease;
+}
+
+/* ── FLASH OVERLAYS ──────────────────────────────── */
+.m-flash-kick{position:fixed;inset:0;pointer-events:none;mix-blend-mode:screen;
+  background:var(--amber);opacity:calc(var(--kick,0)*0.05);z-index:50}
+.m-flash-snare{position:fixed;inset:0;pointer-events:none;mix-blend-mode:screen;
+  background:var(--cyan);opacity:calc(var(--snare,0)*0.03);z-index:50}
+
+@media(max-width:900px){
+  .pd-layout{grid-template-columns:160px 1fr;grid-template-areas:"titlebar titlebar" "palette canvas" "status status"}
+  .pd-props{display:none}
+}
+@media(max-width:600px){
+  .pd-layout{grid-template-columns:1fr;grid-template-areas:"titlebar" "canvas" "status"}
+  .pd-palette{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="m-flash-kick"></div>
+<div class="m-flash-snare"></div>
+
+<div class="pd-layout">
+
+  <!-- TITLEBAR -->
+  <div class="pd-titlebar">
+    <div class="pd-logo">
+      <div>
+        <div class="pd-logo-text">PIPE DREAM</div>
+        <div class="pd-logo-sub">Engineering Canvas · MythOS</div>
+      </div>
+    </div>
+    <div class="pd-titlebar-menu">
+      <div class="pd-menu-item active">File</div>
+      <div class="pd-menu-item">Edit</div>
+      <div class="pd-menu-item">View</div>
+      <div class="pd-menu-item">Topology</div>
+      <div class="pd-menu-item">Deploy</div>
+    </div>
+    <div class="pd-beat">
+      <div class="pd-beat-dot"></div>
+      <span class="bpm-val" id="pd-bpm">120</span>
+      <span>BPM</span>
+      <div class="pd-spectrogram" id="pd-spec"></div>
+    </div>
+  </div>
+
+  <!-- PALETTE -->
+  <div class="pd-palette">
+
+    <div class="palette-section-label">Pipe Kings</div>
+
+    <!-- 20 Pipe King primitives -->
+    <div class="pk-tile" style="--tile-color:var(--king-1)" draggable="true" data-kind="Manifest" onclick="placePK('Manifest','var(--king-1)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/></svg>
+      </div>
+      <span class="pk-label">Manifest</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--king-2)" draggable="true" data-kind="Transducer" onclick="placePK('Transducer','var(--king-2)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <span class="pk-label">Transducer</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--king-3)" draggable="true" data-kind="Covenant" onclick="placePK('Covenant','var(--king-3)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <span class="pk-label">Covenant</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--king-4)" draggable="true" data-kind="Beacon" onclick="placePK('Beacon','var(--king-4)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M20.19 4.46A10.1 10.1 0 0 0 12 2 10.1 10.1 0 0 0 3.81 4.46"/><path d="M16.85 8.41A5 5 0 0 0 12 7a5 5 0 0 0-4.85 1.41"/></svg>
+      </div>
+      <span class="pk-label">Beacon</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--king-5)" draggable="true" data-kind="Force" onclick="placePK('Force','var(--king-5)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <span class="pk-label">Force</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--king-6)" draggable="true" data-kind="Daemon" onclick="placePK('Daemon','var(--king-6)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      </div>
+      <span class="pk-label">Daemon</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--king-7)" draggable="true" data-kind="Operation" onclick="placePK('Operation','var(--king-7)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><polyline points="16 2 12 7 8 2"/></svg>
+      </div>
+      <span class="pk-label">Operation</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--king-8)" draggable="true" data-kind="Enrollment" onclick="placePK('Enrollment','var(--king-8)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+      </div>
+      <span class="pk-label">Enrollment</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--king-9)" draggable="true" data-kind="SubSpace" onclick="placePK('SubSpace','var(--king-9)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      </div>
+      <span class="pk-label">SubSpace</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--king-10)" draggable="true" data-kind="Blob" onclick="placePK('Blob','var(--king-10)')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+      </div>
+      <span class="pk-label">Blob</span>
+    </div>
+
+    <div class="palette-section-label">Wiring</div>
+
+    <div class="pk-tile" style="--tile-color:var(--amber)" onclick="setMode('wire')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <span class="pk-label">Wire Tool</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--cyan)" onclick="setMode('select')">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><path d="M5 3l14 9-7 1-3 7L5 3z"/></svg>
+      </div>
+      <span class="pk-label">Select Tool</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:#86efac" onclick="autoLayout()">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="4" height="4"/><rect x="10" y="3" width="4" height="4"/><rect x="18" y="3" width="4" height="4"/><rect x="6" y="11" width="4" height="4"/><rect x="14" y="11" width="4" height="4"/><line x1="4" y1="7" x2="8" y2="11"/><line x1="12" y1="7" x2="8" y2="11"/><line x1="12" y1="7" x2="16" y2="11"/><line x1="20" y1="7" x2="16" y2="11"/></svg>
+      </div>
+      <span class="pk-label">Auto Layout</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:#f472b6" onclick="clearCanvas()">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+      </div>
+      <span class="pk-label">Clear</span>
+    </div>
+
+    <div class="palette-section-label">Audit</div>
+
+    <div class="pk-tile" style="--tile-color:var(--amber)">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <span class="pk-label">Mirror: PASS</span>
+    </div>
+    <div class="pk-tile" style="--tile-color:var(--cyan)">
+      <div class="pk-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <span class="pk-label">Invariants 102+</span>
+    </div>
+
+  </div><!-- /palette -->
+
+  <!-- CANVAS -->
+  <div class="pd-canvas" id="pd-canvas">
+
+    <div class="canvas-hint" id="canvas-hint">
+      <div class="hint-glyph">&#9670;</div>
+      <div class="hint-text">Drag primitives from the palette<br>to build the daemon topology</div>
+    </div>
+
+    <!-- Canvas toolbar -->
+    <div class="canvas-toolbar">
+      <button class="ctbtn active" id="btn-select" onclick="setMode('select')">
+        <svg viewBox="0 0 24 24"><path d="M5 3l14 9-7 1-3 7L5 3z" fill="currentColor" stroke="none"/></svg>
+        Select
+      </button>
+      <button class="ctbtn" id="btn-wire" onclick="setMode('wire')">
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        Wire
+      </button>
+      <button class="ctbtn" onclick="zoomFit()">
+        <svg viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+        Fit
+      </button>
+      <button class="ctbtn" onclick="exportTopology()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+    </div>
+
+    <!-- Wire SVG layer -->
+    <svg class="wire-layer" id="wire-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <!-- Nodes injected by JS -->
+    <div class="canvas-inner" id="canvas-inner"></div>
+
+    <!-- Dedication -->
+    <div class="dedication">For Chris — the Cage OA awaits</div>
+
+  </div><!-- /canvas -->
+
+  <!-- PROPERTIES PANEL -->
+  <div class="pd-props">
+
+    <div class="props-header">
+      <div class="props-title" id="props-node-name">Properties</div>
+      <div class="props-sub" id="props-node-kind">Select a node</div>
+    </div>
+
+    <div class="props-section">
+      <div class="props-section-label">Identity</div>
+      <div class="prop-field">
+        <label class="prop-label">Name</label>
+        <input class="prop-input" id="prop-name" type="text" placeholder="node_name" value="">
+      </div>
+      <div class="prop-field">
+        <label class="prop-label">Composition</label>
+        <input class="prop-input" id="prop-comp" type="text" placeholder="Constitutional" value="">
+      </div>
+    </div>
+
+    <div class="props-section">
+      <div class="props-section-label">Configuration</div>
+      <div class="prop-field">
+        <label class="prop-label">Chassis</label>
+        <input class="prop-input" id="prop-chassis" type="text" placeholder="7900XT" value="">
+      </div>
+      <div class="prop-field">
+        <label class="prop-label">TTL</label>
+        <input class="prop-input" id="prop-ttl" type="text" placeholder="never / 24h / 1h" value="">
+      </div>
+    </div>
+
+    <div class="props-section">
+      <div class="props-section-label">Audio Reactive</div>
+      <div class="toggle-row">
+        <span class="toggle-label">Beat-sync glow</span>
+        <button class="toggle-btn on" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Kick flash</span>
+        <button class="toggle-btn" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Band-reactive border</span>
+        <button class="toggle-btn on" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div style="margin-top:10px">
+        <div class="prop-label">Live FFT (10 bands)</div>
+        <div class="band-display">
+          <div class="band-cell"></div><div class="band-cell"></div>
+          <div class="band-cell"></div><div class="band-cell"></div>
+          <div class="band-cell"></div><div class="band-cell"></div>
+          <div class="band-cell"></div><div class="band-cell"></div>
+          <div class="band-cell"></div><div class="band-cell"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="props-section">
+      <div class="props-section-label">Connectivity</div>
+      <div class="prop-field">
+        <label class="prop-label">Input Ports</label>
+        <input class="prop-input" type="text" placeholder="substrate, covenant" value="">
+      </div>
+      <div class="prop-field">
+        <label class="prop-label">Output Ports</label>
+        <input class="prop-input" type="text" placeholder="cognition, beacon" value="">
+      </div>
+    </div>
+
+    <div class="props-section">
+      <div class="props-section-label">Envelope</div>
+      <div class="prop-label">Overall Loudness</div>
+      <div class="prop-meter">
+        <div class="prop-meter-fill" style="transform:scaleX(calc(0.05 + 0.95 * var(--envelope, 0)));transform-origin:left;transition:transform 80ms linear"></div>
+      </div>
+      <div class="prop-label" style="margin-top:10px">Beat Pulse</div>
+      <div class="prop-meter">
+        <div class="prop-meter-fill" style="transform:scaleX(var(--beat-pulse, 0));transform-origin:left;transition:transform 60ms linear;background:var(--cyan)"></div>
+      </div>
+    </div>
+
+  </div><!-- /props -->
+
+  <!-- STATUS BAR -->
+  <div class="pd-status">
+    <span><span class="hi" id="stat-nodes">0</span> nodes</span>
+    <span><span class="hi" id="stat-wires">0</span> wires</span>
+    <span>Mode: <span class="hi" id="stat-mode">Select</span></span>
+    <span>SubSpace: <span class="cyan">120K blobs</span></span>
+    <span>Mirror: <span class="hi">GREEN</span> · 121 PASS</span>
+  </div>
+
+</div><!-- /pd-layout -->
+
+<script src="_mythos-page.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // Build spectrogram
+  (function(){
+    var spec = document.getElementById('pd-spec');
+    for(var i=0;i<8;i++){
+      var s = document.createElement('span');
+      s.style.cssText = 'flex:1;background:var(--amber);transform-origin:bottom;transition:transform 60ms linear;height:100%;';
+      s.style.setProperty('--band-level','var(--band-'+i+',0)');
+      s.style.transform = 'scaleY(calc(0.1 + 0.9 * var(--band-'+i+',0)))';
+      spec.appendChild(s);
+    }
+  })();
+
+  // Update BPM display from beat broadcast
+  window.addEventListener('message', function(e){
+    var d = e.data;
+    if(!d||d.type!=='mythos:beat') return;
+    if(d.beat && d.beat.bpm){
+      document.getElementById('pd-bpm').textContent = Math.round(d.beat.bpm);
+    }
+  });
+
+  var nodes = [];
+  var wires = [];
+  var mode = 'select';
+  var nodeCounter = 0;
+  var selectedNodeId = null;
+
+  function setMode(m){
+    mode = m;
+    document.getElementById('stat-mode').textContent = m.charAt(0).toUpperCase()+m.slice(1);
+    document.getElementById('btn-select').classList.toggle('active', m==='select');
+    document.getElementById('btn-wire').classList.toggle('active', m==='wire');
+  }
+  window.setMode = setMode;
+
+  function updateStats(){
+    document.getElementById('stat-nodes').textContent = nodes.length;
+    document.getElementById('stat-wires').textContent = wires.length;
+    var hint = document.getElementById('canvas-hint');
+    if(hint) hint.style.display = nodes.length ? 'none' : 'flex';
+  }
+
+  var KINDS_META = {
+    Manifest:   {ports:{in:['schema'],out:['blob','force']}},
+    Transducer: {ports:{in:['input'],out:['output','signal']}},
+    Covenant:   {ports:{in:['substrate'],out:['bound_agent']}},
+    Beacon:     {ports:{in:['heartbeat'],out:['status','registry']}},
+    Force:      {ports:{in:['constitution'],out:['field','drift']}},
+    Daemon:     {ports:{in:['covenant','substrate'],out:['cognition','beacon']}},
+    Operation:  {ports:{in:['args'],out:['result','error']}},
+    Enrollment: {ports:{in:['domain'],out:['enrolled','ops']}},
+    SubSpace:   {ports:{in:['bang'],out:['blobs','forces']}},
+    Blob:       {ports:{in:['genesis'],out:['content','hash']}},
+  };
+
+  function placePK(kind, color){
+    var canvas = document.getElementById('canvas-inner');
+    var canvasRect = document.getElementById('pd-canvas').getBoundingClientRect();
+    var id = 'node-'+(++nodeCounter);
+    var x = 80 + (Math.random() * (canvasRect.width - 240));
+    var y = 60 + (Math.random() * (canvasRect.height - 200));
+    var meta = KINDS_META[kind] || {ports:{in:['in'],out:['out']}};
+    var node = {id:id, kind:kind, color:color, x:x, y:y, name:kind+'_'+nodeCounter};
+    nodes.push(node);
+
+    var el = document.createElement('div');
+    el.className = 'pd-node';
+    el.id = id;
+    el.style.cssText = 'left:'+x+'px;top:'+y+'px;--node-color:'+color;
+
+    var inPorts = meta.ports.in.map(function(p){
+      return '<div class="node-port input"><div class="port-dot" data-port="'+p+'" data-dir="in" data-node="'+id+'"></div> '+p+'</div>';
+    }).join('');
+    var outPorts = meta.ports.out.map(function(p){
+      return '<div class="node-port output">'+p+' <div class="port-dot" data-port="'+p+'" data-dir="out" data-node="'+id+'"></div></div>';
+    }).join('');
+
+    el.innerHTML =
+      '<div class="node-header">'+
+        '<div class="node-color-bar"></div>'+
+        '<div class="node-title">'+node.name+'</div>'+
+        '<div class="node-kind">'+kind+'</div>'+
+      '</div>'+
+      '<div class="node-ports">'+inPorts+outPorts+'</div>';
+
+    // Dragging
+    var dragX=0, dragY=0, dragging=false;
+    el.addEventListener('mousedown', function(e){
+      if(e.target.classList.contains('port-dot')) return;
+      dragging=true;
+      dragX=e.clientX - node.x;
+      dragY=e.clientY - node.y;
+      selectNode(node.id);
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e){
+      if(!dragging) return;
+      node.x = e.clientX - dragX;
+      node.y = e.clientY - dragY;
+      el.style.left = node.x+'px';
+      el.style.top  = node.y+'px';
+      renderWires();
+    });
+    document.addEventListener('mouseup', function(){ dragging=false; });
+
+    canvas.appendChild(el);
+    updateStats();
+    selectNode(id);
+    document.getElementById('canvas-hint').style.display='none';
+  }
+  window.placePK = placePK;
+
+  function selectNode(id){
+    selectedNodeId = id;
+    document.querySelectorAll('.pd-node').forEach(function(el){
+      el.classList.toggle('selected', el.id===id);
+    });
+    var n = nodes.find(function(x){ return x.id===id; });
+    if(n){
+      document.getElementById('props-node-name').textContent = n.name;
+      document.getElementById('props-node-kind').textContent = n.kind;
+      document.getElementById('prop-name').value = n.name;
+      document.getElementById('prop-comp').value = n.kind;
+    }
+  }
+
+  function renderWires(){
+    var svg = document.getElementById('wire-layer');
+    svg.innerHTML = '';
+    wires.forEach(function(w){
+      var fromEl = document.querySelector('[data-node="'+w.from+'"][data-dir="out"]');
+      var toEl = document.querySelector('[data-node="'+w.to+'"][data-dir="in"]');
+      if(!fromEl||!toEl) return;
+      var canvasEl = document.getElementById('pd-canvas');
+      var cr = canvasEl.getBoundingClientRect();
+      var fr = fromEl.getBoundingClientRect();
+      var tr = toEl.getBoundingClientRect();
+      var x1 = fr.left - cr.left + fr.width/2;
+      var y1 = fr.top - cr.top + fr.height/2;
+      var x2 = tr.left - cr.left + tr.width/2;
+      var y2 = tr.top - cr.top + tr.height/2;
+      var cx = (x1+x2)/2;
+      var path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d','M'+x1+','+y1+' C'+cx+','+y1+' '+cx+','+y2+' '+x2+','+y2);
+      path.setAttribute('class','wire');
+      path.setAttribute('stroke',w.color||'var(--amber)');
+      svg.appendChild(path);
+    });
+  }
+
+  // Demo: pre-place a few nodes to show the canvas in action
+  setTimeout(function(){
+    placePK('SubSpace','var(--king-9)');
+    var n1 = nodes[nodes.length-1];
+    n1.x=60; n1.y=80;
+    document.getElementById(n1.id).style.left='60px';
+    document.getElementById(n1.id).style.top='80px';
+
+    placePK('Daemon','var(--king-6)');
+    var n2 = nodes[nodes.length-1];
+    n2.x=280; n2.y=60;
+    document.getElementById(n2.id).style.left='280px';
+    document.getElementById(n2.id).style.top='60px';
+
+    placePK('Beacon','var(--king-4)');
+    var n3 = nodes[nodes.length-1];
+    n3.x=280; n3.y=190;
+    document.getElementById(n3.id).style.left='280px';
+    document.getElementById(n3.id).style.top='190px';
+
+    placePK('Covenant','var(--king-3)');
+    var n4 = nodes[nodes.length-1];
+    n4.x=500; n4.y=120;
+    document.getElementById(n4.id).style.left='500px';
+    document.getElementById(n4.id).style.top='120px';
+
+    // Wire SubSpace -> Daemon
+    wires.push({from:n1.id, to:n2.id, color:'var(--king-9)'});
+    wires.push({from:n2.id, to:n3.id, color:'var(--king-6)'});
+    wires.push({from:n2.id, to:n4.id, color:'var(--king-4)'});
+    setTimeout(renderWires, 100);
+    updateStats();
+  }, 200);
+
+  window.clearCanvas = function(){
+    nodes=[];wires=[];selectedNodeId=null;
+    document.getElementById('canvas-inner').innerHTML='';
+    document.getElementById('wire-layer').innerHTML='';
+    document.getElementById('canvas-hint').style.display='flex';
+    updateStats();
+  };
+
+  window.autoLayout = function(){
+    var pad=60, cols=Math.ceil(Math.sqrt(nodes.length));
+    var cw=180, ch=140;
+    nodes.forEach(function(n,i){
+      n.x = pad + (i%cols)*cw;
+      n.y = pad + Math.floor(i/cols)*ch;
+      var el = document.getElementById(n.id);
+      if(el){el.style.left=n.x+'px';el.style.top=n.y+'px';}
+    });
+    renderWires();
+  };
+
+  window.zoomFit = function(){
+    // Placeholder — full pan/zoom in production
+    autoLayout();
+  };
+
+  window.exportTopology = function(){
+    var data = {nodes:nodes.map(function(n){return{id:n.id,kind:n.kind,name:n.name,x:n.x,y:n.y};}), wires:wires};
+    var blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'pipe-dream-topology.json';
+    a.click();
+  };
+
+})();
+</script>
+</body>
+</html>

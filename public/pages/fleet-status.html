@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MythOS — Fleet Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --stage-center:#1f1a2a; --stage-mid:#14121c; --stage-deep:#08070d; --stage-void:#020204;
+  --signal-machine:#4ec9d4; --signal-synth:#e8b858; --signal-synth-bright:#f5c970;
+  --core-halo:#fff2c8;
+  --ink-bright:#e8e3d4; --ink-soft:#b5b0a3; --ink-dim:#8a8574; --ink-faint:#4a4740;
+  --rule:#242a33; --rule-soft:#1b2028;
+  --status-green:#4ade80; --status-amber:#e8b858; --status-red:#f87171; --status-dim:#4a4740;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:transparent;color:var(--ink-bright);
+  font-family:'JetBrains Mono',ui-monospace,monospace;-webkit-font-smoothing:antialiased}
+body{overflow-x:hidden;overflow-y:auto;padding-bottom:100px}
+
+/* ── PAGE LAYOUT ─────────────────────────────────── */
+.page{position:relative;z-index:3;padding:48px 6vw 64px}
+
+/* ── HEADER ──────────────────────────────────────── */
+.page-header{margin-bottom:52px}
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--signal-machine);
+  margin-bottom:20px;
+  display:inline-flex;align-items:center;gap:12px;
+}
+.eyebrow::after{content:"";width:32px;height:1px;background:var(--signal-machine);opacity:.5}
+.page-title{
+  font-family:'Archivo',sans-serif;font-weight:800;
+  font-size:clamp(36px,5vw,64px);
+  line-height:.97;letter-spacing:-.025em;
+  color:var(--ink-bright);
+  margin-bottom:16px;
+}
+.page-title .accent{color:var(--signal-machine)}
+.page-sub{
+  font-family:'Fraunces',serif;font-variation-settings:"opsz" 36;
+  font-style:italic;font-weight:300;
+  font-size:clamp(1rem,1.4vw,1.2rem);
+  color:var(--ink-dim);line-height:1.5;max-width:520px;
+}
+
+/* ── SUMMARY STRIP ───────────────────────────────── */
+.summary-strip{
+  display:flex;gap:24px;flex-wrap:wrap;
+  margin-bottom:40px;
+  padding:16px 20px;
+  background:rgba(78,201,212,.04);
+  border:1px solid color-mix(in srgb, var(--signal-machine) 18%, var(--rule));
+  border-radius:4px;
+}
+.summary-stat{
+  display:flex;flex-direction:column;gap:4px;
+  min-width:100px;
+}
+.summary-stat .s-val{
+  font-family:'Archivo',sans-serif;font-weight:700;
+  font-size:28px;letter-spacing:-.02em;
+  color:var(--signal-machine);
+  /* Beat-pulse brightness */
+  text-shadow:0 0 calc(4px + 12px * var(--beat-bar-pulse, 0)) var(--signal-machine);
+  transition:text-shadow 80ms linear;
+}
+.summary-stat .s-lbl{
+  font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);
+}
+.summary-divider{width:1px;background:var(--rule);align-self:stretch}
+
+/* ── CHASSIS GRID ────────────────────────────────── */
+.chassis-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:20px;
+}
+
+/* ── CHASSIS CARD ────────────────────────────────── */
+.chassis-card{
+  background:radial-gradient(ellipse at 30% 20%,var(--stage-center) 0%,var(--stage-mid) 50%,var(--stage-deep) 100%);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  padding:24px;
+  position:relative;
+  overflow:hidden;
+  cursor:default;
+  transition:border-color .2s, box-shadow .2s;
+  /* Card pulses with beat-pulse scaled by band energy */
+  box-shadow:0 0 calc(0px + 20px * var(--beat-pulse, 0)) color-mix(in srgb, var(--card-accent, var(--signal-machine)) 15%, transparent);
+}
+.chassis-card:hover{
+  border-color:color-mix(in srgb, var(--card-accent, var(--signal-machine)) 50%, var(--rule));
+}
+/* Band-reactive top stripe */
+.chassis-card::before{
+  content:"";
+  position:absolute;top:0;left:0;right:0;
+  height:2px;
+  background:var(--card-accent, var(--signal-machine));
+  transform:scaleX(calc(0.1 + 0.9 * var(--band-level, 0)));
+  transform-origin:left;
+  transition:transform 70ms linear;
+}
+/* GPU */
+.chassis-card.gpu-7900xt{--card-accent:var(--signal-synth)}
+.chassis-card.gpu-2080ti {--card-accent:#a78bfa}
+.chassis-card.gpu-3060ti {--card-accent:#60a5fa}
+.chassis-card.gpu-1050gt {--card-accent:#94a3b8}
+.chassis-card.gpu-mythserv1{--card-accent:var(--signal-machine)}
+
+/* Card Header */
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:12px}
+.card-hostname{
+  font-family:'Archivo',sans-serif;font-weight:700;
+  font-size:22px;letter-spacing:-.01em;
+  color:var(--ink-bright);
+}
+.card-hostname .chassis-num{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;letter-spacing:.2em;
+  color:var(--ink-faint);
+  font-weight:400;
+  display:block;
+  margin-top:2px;
+}
+/* Status indicator — pulses on its own band */
+.status-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  font-family:'JetBrains Mono',monospace;
+  flex-shrink:0;
+  margin-top:2px;
+}
+.status-badge .dot{
+  width:5px;height:5px;border-radius:50%;
+  animation:badge-breath 3s ease-in-out infinite;
+}
+@keyframes badge-breath{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+.status-badge.online{
+  background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.22);
+  color:var(--status-green);
+}
+.status-badge.online .dot{background:var(--status-green);box-shadow:0 0 calc(6px + 8px * var(--beat-pulse,0)) var(--status-green)}
+.status-badge.standby{
+  background:rgba(232,184,88,.06);border:1px solid rgba(232,184,88,.18);
+  color:var(--status-amber);
+}
+.status-badge.standby .dot{background:var(--status-amber)}
+.status-badge.offline{
+  background:rgba(74,70,64,.12);border:1px solid rgba(74,70,64,.3);
+  color:var(--ink-faint);
+}
+.status-badge.offline .dot{background:var(--status-dim)}
+
+/* Card Stats */
+.card-stats{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:16px 20px;
+  margin-bottom:20px;
+}
+.stat-row{display:flex;flex-direction:column;gap:3px}
+.stat-lbl{font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint)}
+.stat-val{font-size:12px;letter-spacing:.06em;color:var(--ink-soft)}
+.stat-val .hi{color:var(--card-accent,var(--signal-machine))}
+.stat-val .dim{color:var(--ink-faint)}
+
+/* Load Bar */
+.load-section{margin-bottom:12px}
+.load-label-row{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:6px;
+}
+.load-label{font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint)}
+.load-pct{font-size:11px;letter-spacing:.08em;color:var(--card-accent,var(--signal-machine))}
+.load-bar{height:3px;background:var(--rule);border-radius:2px;position:relative;overflow:hidden}
+.load-bar-fill{
+  position:absolute;inset:0;
+  border-radius:2px;
+  background:var(--card-accent,var(--signal-machine));
+  transform-origin:left;
+  transition:transform .4s ease;
+  box-shadow:0 0 4px var(--card-accent,var(--signal-machine));
+}
+
+/* Agent Pills */
+.agent-row{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  margin-top:4px;
+}
+.agent-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 8px;
+  background:rgba(78,201,212,.06);
+  border:1px solid rgba(78,201,212,.14);
+  border-radius:2px;
+  font-size:8px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-dim);
+}
+.agent-pill .apt{color:var(--signal-machine)}
+
+/* Spectrogram strip */
+.card-spectrum{
+  height:24px;
+  margin-top:16px;
+  border-top:1px solid var(--rule-soft);
+  padding-top:10px;
+}
+
+/* ── SECTION DIVIDER ─────────────────────────────── */
+.section-divider{
+  display:flex;align-items:center;gap:16px;
+  margin:48px 0 32px;
+  color:var(--ink-faint);
+  font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+}
+.section-divider::before,.section-divider::after{content:"";flex:1;height:1px;background:var(--rule-soft)}
+.section-divider .glyph{color:var(--signal-synth)}
+
+/* ── CAPTAIN TABLE ───────────────────────────────── */
+.captain-table{
+  border:1px solid var(--rule);
+  border-radius:4px;
+  overflow:hidden;
+  font-size:11px;
+}
+.captain-table-head{
+  display:grid;
+  grid-template-columns:1fr 1fr 80px 80px 100px;
+  gap:0;
+  padding:10px 20px;
+  background:rgba(78,201,212,.04);
+  border-bottom:1px solid var(--rule);
+  font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);
+}
+.captain-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 80px 80px 100px;
+  gap:0;
+  padding:12px 20px;
+  border-bottom:1px solid var(--rule-soft);
+  transition:background .12s;
+  align-items:center;
+}
+.captain-row:last-child{border-bottom:none}
+.captain-row:hover{background:rgba(78,201,212,.03)}
+.captain-name{
+  font-family:'Archivo',sans-serif;font-weight:700;font-size:13px;
+  color:var(--ink-bright);letter-spacing:.01em;
+}
+.captain-mission{color:var(--ink-soft);font-size:10px;letter-spacing:.04em}
+.captain-nugget{color:var(--ink-faint);font-size:9px;letter-spacing:.12em}
+.captain-crew{color:var(--signal-machine);letter-spacing:.08em}
+.captain-status{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+}
+.captain-status .dot{width:4px;height:4px;border-radius:50%}
+.captain-status.ready .dot{background:var(--status-green);box-shadow:0 0 6px var(--status-green)}
+.captain-status.ready{color:var(--status-green)}
+.captain-status.standby .dot{background:var(--status-amber)}
+.captain-status.standby{color:var(--status-amber)}
+
+/* ── LEGEND ──────────────────────────────────────── */
+.legend{
+  display:flex;gap:20px;flex-wrap:wrap;
+  margin-top:40px;
+  padding-top:20px;
+  border-top:1px solid var(--rule-soft);
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
+}
+.legend-item{display:flex;align-items:center;gap:6px}
+.legend-swatch{width:8px;height:8px;border-radius:1px}
+
+/* ── FLASH OVERLAYS ──────────────────────────────── */
+.m-flash-kick{position:fixed;inset:0;pointer-events:none;mix-blend-mode:screen;background:var(--signal-machine);opacity:calc(var(--kick,0) * 0.04);z-index:2}
+.m-flash-bar{position:fixed;inset:0;pointer-events:none;mix-blend-mode:screen;background:var(--signal-synth);opacity:calc(var(--beat-bar-pulse,0) * 0.03);z-index:2}
+
+/* ── RESPONSIVE ──────────────────────────────────── */
+@media(max-width:600px){
+  .page{padding:32px 4vw 48px}
+  .summary-divider{display:none}
+  .captain-table-head,.captain-row{grid-template-columns:1fr 80px 80px}
+  .captain-row .captain-mission,.captain-row .captain-nugget{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="m-flash-kick"></div>
+<div class="m-flash-bar"></div>
+
+<div class="page">
+
+  <!-- PAGE HEADER -->
+  <header class="page-header" data-reveal>
+    <div class="eyebrow">&#10022; Fleet Command</div>
+    <h1 class="page-title">
+      <span class="accent">FLEET</span> STATUS
+    </h1>
+    <p class="page-sub">5 chassis · 6 captains · 42 agents · one substrate</p>
+  </header>
+
+  <!-- SUMMARY STRIP -->
+  <div class="summary-strip" data-band="1" data-reveal>
+    <div class="summary-stat">
+      <div class="s-val m-type-breathe">5</div>
+      <div class="s-lbl">Chassis Online</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <div class="s-val m-type-breathe">6</div>
+      <div class="s-lbl">Captains Active</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <div class="s-val m-type-breathe">42</div>
+      <div class="s-lbl">Total Agents</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <div class="s-val m-type-breathe" style="color:var(--signal-synth)">120K</div>
+      <div class="s-lbl">Blobs in SubSpace</div>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <div class="s-val m-type-breathe" style="color:var(--status-green)">GREEN</div>
+      <div class="s-lbl">Mirror Exercise</div>
+    </div>
+  </div>
+
+  <!-- CHASSIS GRID -->
+  <div class="chassis-grid">
+
+    <!-- 7900XT -->
+    <div class="chassis-card gpu-7900xt" data-band="0" data-tint="#e8b858" data-reveal>
+      <div class="card-head">
+        <div class="card-hostname">
+          7900XT
+          <span class="chassis-num">localhost · 10.69.10.121</span>
+        </div>
+        <div class="status-badge online">
+          <span class="dot"></span>Online
+        </div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-row">
+          <div class="stat-lbl">GPU</div>
+          <div class="stat-val"><span class="hi">AMD RX 7900 XT</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">VRAM</div>
+          <div class="stat-val"><span class="hi">20 GB</span> GDDR6</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Platform</div>
+          <div class="stat-val">Win10 Pro <span class="dim">+ WSL2</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Role</div>
+          <div class="stat-val"><span class="hi">Admiral</span> · FLEET CMD</div>
+        </div>
+      </div>
+      <div class="load-section">
+        <div class="load-label-row">
+          <span class="load-label">GPU Load</span>
+          <span class="load-pct">TTS Active</span>
+        </div>
+        <div class="load-bar"><div class="load-bar-fill" style="transform:scaleX(.72)"></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="agent-pill"><span class="apt">BABEL</span></div>
+        <div class="agent-pill"><span class="apt">FLEET</span></div>
+        <div class="agent-pill"><span class="apt">SUBSYNC</span></div>
+      </div>
+      <div class="card-spectrum">
+        <div class="m-spectrogram" data-spectrogram-count="10" data-spectrogram-from="0" style="color:var(--signal-synth)"></div>
+      </div>
+    </div>
+
+    <!-- 2080ti -->
+    <div class="chassis-card gpu-2080ti" data-band="2" data-reveal>
+      <div class="card-head">
+        <div class="card-hostname">
+          2080TI
+          <span class="chassis-num">10.69.10.102 · SSH :2222</span>
+        </div>
+        <div class="status-badge online">
+          <span class="dot"></span>Online
+        </div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-row">
+          <div class="stat-lbl">GPU</div>
+          <div class="stat-val"><span class="hi">NVIDIA RTX 2080 Ti</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">VRAM</div>
+          <div class="stat-val"><span class="hi">11 GB</span> GDDR6</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Platform</div>
+          <div class="stat-val">Linux <span class="dim">WSL2</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Role</div>
+          <div class="stat-val">Crew <span class="dim">Inference</span></div>
+        </div>
+      </div>
+      <div class="load-section">
+        <div class="load-label-row">
+          <span class="load-label">GPU Load</span>
+          <span class="load-pct" style="color:#a78bfa">38%</span>
+        </div>
+        <div class="load-bar"><div class="load-bar-fill" style="transform:scaleX(.38);background:#a78bfa;box-shadow:0 0 4px #a78bfa"></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="agent-pill"><span class="apt">CREW ×3</span></div>
+        <div class="agent-pill"><span>FORGE pair</span></div>
+      </div>
+      <div class="card-spectrum">
+        <div class="m-spectrogram" data-spectrogram-count="10" data-spectrogram-from="0" style="color:#a78bfa"></div>
+      </div>
+    </div>
+
+    <!-- 3060ti -->
+    <div class="chassis-card gpu-3060ti" data-band="4" data-reveal>
+      <div class="card-head">
+        <div class="card-hostname">
+          3060TI
+          <span class="chassis-num">10.69.10.110 · SSH :2222</span>
+        </div>
+        <div class="status-badge online">
+          <span class="dot"></span>Online
+        </div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-row">
+          <div class="stat-lbl">GPU</div>
+          <div class="stat-val"><span class="hi">NVIDIA RTX 3060 Ti</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">VRAM</div>
+          <div class="stat-val"><span class="hi">8 GB</span> GDDR6</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Platform</div>
+          <div class="stat-val">Linux <span class="dim">WSL2</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Role</div>
+          <div class="stat-val">Crew <span class="dim">Inference</span></div>
+        </div>
+      </div>
+      <div class="load-section">
+        <div class="load-label-row">
+          <span class="load-label">GPU Load</span>
+          <span class="load-pct" style="color:#60a5fa">22%</span>
+        </div>
+        <div class="load-bar"><div class="load-bar-fill" style="transform:scaleX(.22);background:#60a5fa;box-shadow:0 0 4px #60a5fa"></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="agent-pill"><span class="apt">CREW ×3</span></div>
+        <div class="agent-pill"><span>LAWS pair</span></div>
+      </div>
+      <div class="card-spectrum">
+        <div class="m-spectrogram" data-spectrogram-count="10" data-spectrogram-from="0" style="color:#60a5fa"></div>
+      </div>
+    </div>
+
+    <!-- 1050gt -->
+    <div class="chassis-card gpu-1050gt" data-band="6" data-reveal>
+      <div class="card-head">
+        <div class="card-hostname">
+          1050GT
+          <span class="chassis-num">10.69.10.119 · SSH :2222</span>
+        </div>
+        <div class="status-badge standby">
+          <span class="dot"></span>Standby
+        </div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-row">
+          <div class="stat-lbl">GPU</div>
+          <div class="stat-val"><span class="hi">NVIDIA GTX 1050 GT</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">VRAM</div>
+          <div class="stat-val"><span class="hi">4 GB</span> GDDR5</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Platform</div>
+          <div class="stat-val">Linux <span class="dim">WSL2</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Role</div>
+          <div class="stat-val">Light <span class="dim">Workloads</span></div>
+        </div>
+      </div>
+      <div class="load-section">
+        <div class="load-label-row">
+          <span class="load-label">GPU Load</span>
+          <span class="load-pct" style="color:var(--ink-faint)">Idle</span>
+        </div>
+        <div class="load-bar"><div class="load-bar-fill" style="transform:scaleX(.04);background:var(--ink-faint);box-shadow:none"></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="agent-pill"><span class="apt">DOMAIN pair</span></div>
+      </div>
+      <div class="card-spectrum">
+        <div class="m-spectrogram" data-spectrogram-count="10" data-spectrogram-from="0" style="color:var(--ink-faint)"></div>
+      </div>
+    </div>
+
+    <!-- MythServ1 -->
+    <div class="chassis-card gpu-mythserv1" data-band="3" data-reveal>
+      <div class="card-head">
+        <div class="card-hostname">
+          MYTHSERV1
+          <span class="chassis-num">10.69.69.69 WinRM · 10.69.0.2 SSH</span>
+        </div>
+        <div class="status-badge online">
+          <span class="dot"></span>Online
+        </div>
+      </div>
+      <div class="card-stats">
+        <div class="stat-row">
+          <div class="stat-lbl">GPU</div>
+          <div class="stat-val"><span class="hi">NVIDIA GTX 1070</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">VRAM</div>
+          <div class="stat-val"><span class="hi">8 GB</span> GDDR5</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Platform</div>
+          <div class="stat-val">Windows <span class="dim">WinRM</span></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-lbl">Role</div>
+          <div class="stat-val"><span class="hi">Fast Net</span> · MCP Host</div>
+        </div>
+      </div>
+      <div class="load-section">
+        <div class="load-label-row">
+          <span class="load-label">GPU Load</span>
+          <span class="load-pct">14%</span>
+        </div>
+        <div class="load-bar"><div class="load-bar-fill" style="transform:scaleX(.14)"></div></div>
+      </div>
+      <div class="agent-row">
+        <div class="agent-pill"><span class="apt">MCP Fed</span></div>
+        <div class="agent-pill"><span>SubSpace</span></div>
+      </div>
+      <div class="card-spectrum">
+        <div class="m-spectrogram" data-spectrogram-count="10" data-spectrogram-from="0" style="color:var(--signal-machine)"></div>
+      </div>
+    </div>
+
+  </div><!-- /chassis-grid -->
+
+  <!-- CAPTAIN TABLE -->
+  <div class="section-divider"><span class="glyph">✦</span> Captain Roster</div>
+
+  <div class="captain-table" data-reveal>
+    <div class="captain-table-head">
+      <span>Captain</span>
+      <span>Mission</span>
+      <span>Nugget</span>
+      <span>Crew</span>
+      <span>Status</span>
+    </div>
+    <div class="captain-row">
+      <span class="captain-name">FORGE</span>
+      <span class="captain-mission">Bang Fuel Baking</span>
+      <span class="captain-nugget">antnug1</span>
+      <span class="captain-crew">×3</span>
+      <span class="captain-status ready"><span class="dot"></span>Ready</span>
+    </div>
+    <div class="captain-row">
+      <span class="captain-name">LAWS</span>
+      <span class="captain-mission">Constitutional Integrity</span>
+      <span class="captain-nugget">antnug1</span>
+      <span class="captain-crew">×3</span>
+      <span class="captain-status ready"><span class="dot"></span>Ready</span>
+    </div>
+    <div class="captain-row">
+      <span class="captain-name">BABEL</span>
+      <span class="captain-mission">Runtime Binary</span>
+      <span class="captain-nugget">antnug2</span>
+      <span class="captain-crew">×3</span>
+      <span class="captain-status ready"><span class="dot"></span>Ready</span>
+    </div>
+    <div class="captain-row">
+      <span class="captain-name">FLEET</span>
+      <span class="captain-mission">Infrastructure</span>
+      <span class="captain-nugget">antnug2</span>
+      <span class="captain-crew">×3</span>
+      <span class="captain-status ready"><span class="dot"></span>Ready</span>
+    </div>
+    <div class="captain-row">
+      <span class="captain-name">SUBSYNC</span>
+      <span class="captain-mission">Data Movement</span>
+      <span class="captain-nugget">antnug2</span>
+      <span class="captain-crew">×3</span>
+      <span class="captain-status ready"><span class="dot"></span>Ready</span>
+    </div>
+    <div class="captain-row">
+      <span class="captain-name">DOMAIN</span>
+      <span class="captain-mission">Domain Articulations</span>
+      <span class="captain-nugget">antnug3</span>
+      <span class="captain-crew">×3</span>
+      <span class="captain-status standby"><span class="dot"></span>Standby</span>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--signal-synth)"></div>Amber — Admiral / 7900XT</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#a78bfa"></div>Violet — 2080ti</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#60a5fa"></div>Blue — 3060ti</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--ink-faint)"></div>Dim — 1050gt</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--signal-machine)"></div>Cyan — MythServ1 / MCP</div>
+  </div>
+
+</div><!-- /page -->
+
+<script src="_mythos-page.js"></script>
+</body>
+</html>

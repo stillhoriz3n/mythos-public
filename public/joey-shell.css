@@ -1,0 +1,767 @@
+/**
+ * joey-shell.css — Joey's Warm UI Layer (Layer 1)
+ *
+ * The default surface: warm cream, Brooke palette, liquid glass.
+ * Designed for Joey and the general-public face of MythOS.
+ * Audio-reactive custom properties subtly animate depth and glow.
+ *
+ * Fonts: Newsreader (serif headings) + system sans (body)
+ * Motion: Apple timing curves, 3-7s gentle animations
+ * Colors: cream #FAF8F5, Brooke palette (copper, sage, rose)
+ *
+ * Load order: this file after Reset, before component styles.
+ * Requires: Newsreader from Google Fonts
+ *   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&display=swap" rel="stylesheet">
+ */
+
+/* ── ROOT VARIABLES ─────────────────────────────────────────────────────────
+   Brooke palette — named after the warmth of a late-afternoon kitchen.
+   All colors are warm-shifted, never cold. */
+
+:root {
+  /* Cream ground */
+  --joey-cream:       #FAF8F5;
+  --joey-cream-mid:   #F4F0EA;
+  --joey-cream-deep:  #EDE7DC;
+  --joey-cream-dim:   #E2DAD0;
+
+  /* Brooke palette (copper, sage, rose, soft-black) */
+  --joey-copper:      #C4A484;
+  --joey-copper-bright: #D4B494;
+  --joey-copper-dim:  #A88A68;
+  --joey-sage:        #A8B5A0;
+  --joey-sage-bright: #B8C5B0;
+  --joey-sage-dim:    #8A9882;
+  --joey-rose:        #D4A5A5;
+  --joey-rose-bright: #E0B5B5;
+  --joey-rose-dim:    #B88888;
+  --joey-soft-black:  #2D2A26;
+  --joey-soft-black-mid: #3D3A34;
+  --joey-soft-black-dim: #5A5650;
+
+  /* Ink hierarchy */
+  --joey-ink-strong:  #2D2A26;
+  --joey-ink-body:    #4A4540;
+  --joey-ink-mid:     #7A736A;
+  --joey-ink-soft:    #A09890;
+  --joey-ink-faint:   #C8C0B8;
+
+  /* Functional accent: copper for primary CTAs */
+  --joey-accent:      var(--joey-copper);
+  --joey-accent-hover: var(--joey-copper-bright);
+
+  /* Glass */
+  --joey-glass-bg:    rgba(250, 248, 245, 0.72);
+  --joey-glass-edge:  rgba(196, 164, 132, 0.18);
+  --joey-glass-shine: rgba(255, 255, 255, 0.55);
+
+  /* Shadows (warm-tinted, never cold gray) */
+  --joey-shadow-sm:   0 1px 4px rgba(45, 42, 38, 0.06), 0 1px 2px rgba(45, 42, 38, 0.04);
+  --joey-shadow-md:   0 4px 16px rgba(45, 42, 38, 0.08), 0 1px 4px rgba(45, 42, 38, 0.05);
+  --joey-shadow-lg:   0 12px 40px rgba(45, 42, 38, 0.10), 0 4px 12px rgba(45, 42, 38, 0.06);
+
+  /* Typography */
+  --joey-font-serif:  'Newsreader', 'Georgia', serif;
+  --joey-font-body:   -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+  /* Apple timing curves */
+  --joey-ease:        cubic-bezier(0.25, 0.1, 0.25, 1.0);
+  --joey-ease-out:    cubic-bezier(0.0, 0.0, 0.4, 1.0);
+  --joey-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1.0);
+  --joey-duration-fast:   150ms;
+  --joey-duration-base:   280ms;
+  --joey-duration-slow:   480ms;
+  --joey-duration-gentle: 700ms;
+
+  /* Spacing */
+  --joey-sp-xs:  4px;
+  --joey-sp-sm:  8px;
+  --joey-sp-md:  16px;
+  --joey-sp-lg:  24px;
+  --joey-sp-xl:  40px;
+  --joey-sp-2xl: 64px;
+  --joey-sp-3xl: 96px;
+
+  /* Layout */
+  --joey-nav-h:     56px;
+  --joey-sidebar-w: 260px;
+  --joey-content-max: 680px;
+  --joey-wide-max:   1100px;
+  --joey-radius-sm:  6px;
+  --joey-radius-md:  12px;
+  --joey-radius-lg:  20px;
+  --joey-radius-full: 999px;
+
+  /* Audio-reactive passthrough (fallback 0 when silent) */
+  --envelope:     0;
+  --beat-pulse:   0;
+  --band-1:       0;
+  --band-4:       0;
+  --kick:         0;
+}
+
+/* ── GROUND ──────────────────────────────────────────────────────────────────
+   The warm cream background is the stage. No stark whites, no cold grays. */
+
+.joey-shell,
+[data-joey-shell] {
+  background: var(--joey-cream);
+  color:      var(--joey-ink-body);
+  font-family: var(--joey-font-body);
+  font-size:  16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── NAV ─────────────────────────────────────────────────────────────────────
+   Top navigation strip: warm glass, copper underline that gently pulses
+   with the bassline. */
+
+.joey-nav {
+  position: sticky;
+  top: 0;
+  height: var(--joey-nav-h);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--joey-sp-xl);
+  gap: var(--joey-sp-lg);
+  background: var(--joey-glass-bg);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid color-mix(
+    in srgb,
+    var(--joey-glass-edge) 100%,
+    var(--joey-copper) calc(var(--envelope, 0) * 20%)
+  );
+  box-shadow: var(--joey-shadow-sm);
+  z-index: 100;
+  transition:
+    border-color var(--joey-duration-base) var(--joey-ease),
+    box-shadow   var(--joey-duration-base) var(--joey-ease);
+}
+
+/* Nav brand wordmark */
+.joey-nav__brand {
+  font-family: var(--joey-font-serif);
+  font-weight: 400;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--joey-soft-black);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: color var(--joey-duration-fast) var(--joey-ease);
+}
+.joey-nav__brand:hover { color: var(--joey-copper); }
+
+/* Nav link list */
+.joey-nav__links {
+  display: flex;
+  align-items: center;
+  gap: var(--joey-sp-md);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+}
+
+.joey-nav__link {
+  font-size: 14px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  color: var(--joey-ink-mid);
+  text-decoration: none;
+  padding: var(--joey-sp-xs) var(--joey-sp-sm);
+  border-radius: var(--joey-radius-sm);
+  transition:
+    color  var(--joey-duration-fast) var(--joey-ease),
+    background var(--joey-duration-fast) var(--joey-ease);
+}
+.joey-nav__link:hover {
+  color: var(--joey-ink-strong);
+  background: rgba(196, 164, 132, 0.10);
+}
+.joey-nav__link[aria-current="page"] {
+  color: var(--joey-copper);
+  background: rgba(196, 164, 132, 0.12);
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────────────────────────
+   Left sidebar for persistent navigation on wider viewports. */
+
+.joey-sidebar {
+  width: var(--joey-sidebar-w);
+  flex-shrink: 0;
+  background: var(--joey-cream-mid);
+  border-right: 1px solid var(--joey-glass-edge);
+  padding: var(--joey-sp-xl) var(--joey-sp-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--joey-sp-md);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.joey-sidebar__group-label {
+  font-family: var(--joey-font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--joey-ink-soft);
+  margin-bottom: var(--joey-sp-xs);
+  margin-top: var(--joey-sp-md);
+}
+.joey-sidebar__group-label:first-child { margin-top: 0; }
+
+.joey-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: var(--joey-sp-sm);
+  padding: var(--joey-sp-sm) var(--joey-sp-md);
+  border-radius: var(--joey-radius-sm);
+  font-size: 14px;
+  color: var(--joey-ink-body);
+  text-decoration: none;
+  transition:
+    background var(--joey-duration-fast) var(--joey-ease),
+    color      var(--joey-duration-fast) var(--joey-ease);
+}
+.joey-sidebar__link:hover {
+  background: rgba(196, 164, 132, 0.12);
+  color: var(--joey-ink-strong);
+}
+.joey-sidebar__link[aria-current="page"] {
+  background: rgba(196, 164, 132, 0.18);
+  color: var(--joey-copper);
+  font-weight: 500;
+}
+
+/* ── HERO ─────────────────────────────────────────────────────────────────────
+   Large serif heading section. Audio-reactive: bass gently lifts the radial
+   warm center; beat-pulse nudges the heading scale (very subtly). */
+
+.joey-hero {
+  padding: var(--joey-sp-3xl) var(--joey-sp-xl);
+  background: radial-gradient(
+    ellipse at 40% 60%,
+    color-mix(in srgb, var(--joey-cream) 60%, var(--joey-copper) calc(8% + 4% * var(--band-1, 0))) 0%,
+    var(--joey-cream-mid) 50%,
+    var(--joey-cream)     100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.joey-hero__eyebrow {
+  font-family: var(--joey-font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--joey-copper);
+  margin-bottom: var(--joey-sp-lg);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--joey-sp-sm);
+  opacity: 0;
+  animation: joey-rise 0.7s var(--joey-ease-out) 0.1s forwards;
+}
+.joey-hero__eyebrow::after {
+  content: "";
+  width: 28px;
+  height: 1px;
+  background: var(--joey-copper);
+  opacity: 0.5;
+}
+
+.joey-hero__title {
+  font-family: var(--joey-font-serif);
+  font-weight: 400;
+  font-size: clamp(36px, 6vw, 72px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--joey-ink-strong);
+  max-width: 720px;
+  margin-bottom: var(--joey-sp-lg);
+  /* Subtle scale on beat — very small amplitude */
+  transform: scale(calc(1 + 0.006 * var(--beat-pulse, 0)));
+  transition: transform 60ms linear;
+  opacity: 0;
+  animation:
+    joey-rise 0.7s var(--joey-ease-out) 0.25s forwards;
+}
+
+.joey-hero__subtitle {
+  font-family: var(--joey-font-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(16px, 2vw, 22px);
+  line-height: 1.5;
+  color: var(--joey-ink-mid);
+  max-width: 540px;
+  margin-bottom: var(--joey-sp-xl);
+  opacity: 0;
+  animation: joey-rise 0.7s var(--joey-ease-out) 0.4s forwards;
+}
+
+.joey-hero__cta {
+  opacity: 0;
+  animation: joey-rise 0.7s var(--joey-ease-out) 0.55s forwards;
+}
+
+@keyframes joey-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── CARD — liquid glass ──────────────────────────────────────────────────────
+   The primary surface unit. Warm glass: frosted, with a copper-tinted edge
+   that very gently brightens with --envelope (overall loudness). */
+
+.joey-card {
+  background: var(--joey-glass-bg);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border: 1px solid color-mix(
+    in srgb,
+    var(--joey-glass-edge) 100%,
+    var(--joey-copper) calc(var(--envelope, 0) * 15%)
+  );
+  border-radius: var(--joey-radius-md);
+  padding: var(--joey-sp-xl);
+  box-shadow:
+    var(--joey-shadow-md),
+    inset 0 1px 0 var(--joey-glass-shine);
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color var(--joey-duration-base) var(--joey-ease),
+    box-shadow   var(--joey-duration-base) var(--joey-ease);
+}
+
+/* Copper top-edge accent stripe */
+.joey-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--joey-copper) calc(30% + 30% * var(--envelope, 0)), transparent),
+    transparent
+  );
+  transition: background var(--joey-duration-base) var(--joey-ease);
+}
+
+/* Hover lift */
+.joey-card:hover {
+  box-shadow:
+    var(--joey-shadow-lg),
+    inset 0 1px 0 var(--joey-glass-shine);
+  border-color: rgba(196, 164, 132, 0.30);
+  transform: translateY(-1px);
+  transition:
+    transform     var(--joey-duration-fast) var(--joey-ease-spring),
+    box-shadow    var(--joey-duration-fast) var(--joey-ease),
+    border-color  var(--joey-duration-fast) var(--joey-ease);
+}
+
+/* ── GRID ─────────────────────────────────────────────────────────────────────
+   Responsive grid: auto-fills at a sensible column width, gaps match the
+   spatial rhythm. */
+
+.joey-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: var(--joey-sp-lg);
+  max-width: var(--joey-wide-max);
+  margin: 0 auto;
+}
+
+/* Two columns at explicit breakpoints */
+.joey-grid--2 {
+  grid-template-columns: repeat(auto-fill, minmax(min(440px, 100%), 1fr));
+}
+/* Three columns */
+.joey-grid--3 {
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+}
+
+/* ── BUTTON ──────────────────────────────────────────────────────────────────
+   Warm, rounded. Primary = filled copper. Secondary = outlined. Ghost = text.
+   Subtle hover glow from the bass band (very low amplitude — atmosphere only). */
+
+.joey-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--joey-sp-sm);
+  padding: 10px 22px;
+  border-radius: var(--joey-radius-full);
+  font-family: var(--joey-font-body);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  text-decoration: none;
+  border: 2px solid transparent;
+  transition:
+    background    var(--joey-duration-fast) var(--joey-ease),
+    border-color  var(--joey-duration-fast) var(--joey-ease),
+    color         var(--joey-duration-fast) var(--joey-ease),
+    box-shadow    var(--joey-duration-fast) var(--joey-ease),
+    transform     var(--joey-duration-fast) var(--joey-ease-spring);
+
+  /* Audio-reactive glow: copper warmth rises with bass. Stays very subtle. */
+  box-shadow:
+    0 0 0 0 transparent,
+    0 0 calc(4px + 8px * var(--band-1, 0)) rgba(196, 164, 132, calc(0.0 + 0.25 * var(--band-1, 0)));
+}
+
+/* Primary */
+.joey-button,
+.joey-button--primary {
+  background: var(--joey-copper);
+  color: var(--joey-cream);
+  border-color: var(--joey-copper);
+}
+.joey-button:hover,
+.joey-button--primary:hover {
+  background: var(--joey-copper-bright);
+  border-color: var(--joey-copper-bright);
+  transform: translateY(-1px);
+  box-shadow:
+    0 4px 12px rgba(196, 164, 132, 0.30),
+    0 0 calc(4px + 8px * var(--band-1, 0)) rgba(196, 164, 132, calc(0.10 + 0.25 * var(--band-1, 0)));
+}
+.joey-button:active,
+.joey-button--primary:active {
+  transform: translateY(0);
+  transition-duration: 80ms;
+}
+
+/* Secondary — outlined */
+.joey-button--secondary {
+  background: transparent;
+  color: var(--joey-copper);
+  border-color: var(--joey-copper);
+}
+.joey-button--secondary:hover {
+  background: rgba(196, 164, 132, 0.10);
+  border-color: var(--joey-copper-bright);
+  color: var(--joey-copper-bright);
+  transform: translateY(-1px);
+}
+
+/* Ghost — text only */
+.joey-button--ghost {
+  background: transparent;
+  color: var(--joey-ink-mid);
+  border-color: transparent;
+}
+.joey-button--ghost:hover {
+  color: var(--joey-ink-strong);
+  background: rgba(45, 42, 38, 0.05);
+}
+
+/* Rose accent (Joey-specific warm action) */
+.joey-button--rose {
+  background: var(--joey-rose);
+  color: var(--joey-cream);
+  border-color: var(--joey-rose);
+}
+.joey-button--rose:hover {
+  background: var(--joey-rose-bright);
+  border-color: var(--joey-rose-bright);
+}
+
+/* Sage accent */
+.joey-button--sage {
+  background: var(--joey-sage);
+  color: var(--joey-cream);
+  border-color: var(--joey-sage);
+}
+.joey-button--sage:hover {
+  background: var(--joey-sage-bright);
+  border-color: var(--joey-sage-bright);
+}
+
+/* ── TYPOGRAPHY UTILITIES ────────────────────────────────────────────────────*/
+
+.joey-serif {
+  font-family: var(--joey-font-serif);
+}
+.joey-serif-italic {
+  font-family: var(--joey-font-serif);
+  font-style: italic;
+  font-weight: 300;
+}
+
+.joey-h1 {
+  font-family: var(--joey-font-serif);
+  font-weight: 400;
+  font-size: clamp(28px, 5vw, 56px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--joey-ink-strong);
+}
+.joey-h2 {
+  font-family: var(--joey-font-serif);
+  font-weight: 400;
+  font-size: clamp(22px, 3.5vw, 40px);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--joey-ink-strong);
+}
+.joey-h3 {
+  font-family: var(--joey-font-serif);
+  font-weight: 400;
+  font-size: clamp(18px, 2.5vw, 28px);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--joey-ink-strong);
+}
+
+.joey-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--joey-copper);
+}
+.joey-label--sage   { color: var(--joey-sage-dim); }
+.joey-label--rose   { color: var(--joey-rose-dim); }
+.joey-label--muted  { color: var(--joey-ink-soft); }
+
+.joey-body {
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--joey-ink-body);
+  max-width: var(--joey-content-max);
+}
+.joey-caption {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--joey-ink-mid);
+}
+
+/* ── INPUT ───────────────────────────────────────────────────────────────────*/
+
+.joey-input {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: var(--joey-cream);
+  border: 1.5px solid var(--joey-cream-dim);
+  border-radius: var(--joey-radius-sm);
+  font-family: var(--joey-font-body);
+  font-size: 15px;
+  color: var(--joey-ink-strong);
+  outline: none;
+  transition:
+    border-color var(--joey-duration-fast) var(--joey-ease),
+    box-shadow   var(--joey-duration-fast) var(--joey-ease);
+}
+.joey-input::placeholder { color: var(--joey-ink-faint); }
+.joey-input:focus {
+  border-color: var(--joey-copper);
+  box-shadow: 0 0 0 3px rgba(196, 164, 132, 0.18);
+}
+
+/* ── DIVIDER ─────────────────────────────────────────────────────────────────*/
+
+.joey-divider {
+  height: 1px;
+  background: var(--joey-glass-edge);
+  border: none;
+  margin: var(--joey-sp-xl) 0;
+}
+
+.joey-divider--accented {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--joey-copper),
+    transparent
+  );
+  opacity: 0.25;
+}
+
+/* ── BADGE / PILL ─────────────────────────────────────────────────────────── */
+
+.joey-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--joey-sp-xs);
+  padding: 2px 10px;
+  border-radius: var(--joey-radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.joey-badge--copper {
+  background: rgba(196, 164, 132, 0.14);
+  color: var(--joey-copper-dim);
+  border: 1px solid rgba(196, 164, 132, 0.24);
+}
+.joey-badge--sage {
+  background: rgba(168, 181, 160, 0.14);
+  color: var(--joey-sage-dim);
+  border: 1px solid rgba(168, 181, 160, 0.24);
+}
+.joey-badge--rose {
+  background: rgba(212, 165, 165, 0.14);
+  color: var(--joey-rose-dim);
+  border: 1px solid rgba(212, 165, 165, 0.24);
+}
+
+/* ── AUDIO-REACTIVE AMBIENT EFFECTS ─────────────────────────────────────────
+   These should be subtle enough that a non-musician wouldn't notice unless
+   they were looking. The room breathes — it does not perform. */
+
+/* Warm pulse dot for "live" status indicators */
+.joey-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--joey-copper);
+  display: inline-block;
+  transform: scale(calc(1 + 0.5 * var(--beat-pulse, 0)));
+  opacity: calc(0.6 + 0.4 * var(--envelope, 0));
+  box-shadow: 0 0 calc(3px + 6px * var(--envelope, 0)) var(--joey-copper);
+  transition:
+    transform 60ms linear,
+    opacity   60ms linear,
+    box-shadow 60ms linear;
+  animation: joey-idle-dot 4.5s ease-in-out infinite;
+}
+html[data-audio-playing] .joey-live-dot { animation: none; }
+
+@keyframes joey-idle-dot {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 0.9; transform: scale(1.2); }
+}
+
+/* Sage live dot variant */
+.joey-live-dot--sage {
+  background: var(--joey-sage);
+  box-shadow: 0 0 calc(3px + 6px * var(--envelope, 0)) var(--joey-sage);
+  --beat-pulse: var(--band-4, 0); /* mid-band */
+}
+
+/* Rose live dot variant */
+.joey-live-dot--rose {
+  background: var(--joey-rose);
+  box-shadow: 0 0 calc(3px + 6px * var(--envelope, 0)) var(--joey-rose);
+}
+
+/* Card ambient glow — bass-reactive edge warmth. Set on a .joey-card. */
+.joey-card--reactive {
+  border-color: color-mix(
+    in srgb,
+    var(--joey-glass-edge) 100%,
+    var(--joey-copper) calc(var(--band-1, 0) * 30%)
+  );
+  box-shadow:
+    var(--joey-shadow-md),
+    inset 0 1px 0 var(--joey-glass-shine),
+    0 0 calc(0px + 20px * var(--band-1, 0))
+      rgba(196, 164, 132, calc(var(--band-1, 0) * 0.12));
+  transition:
+    border-color 80ms linear,
+    box-shadow   80ms linear;
+}
+
+/* Hero ambient shimmer — a very slow shimmer on the background gradient. */
+.joey-hero--ambient {
+  background: radial-gradient(
+    ellipse at calc(40% + 5% * var(--beat-bar-phase, 0.5)) 60%,
+    color-mix(
+      in srgb,
+      var(--joey-cream) 60%,
+      var(--joey-copper) calc(8% + 6% * var(--band-1, 0))
+    ) 0%,
+    var(--joey-cream-mid) 50%,
+    var(--joey-cream)     100%
+  );
+}
+
+/* ── GENTLE IDLE ANIMATION ───────────────────────────────────────────────────
+   3-7s gentle ambient animations for the warm UI when no audio is playing.
+   Suppressed when audio-reactive properties are driving motion. */
+
+@keyframes joey-gentle-float {
+  0%, 100% { transform: translateY(0);   }
+  50%       { transform: translateY(-4px); }
+}
+@keyframes joey-gentle-fade {
+  0%, 100% { opacity: 0.7; }
+  50%       { opacity: 1.0; }
+}
+@keyframes joey-gentle-glow {
+  0%, 100% { box-shadow: var(--joey-shadow-sm); }
+  50%       { box-shadow: var(--joey-shadow-md), 0 0 16px rgba(196, 164, 132, 0.12); }
+}
+
+.joey-float {
+  animation: joey-gentle-float 5s ease-in-out infinite;
+}
+.joey-glow-pulse {
+  animation: joey-gentle-glow 6s ease-in-out infinite;
+}
+html[data-audio-playing] .joey-float,
+html[data-audio-playing] .joey-glow-pulse {
+  animation: none;
+}
+
+/* ── SCROLLBAR ────────────────────────────────────────────────────────────── */
+.joey-shell ::-webkit-scrollbar { width: 6px; }
+.joey-shell ::-webkit-scrollbar-track { background: transparent; }
+.joey-shell ::-webkit-scrollbar-thumb {
+  background: var(--joey-cream-dim);
+  border-radius: 3px;
+}
+.joey-shell ::-webkit-scrollbar-thumb:hover {
+  background: var(--joey-ink-faint);
+}
+
+/* ── SELECTION ────────────────────────────────────────────────────────────── */
+.joey-shell ::selection {
+  background: rgba(196, 164, 132, 0.28);
+  color: var(--joey-ink-strong);
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  :root {
+    --joey-sp-3xl: 56px;
+    --joey-sp-2xl: 40px;
+    --joey-sp-xl: 24px;
+    --joey-nav-h: 48px;
+  }
+
+  .joey-nav { padding: 0 var(--joey-sp-lg); }
+  .joey-hero { padding: var(--joey-sp-2xl) var(--joey-sp-lg); }
+  .joey-card { padding: var(--joey-sp-lg); }
+
+  .joey-sidebar {
+    /* On mobile, sidebar collapses — consumers control visibility. */
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--joey-glass-edge);
+    height: auto;
+    padding: var(--joey-sp-md) var(--joey-sp-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  :root { --joey-sp-xl: 16px; }
+  .joey-grid {
+    grid-template-columns: 1fr;
+  }
+}

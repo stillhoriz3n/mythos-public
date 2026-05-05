@@ -1,0 +1,888 @@
+/**
+ * pipe-dream-shell.css — Pipe Dream Dark Engineering Layer (Layer 2)
+ *
+ * The engineering surface: void-black, amber + cyan signal pair,
+ * monospace throughout, corner ticks, sharp edges.
+ * Designed for the Cage OA operator / Chris Lejeune.
+ *
+ * Audio-reactive properties drive subtle border flickers, spectrogram
+ * bars, onset glow, and beat-synced rotation on the Prime Radiant seal.
+ *
+ * Fonts: Archivo (headings) · Fraunces (ornamental italic) · JetBrains Mono (body)
+ * Colors: void #020204 · amber #e8b858 · cyan #4ec9d4
+ * Motion: minimal; snappy; locked to beat clock when audio is live
+ *
+ * NOTE: Fraunces is intentionally present as a spice — use it only for
+ * major key phrases, never for body text or UI labels.
+ */
+
+/* ── ROOT VARIABLES ─────────────────────────────────────────────────────────*/
+
+:root {
+  /* Ground */
+  --pd-void:       #020204;
+  --pd-deep:       #08070d;
+  --pd-panel:      #0c0b12;
+  --pd-surface:    #111019;
+  --pd-elevated:   #161420;
+
+  /* Amber signal */
+  --pd-amber:      #e8b858;
+  --pd-amber-bright: #f5c970;
+  --pd-amber-dim:  #a88238;
+  --pd-amber-muted: rgba(232, 184, 88, 0.15);
+
+  /* Cyan signal */
+  --pd-cyan:       #4ec9d4;
+  --pd-cyan-bright: #70dde6;
+  --pd-cyan-dim:   #2a8c96;
+  --pd-cyan-muted:  rgba(78, 201, 212, 0.12);
+
+  /* Ink hierarchy */
+  --pd-ink-bright: #e8e3d4;
+  --pd-ink-soft:   #b5b0a3;
+  --pd-ink-dim:    #8a8574;
+  --pd-ink-faint:  #4a4740;
+
+  /* Rule lines */
+  --pd-rule:       #242a33;
+  --pd-rule-soft:  #1b2028;
+
+  /* Typography */
+  --pd-font-head:  'Archivo', sans-serif;
+  --pd-font-mono:  'JetBrains Mono', ui-monospace, monospace;
+  --pd-font-serif: 'Fraunces', Georgia, serif;
+
+  /* Corner tick geometry */
+  --pd-tick-size:    10px;
+  --pd-tick-weight:  1.5px;
+  --pd-tick-color:   var(--pd-cyan);
+
+  /* Motion */
+  --pd-ease-snap:   cubic-bezier(0.22, 1.0, 0.36, 1.0);
+  --pd-ease-linear: linear;
+  --pd-duration-instant: 60ms;
+  --pd-duration-fast:    120ms;
+  --pd-duration-base:    200ms;
+
+  /* Layout */
+  --pd-header-h:     48px;
+  --pd-sidebar-w:    240px;
+  --pd-content-max:  1280px;
+  --pd-grid-line:    1px solid var(--pd-rule-soft);
+
+  /* Audio-reactive passthrough (engine writes these to html) */
+  --envelope:       0;
+  --beat-pulse:     0;
+  --beat-bar-pulse: 0;
+  --beat-phase:     0;
+  --beat-bar-phase: 0;
+  --band-0:         0;
+  --band-1:         0;
+  --band-4:         0;
+  --band-8:         0;
+  --onset-bass:     0;
+  --onset-mid:      0;
+  --onset-high:     0;
+  --kick:           0;
+  --snare:          0;
+  --hat:            0;
+}
+
+/* ── GROUND ──────────────────────────────────────────────────────────────────*/
+
+.pd-shell,
+[data-pd-shell] {
+  background: var(--pd-void);
+  color: var(--pd-ink-bright);
+  font-family: var(--pd-font-mono);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── CORNER TICK MIXIN ────────────────────────────────────────────────────────
+   Applied via the .pd-ticks class. Four L-shaped corner marks rendered
+   entirely in CSS — no extra markup needed. Reactive: tick color pulses
+   with onset-mid on-beat. */
+
+.pd-ticks {
+  position: relative;
+}
+
+.pd-ticks::before,
+.pd-ticks::after {
+  content: "";
+  position: absolute;
+  width: var(--pd-tick-size);
+  height: var(--pd-tick-size);
+  pointer-events: none;
+  /* Color tracks onset-mid (snare/hat presence) */
+  border-color: color-mix(
+    in srgb,
+    var(--pd-tick-color) 100%,
+    var(--pd-amber) calc(var(--onset-mid, 0) * 60%)
+  );
+  opacity: calc(0.4 + 0.6 * (var(--onset-mid, 0) + var(--envelope, 0) * 0.3));
+  transition:
+    border-color var(--pd-duration-instant) var(--pd-ease-linear),
+    opacity      var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* Top-left + bottom-right */
+.pd-ticks::before {
+  top: 0; left: 0;
+  border-top:  var(--pd-tick-weight) solid;
+  border-left: var(--pd-tick-weight) solid;
+}
+.pd-ticks::after {
+  bottom: 0; right: 0;
+  border-bottom: var(--pd-tick-weight) solid;
+  border-right:  var(--pd-tick-weight) solid;
+}
+
+/* Top-right + bottom-left via a generated sibling — we use a ::before
+   on the inner .pd-ticks__inner child, so place it where needed.
+   Alternatively, compose with pd-ticks-all on a wrapper. */
+.pd-ticks-inner {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.pd-ticks-inner::before,
+.pd-ticks-inner::after {
+  content: "";
+  position: absolute;
+  width: var(--pd-tick-size);
+  height: var(--pd-tick-size);
+  border-color: color-mix(
+    in srgb,
+    var(--pd-tick-color) 100%,
+    var(--pd-amber) calc(var(--onset-mid, 0) * 60%)
+  );
+  opacity: calc(0.4 + 0.6 * (var(--onset-mid, 0) + var(--envelope, 0) * 0.3));
+  transition:
+    border-color var(--pd-duration-instant) var(--pd-ease-linear),
+    opacity      var(--pd-duration-instant) var(--pd-ease-linear);
+}
+.pd-ticks-inner::before {
+  top: 0; right: 0;
+  border-top:   var(--pd-tick-weight) solid;
+  border-right: var(--pd-tick-weight) solid;
+}
+.pd-ticks-inner::after {
+  bottom: 0; left: 0;
+  border-bottom: var(--pd-tick-weight) solid;
+  border-left:   var(--pd-tick-weight) solid;
+}
+
+/* ── HEADER / LENS ───────────────────────────────────────────────────────────
+   The Pipe Dream top bar. Lens = a horizontal strip with corner ticks,
+   amber brand, and a live status cluster. The amber rule at the bottom
+   brightens on beat-bar-pulse (every 4 beats). */
+
+.pd-header {
+  position: sticky;
+  top: 0;
+  height: var(--pd-header-h);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  background: rgba(12, 11, 18, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid color-mix(
+    in srgb,
+    var(--pd-rule) 100%,
+    var(--pd-amber) calc(var(--beat-bar-pulse, 0) * 50%)
+  );
+  z-index: 100;
+  /* Ticks via the mixin */
+  position: sticky;
+  transition: border-color var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* Amber underline pulse on bar */
+.pd-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--pd-amber);
+  opacity: calc(var(--beat-bar-pulse, 0) * 0.7);
+  transition: opacity var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+.pd-header__brand {
+  font-family: var(--pd-font-head);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pd-ink-bright);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  transition: color var(--pd-duration-fast) var(--pd-ease-snap);
+}
+.pd-header__brand:hover { color: var(--pd-amber); }
+
+.pd-header__brand-sub {
+  font-family: var(--pd-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--pd-ink-dim);
+}
+
+.pd-header__sep {
+  width: 1px;
+  height: 20px;
+  background: var(--pd-rule);
+}
+
+.pd-header__breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--pd-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pd-ink-dim);
+  flex: 1;
+}
+.pd-header__breadcrumb .pd-crumb-current { color: var(--pd-amber); }
+
+.pd-header__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+
+/* ── CARD — sharp-edged, cyan-bordered ───────────────────────────────────────
+   The void card. No blur, no warmth — vacuum geometry with a precise cyan
+   border. Border brightness tracks --envelope. Corner ticks applied via class. */
+
+.pd-card {
+  background: var(--pd-panel);
+  border: 1px solid color-mix(
+    in srgb,
+    var(--pd-rule) 100%,
+    var(--pd-cyan) calc(var(--envelope, 0) * 35%)
+  );
+  border-radius: 2px;
+  padding: 24px 28px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* Cyan top edge, brightens on beat-pulse */
+.pd-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: color-mix(
+    in srgb,
+    var(--pd-cyan) calc(30% + 50% * var(--beat-pulse, 0)),
+    transparent
+  );
+  transition: background var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* Amber top edge variant */
+.pd-card--amber::before {
+  background: color-mix(
+    in srgb,
+    var(--pd-amber) calc(30% + 50% * var(--beat-pulse, 0)),
+    transparent
+  );
+}
+
+/* Active / selected state */
+.pd-card--active {
+  background: var(--pd-elevated);
+  border-color: color-mix(
+    in srgb,
+    var(--pd-cyan) calc(50% + 30% * var(--envelope, 0)),
+    var(--pd-rule)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(78, 201, 212, 0.08),
+    0 0 20px rgba(78, 201, 212, calc(0.05 + 0.08 * var(--envelope, 0)));
+}
+
+/* ── GRID — engineering grid with amber lines ─────────────────────────────── */
+
+.pd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  gap: 1px;
+  background: var(--pd-rule-soft);  /* gap rendered as grid lines */
+}
+
+.pd-grid > * {
+  background: var(--pd-panel);
+}
+
+/* Explicit column variants */
+.pd-grid--2  { grid-template-columns: repeat(2, 1fr); }
+.pd-grid--3  { grid-template-columns: repeat(3, 1fr); }
+.pd-grid--4  { grid-template-columns: repeat(4, 1fr); }
+.pd-grid--12 { grid-template-columns: repeat(12, 1fr); }
+
+/* Amber hairline accent between column groups */
+.pd-grid--amber-divider {
+  background: color-mix(
+    in srgb,
+    var(--pd-rule-soft) 100%,
+    var(--pd-amber) calc(var(--envelope, 0) * 20%)
+  );
+}
+
+/* ── SIDEBAR — left engineering navigation ─────────────────────────────────── */
+
+.pd-sidebar {
+  width: var(--pd-sidebar-w);
+  flex-shrink: 0;
+  background: var(--pd-deep);
+  border-right: var(--pd-grid-line);
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.pd-sidebar__label {
+  font-family: var(--pd-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--pd-ink-faint);
+  padding: 12px 20px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pd-sidebar__label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--pd-rule-soft);
+}
+
+.pd-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  font-family: var(--pd-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--pd-ink-soft);
+  text-decoration: none;
+  position: relative;
+  transition:
+    color      var(--pd-duration-fast) var(--pd-ease-snap),
+    background var(--pd-duration-fast) var(--pd-ease-snap);
+}
+.pd-sidebar__link:hover {
+  color: var(--pd-ink-bright);
+  background: color-mix(in srgb, var(--pd-cyan) 4%, transparent);
+}
+.pd-sidebar__link[aria-current="page"] {
+  color: var(--pd-amber);
+  background: color-mix(in srgb, var(--pd-amber) 6%, transparent);
+}
+/* Active left edge marker */
+.pd-sidebar__link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--pd-amber);
+  /* Flicker with beat-bar-pulse */
+  opacity: calc(0.8 + 0.2 * var(--beat-bar-pulse, 0));
+  transition: opacity var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* ── BUTTON — flat monospace ─────────────────────────────────────────────────
+   No gradients, no shadows. Amber fill or amber outline. Text is monospace.
+   Beat-pulse causes a subtle amber flash on the active button. */
+
+.pd-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 2px;
+  font-family: var(--pd-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  background: none;
+  transition:
+    background     var(--pd-duration-fast) var(--pd-ease-snap),
+    border-color   var(--pd-duration-fast) var(--pd-ease-snap),
+    color          var(--pd-duration-fast) var(--pd-ease-snap);
+}
+
+/* Primary: amber fill */
+.pd-button,
+.pd-button--primary {
+  background: var(--pd-amber);
+  color: var(--pd-void);
+  border-color: var(--pd-amber);
+}
+.pd-button:hover,
+.pd-button--primary:hover {
+  background: var(--pd-amber-bright);
+  border-color: var(--pd-amber-bright);
+}
+/* Subtle onset-bass pulse on primary active button */
+.pd-button--reactive {
+  background: color-mix(
+    in srgb,
+    var(--pd-amber) 100%,
+    var(--pd-amber-bright) calc(var(--onset-bass, 0) * 60%)
+  );
+}
+
+/* Secondary: amber outline */
+.pd-button--secondary {
+  background: transparent;
+  color: var(--pd-amber);
+  border-color: var(--pd-amber-dim);
+}
+.pd-button--secondary:hover {
+  border-color: var(--pd-amber);
+  color: var(--pd-amber-bright);
+  background: var(--pd-amber-muted);
+}
+
+/* Cyan outline variant */
+.pd-button--cyan {
+  background: transparent;
+  color: var(--pd-cyan);
+  border-color: var(--pd-cyan-dim);
+}
+.pd-button--cyan:hover {
+  border-color: var(--pd-cyan);
+  color: var(--pd-cyan-bright);
+  background: var(--pd-cyan-muted);
+}
+
+/* Ghost: dim text, no border */
+.pd-button--ghost {
+  background: transparent;
+  color: var(--pd-ink-dim);
+  border-color: transparent;
+}
+.pd-button--ghost:hover {
+  color: var(--pd-ink-soft);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Danger */
+.pd-button--danger {
+  background: transparent;
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+.pd-button--danger:hover {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: #f87171;
+}
+
+/* ── CANVAS AREA — full-width graph background ────────────────────────────── */
+
+.pd-canvas {
+  background: var(--pd-void);
+  border: 1px solid var(--pd-rule-soft);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+  /* Subtle cyan inner glow tracks --envelope */
+  box-shadow:
+    inset 0 0 40px rgba(78, 201, 212, calc(0.0 + 0.05 * var(--envelope, 0))),
+    inset 0 0  6px rgba(78, 201, 212, calc(0.0 + 0.08 * var(--envelope, 0)));
+  transition: box-shadow var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* Grid lines inside the canvas (pure CSS, no SVG needed) */
+.pd-canvas--grid {
+  background-image:
+    linear-gradient(var(--pd-rule-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pd-rule-soft) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Amber scan-line: a slow horizontal sweep, 1 bar duration */
+.pd-canvas__scan {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg, transparent, var(--pd-amber), transparent
+  );
+  opacity: calc(0.05 + 0.25 * var(--envelope, 0));
+  top: calc(var(--beat-bar-phase, 0) * 100%);
+  transition: top 80ms linear, opacity 80ms linear;
+}
+
+/* ── TYPOGRAPHY UTILITIES ──────────────────────────────────────────────────── */
+
+/* Archivo headings */
+.pd-h1 {
+  font-family: var(--pd-font-head);
+  font-weight: 800;
+  font-size: clamp(28px, 5vw, 56px);
+  letter-spacing: -0.02em;
+  line-height: 1.0;
+  color: var(--pd-ink-bright);
+}
+.pd-h2 {
+  font-family: var(--pd-font-head);
+  font-weight: 700;
+  font-size: clamp(20px, 3.5vw, 36px);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--pd-ink-bright);
+}
+.pd-h3 {
+  font-family: var(--pd-font-head);
+  font-weight: 600;
+  font-size: clamp(14px, 2vw, 22px);
+  letter-spacing: 0em;
+  line-height: 1.2;
+  color: var(--pd-ink-bright);
+}
+
+/* Fraunces ornamental — use sparingly. Key phrases only. */
+.pd-key {
+  font-family: var(--pd-font-serif);
+  font-variation-settings: "opsz" 144;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--pd-amber);
+}
+
+/* Mono eyebrow */
+.pd-eyebrow {
+  font-family: var(--pd-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--pd-ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pd-eyebrow::after {
+  content: "";
+  flex: 1;
+  max-width: 32px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.4;
+}
+
+/* Amber eyebrow */
+.pd-eyebrow--amber { color: var(--pd-amber); }
+.pd-eyebrow--cyan  { color: var(--pd-cyan);  }
+
+/* Body — mono only, as per Pipe Dream doctrine */
+.pd-body {
+  font-family: var(--pd-font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--pd-ink-soft);
+}
+
+/* Metadata / small label */
+.pd-meta {
+  font-family: var(--pd-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pd-ink-dim);
+}
+
+/* Value readout — instrument panel number */
+.pd-value {
+  font-family: var(--pd-font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--pd-amber);
+  /* Subtle glow scales with envelope */
+  text-shadow:
+    0 0 calc(4px + 10px * var(--envelope, 0)) rgba(232, 184, 88, calc(0.2 + 0.4 * var(--envelope, 0)));
+  transition: text-shadow var(--pd-duration-instant) var(--pd-ease-linear);
+}
+.pd-value--cyan {
+  color: var(--pd-cyan);
+  text-shadow:
+    0 0 calc(4px + 10px * var(--envelope, 0)) rgba(78, 201, 212, calc(0.2 + 0.4 * var(--envelope, 0)));
+}
+
+/* ── STATUS PILL ─────────────────────────────────────────────────────────────*/
+
+.pd-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--pd-rule);
+  border-radius: 999px;
+  font-family: var(--pd-font-mono);
+  font-size: 9px;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--pd-ink-dim);
+  /* Border brightens with envelope */
+  border-color: color-mix(
+    in srgb,
+    var(--pd-rule) 100%,
+    var(--pd-amber) calc(var(--envelope, 0) * 30%)
+  );
+  transition: border-color var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+.pd-pill__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--pd-ink-dim);
+  flex-shrink: 0;
+}
+
+/* Online / amber dot — bass-reactive */
+.pd-pill--amber .pd-pill__dot {
+  background: var(--pd-amber);
+  transform: scale(calc(1 + 0.6 * var(--band-1, 0) + 0.7 * var(--kick, 0)));
+  opacity: calc(0.6 + 0.4 * var(--band-1, 0));
+  box-shadow: 0 0 calc(4px + 8px * var(--band-1, 0) + 12px * var(--kick, 0)) var(--pd-amber);
+  transition: transform 60ms linear, opacity 60ms linear, box-shadow 60ms linear;
+  animation: pd-idle-dot 4s ease-in-out infinite;
+}
+html[data-audio-playing] .pd-pill--amber .pd-pill__dot { animation: none; }
+
+/* Cyan dot — treble-reactive */
+.pd-pill--cyan .pd-pill__dot {
+  background: var(--pd-cyan);
+  transform: scale(calc(1 + 0.6 * var(--band-8, 0) + 0.7 * var(--hat, 0)));
+  opacity: calc(0.6 + 0.4 * var(--band-8, 0));
+  box-shadow: 0 0 calc(4px + 8px * var(--band-8, 0) + 12px * var(--hat, 0)) var(--pd-cyan);
+  transition: transform 60ms linear, opacity 60ms linear, box-shadow 60ms linear;
+  animation: pd-idle-dot 4s ease-in-out infinite;
+  animation-delay: 1.3s;
+}
+html[data-audio-playing] .pd-pill--cyan .pd-pill__dot { animation: none; }
+
+@keyframes pd-idle-dot {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 1.0; transform: scale(1.2); }
+}
+
+/* ── DIVIDER ─────────────────────────────────────────────────────────────────*/
+
+.pd-rule {
+  height: 1px;
+  background: var(--pd-rule);
+  border: none;
+  margin: 0;
+}
+.pd-rule--amber {
+  background: linear-gradient(90deg, transparent, var(--pd-amber-dim), transparent);
+  opacity: 0.35;
+}
+.pd-rule--cyan {
+  background: linear-gradient(90deg, transparent, var(--pd-cyan-dim), transparent);
+  opacity: 0.35;
+}
+
+/* ── INPUT ───────────────────────────────────────────────────────────────────*/
+
+.pd-input {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--pd-void);
+  border: 1px solid var(--pd-rule);
+  border-radius: 2px;
+  font-family: var(--pd-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--pd-ink-bright);
+  outline: none;
+  transition:
+    border-color var(--pd-duration-fast) var(--pd-ease-snap),
+    box-shadow   var(--pd-duration-fast) var(--pd-ease-snap);
+}
+.pd-input::placeholder { color: var(--pd-ink-faint); }
+.pd-input:focus {
+  border-color: var(--pd-amber);
+  box-shadow: 0 0 0 2px rgba(232, 184, 88, 0.15);
+}
+
+/* ── SPECTROGRAM STRIP ───────────────────────────────────────────────────────
+   A 10-band amber/cyan mini-spectrum for the Pipe Dream status bar.
+   Uses the .m-spectrogram hook from mythos-meters.css but overrides
+   colors to fit the void palette. */
+
+.pd-spectrogram {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 1px;
+  overflow: hidden;
+  height: 24px;
+}
+
+.pd-spectrogram > span {
+  flex: 1;
+  min-width: 2px;
+  transform-origin: bottom center;
+  transform: scaleY(var(--band-level, 0.02));
+  height: 100%;
+  transition: transform 16ms linear;
+  border-radius: 0;
+}
+
+/* Bass/low bands: amber */
+.pd-spectrogram > span:nth-child(-n+4) {
+  background: var(--pd-amber);
+}
+/* High bands: cyan */
+.pd-spectrogram > span:nth-child(n+7) {
+  background: var(--pd-cyan);
+}
+/* Mid bands: amber-to-cyan blend */
+.pd-spectrogram > span:nth-child(5),
+.pd-spectrogram > span:nth-child(6) {
+  background: color-mix(in srgb, var(--pd-amber), var(--pd-cyan));
+}
+
+/* Glow variant */
+.pd-spectrogram--glow > span:nth-child(-n+4) {
+  box-shadow: 0 0 calc(2px + 4px * var(--band-level, 0)) var(--pd-amber);
+}
+.pd-spectrogram--glow > span:nth-child(n+7) {
+  box-shadow: 0 0 calc(2px + 4px * var(--band-level, 0)) var(--pd-cyan);
+}
+
+/* ── AUDIO-REACTIVE SURFACE EFFECTS ─────────────────────────────────────────
+   These make the engineering surface feel "wired." Border flicker, glow,
+   onset flash — all very controlled, never decorative. */
+
+/* Onset bass glow — use on the single hot element per surface */
+.pd-bass-event {
+  box-shadow:
+    0 0 calc(4px + 24px * var(--onset-bass, 0)) rgba(232, 184, 88, calc(0.1 + 0.4 * var(--onset-bass, 0)));
+  transition: box-shadow var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* Onset high glow — cyan shimmer on hat hits */
+.pd-hat-shimmer {
+  box-shadow:
+    0 0 calc(2px + 12px * var(--onset-high, 0)) rgba(78, 201, 212, calc(0.05 + 0.3 * var(--onset-high, 0)));
+  transition: box-shadow var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* Beat-pulse border flash — use on the card that owns the current focus */
+.pd-beat-border {
+  border-color: color-mix(
+    in srgb,
+    var(--pd-cyan-dim) 100%,
+    var(--pd-cyan) calc(var(--beat-pulse, 0) * 80%)
+  );
+  transition: border-color var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* Prime Radiant seal beat-sync rotation */
+.pd-seal-spin {
+  animation: pd-full-rotation var(--beat-bar-sec, 2s) linear infinite;
+  transform-origin: center;
+}
+@keyframes pd-full-rotation {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+/* Kick flash — amber opacity pulse on bass hits */
+.pd-kick-flash {
+  opacity: calc(0.6 + 0.4 * var(--kick, 0));
+  filter: brightness(calc(1 + 0.3 * var(--kick, 0)));
+  transition:
+    opacity var(--pd-duration-instant) var(--pd-ease-linear),
+    filter  var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* Snare flash — flat brightness on mid hits */
+.pd-snare-flash {
+  filter: brightness(calc(1 + 0.15 * var(--snare, 0)));
+  transition: filter var(--pd-duration-instant) var(--pd-ease-linear);
+}
+
+/* ── SCROLLBAR ────────────────────────────────────────────────────────────── */
+
+.pd-shell ::-webkit-scrollbar { width: 4px; }
+.pd-shell ::-webkit-scrollbar-track { background: transparent; }
+.pd-shell ::-webkit-scrollbar-thumb {
+  background: var(--pd-rule);
+  border-radius: 0;
+}
+.pd-shell ::-webkit-scrollbar-thumb:hover {
+  background: var(--pd-ink-faint);
+}
+
+/* ── SELECTION ────────────────────────────────────────────────────────────── */
+
+.pd-shell ::selection {
+  background: rgba(232, 184, 88, 0.25);
+  color: var(--pd-amber-bright);
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  :root {
+    --pd-header-h:    40px;
+    --pd-sidebar-w:   100%;
+  }
+
+  .pd-header { padding: 0 12px; }
+  .pd-card   { padding: 16px 18px; }
+
+  .pd-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--pd-rule-soft);
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .pd-grid--2,
+  .pd-grid--3,
+  .pd-grid--4 {
+    grid-template-columns: 1fr;
+  }
+}

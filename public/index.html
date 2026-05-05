@@ -156,88 +156,6 @@ body {
   box-shadow: 0 0 32px rgba(232,184,88,0.12);
 }
 
-/* ── EMAIL INLINE ─────────────────────────── */
-.email-capture {
-  margin-top: 24px;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  opacity: 0;
-  animation: rise 0.4s ease-out forwards;
-}
-
-.email-capture.visible {
-  display: flex;
-}
-
-.email-row {
-  display: flex;
-  gap: 0;
-  width: 100%;
-  max-width: 400px;
-}
-
-.email-input {
-  flex: 1;
-  padding: 14px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--rule);
-  border-right: none;
-  border-radius: 6px 0 0 6px;
-  color: var(--ink-bright);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.email-input:focus {
-  border-color: var(--signal-synth);
-  box-shadow: 0 0 0 3px var(--signal-synth-dim);
-}
-
-.email-input::placeholder {
-  color: var(--ink-faint);
-}
-
-.email-send {
-  padding: 14px 20px;
-  background: var(--signal-synth);
-  border: 1px solid var(--signal-synth);
-  border-radius: 0 6px 6px 0;
-  color: var(--stage-void);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.email-send:hover {
-  background: var(--signal-synth-bright);
-}
-
-.email-send:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.email-note {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 300;
-  font-size: 13px;
-  color: var(--ink-dim);
-  transition: color 0.3s;
-}
-
-.email-note.sent {
-  color: var(--signal-synth);
-}
-
 /* ── FOOTER ───────────────────────────────── */
 .credit {
   position: absolute;
@@ -339,20 +257,10 @@ body {
 
   <!-- DOORS -->
   <div class="doors">
-    <a class="door primary" href="isaac/">Talk to Isaac <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
-    <a class="door" href="jarvis/">Ask Jarvis <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
+    <a class="door primary" href="jarvis/">Ask Jarvis <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
+    <a class="door" href="isaac/">Isaac <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
     <a class="door" href="mythchat/">MythChat <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
-    <a class="door" href="plm-upgrade.html">PLM Upgrade <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
-    <button class="door" id="door-email">Get the Briefing</button>
-  </div>
-
-  <!-- EMAIL CAPTURE (appears on click) -->
-  <div class="email-capture" id="email-capture">
-    <div class="email-row">
-      <input class="email-input" id="email" type="email" placeholder="you@example.com" autocomplete="email">
-      <button class="email-send" id="email-send" disabled>send &rarr;</button>
-    </div>
-    <span class="email-note" id="email-note">Receive the formal proof &amp; mission statement.</span>
+    <a class="door" href="pages/waitlist.html">Join the Waitlist <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
   </div>
 
   <!-- CREDIT -->
@@ -362,52 +270,6 @@ body {
 
 <script>
 (function() {
-  var doorEmail = document.getElementById('door-email');
-  var capture = document.getElementById('email-capture');
-  var emailInput = document.getElementById('email');
-  var emailSend = document.getElementById('email-send');
-  var emailNote = document.getElementById('email-note');
-
-  doorEmail.addEventListener('click', function() {
-    capture.classList.add('visible');
-    doorEmail.style.display = 'none';
-    setTimeout(function() { emailInput.focus(); }, 100);
-  });
-
-  emailInput.addEventListener('input', function() {
-    emailSend.disabled = !emailInput.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-  });
-
-  emailInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !emailSend.disabled) submitEmail();
-  });
-
-  emailSend.addEventListener('click', submitEmail);
-
-  function submitEmail() {
-    var email = emailInput.value.trim();
-    if (!email) return;
-
-    var entry = { email: email, source: 'mysubstrate', ts: new Date().toISOString() };
-
-    fetch('https://script.google.com/macros/s/AKfycbxYz0SjghuFujuMI5ShaygDDKDv7Mz9oWLfe18xxnMHK4jeOy5EJCum6CHfjdiHPuFC/exec', {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(entry)
-    }).catch(function() {});
-
-    var existing = JSON.parse(localStorage.getItem('mythos_waitlist') || '[]');
-    existing.push(entry);
-    localStorage.setItem('mythos_waitlist', JSON.stringify(existing));
-
-    emailInput.disabled = true;
-    emailSend.disabled = true;
-    emailSend.textContent = '✓';
-    emailNote.textContent = "You'll hear from Jarvis.";
-    emailNote.classList.add('sent');
-  }
-
   // Navigation for in-iframe links
   document.addEventListener('click', function(e) {
     var a = e.target.closest('a[data-mythos-link]');

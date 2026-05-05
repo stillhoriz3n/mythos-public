@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MythOS — Compositor</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 70 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23e8b858' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolygon points='35,2 60,16 60,44 35,58 10,44 10,16' stroke-width='2.2'/%3E%3Cpolygon points='35,16 47,23 47,37 35,44 23,37 23,23' stroke-width='1.6' opacity='.92' fill='%23e8b858' fill-opacity='.18'/%3E%3Ccircle cx='35' cy='30' r='3' fill='%23ffe6a0' stroke='none'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="void-canvas"></canvas>
+<div class="grain"></div>
+
+<div id="frame-layer"></div>
+
+<div id="radial" class="radial">
+  <button class="radial-trigger" id="radial-trigger">
+    <svg viewBox="0 0 70 60" width="36" height="32">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.8" opacity=".95"/>
+        <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width="1.2" opacity=".85" fill="currentColor" fill-opacity=".12"/>
+        <circle cx="35" cy="30" r="2.2" fill="#ffe6a0" stroke="none"/>
+        <circle cx="35" cy="30" r="5" fill="none" stroke="#ffe6a0" stroke-width=".5" opacity=".5"/>
+      </g>
+    </svg>
+  </button>
+  <div class="radial-ring" id="radial-ring"></div>
+</div>
+
+<div class="status-bar" id="status-bar">
+  <span class="status-left">
+    <span class="status-dot"></span>
+    <span>MYTHOS COMPOSITOR</span>
+  </span>
+  <span class="status-right">
+    <span id="frame-count">0 frames</span>
+    <span class="sep">&middot;</span>
+    <span id="wasm-status">wasm loading</span>
+  </span>
+</div>
+
+<script src="wasm_exec.js"></script>
+<script src="floor.js"></script>
+
+</body>
+</html>

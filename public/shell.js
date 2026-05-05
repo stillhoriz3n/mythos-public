@@ -25,7 +25,6 @@
   const PAGE_META = {
     'mysubstrate.html':                           { title: 'mysubstrate.org',         group: 'Home',          dark: true  },
     'mission.html':                               { title: 'Mission',                 group: 'Home',          dark: true  },
-    'ask-jarvis.html':                            { title: 'Ask Jarvis',              group: 'Home',          dark: true  },
     'landing.html':                               { title: 'Home',                    group: 'Home',          dark: true  },
     'the-prime-radiant.html':                     { title: 'The Prime Radiant',       group: 'Home',          dark: true  },
     'thesis.html':                                { title: 'Thesis',                  group: 'Canon',         dark: false },
@@ -38,6 +37,11 @@
     '_lyrics-preview.html':                       { title: 'Lyrics (preview)',        group: 'Transmissions', dark: true, hidden: true },
     '_labeler.html':                              { title: 'Section Labeler',         group: 'Transmissions', dark: true, hidden: true },
     'neverland-nocturnal-001.html':            { title: 'The Immune System',      group: 'NeverlandNocturnal', dark: true  },
+    'fleet-status.html':                         { title: 'Fleet Status',            group: 'MythOS',            dark: true  },
+    'substrate-explorer.html':                   { title: 'Substrate Explorer',      group: 'MythOS',            dark: true  },
+    'pipe-dream.html':                           { title: 'Pipe Dream',              group: 'MythOS',            dark: true  },
+    'mythcast.html':                             { title: 'MythCast',                group: 'MythOS',            dark: true  },
+    'ask-jarvis.html':                           { title: 'Ask Jarvis',              group: 'MythOS',            dark: true  },
   };
 
   // ── DOM ──────────────────────────────────────────────
@@ -3370,7 +3374,7 @@
   else if (hash && PAGE_META[hash]) initialPage = hash;
   else {
     try {
-      var s = localStorage.getItem(PAGE_KEY); if (s === 'landing.html') s = null;
+      var s = localStorage.getItem(PAGE_KEY);
       if (s && PAGE_META[s]) initialPage = s;
     } catch(e){}
   }

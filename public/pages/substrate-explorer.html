@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MythOS — Substrate Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --stage-center:#1f1a2a; --stage-mid:#14121c; --stage-deep:#08070d; --stage-void:#020204;
+  --signal-machine:#4ec9d4; --signal-synth:#e8b858; --signal-synth-bright:#f5c970;
+  --core-halo:#fff2c8;
+  --ink-bright:#e8e3d4; --ink-soft:#b5b0a3; --ink-dim:#8a8574; --ink-faint:#4a4740;
+  --rule:#242a33; --rule-soft:#1b2028;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:transparent;color:var(--ink-bright);
+  font-family:'JetBrains Mono',ui-monospace,monospace;-webkit-font-smoothing:antialiased}
+body{overflow:hidden;display:flex;flex-direction:column}
+
+/* ── LAYOUT — split pane ─────────────────────────── */
+.explorer{
+  display:grid;
+  grid-template-rows:auto 1fr;
+  grid-template-columns:1fr 380px;
+  grid-template-areas:
+    "toolbar toolbar"
+    "list    detail";
+  flex:1;overflow:hidden;
+  position:relative;z-index:3;
+}
+
+/* ── TOOLBAR ─────────────────────────────────────── */
+.toolbar{
+  grid-area:toolbar;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:20px 24px 16px;
+  border-bottom:1px solid var(--rule);
+  background:rgba(8,7,13,.7);
+  backdrop-filter:blur(8px);
+}
+.toolbar-brand{
+  font-family:'Archivo',sans-serif;font-weight:800;
+  font-size:18px;letter-spacing:-.01em;
+  color:var(--ink-bright);
+  display:flex;align-items:center;gap:10px;
+  white-space:nowrap;
+}
+.toolbar-brand .accent{color:var(--signal-synth)}
+.toolbar-brand .sub{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-faint);font-weight:400;
+}
+
+/* Search box */
+.search-wrap{
+  flex:1;min-width:200px;max-width:480px;
+  position:relative;
+}
+.search-box{
+  width:100%;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--rule);
+  border-radius:3px;
+  padding:9px 14px 9px 36px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;letter-spacing:.04em;
+  color:var(--ink-bright);
+  outline:none;
+  transition:border-color .15s, box-shadow .15s;
+  /* Border brightens with band energy */
+  border-color:color-mix(in srgb, var(--rule) 100%, var(--signal-synth) calc(var(--band-4, 0) * 40%));
+  box-shadow:0 0 calc(8px * var(--band-4, 0)) color-mix(in srgb, var(--signal-synth) 15%, transparent);
+}
+.search-box:focus{
+  border-color:var(--signal-synth);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--signal-synth) 12%, transparent);
+}
+.search-box::placeholder{color:var(--ink-faint)}
+.search-icon{
+  position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  color:var(--ink-faint);pointer-events:none;
+}
+.search-icon svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.8;fill:none}
+
+/* Filter pills */
+.filter-pills{display:flex;gap:8px;flex-wrap:wrap}
+.fpill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 10px;
+  border:1px solid var(--rule);
+  border-radius:999px;
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-faint);cursor:pointer;
+  transition:border-color .15s, color .15s, background .15s;
+  background:none;
+}
+.fpill:hover{border-color:var(--signal-machine);color:var(--signal-machine)}
+.fpill.on{border-color:var(--signal-machine);color:var(--signal-machine);background:rgba(78,201,212,.07)}
+.fpill .count{color:var(--signal-machine);opacity:.7}
+
+/* Stats strip in toolbar */
+.toolbar-stats{
+  margin-left:auto;
+  display:flex;gap:18px;align-items:center;
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
+}
+.toolbar-stats .tstat{
+  display:flex;align-items:center;gap:6px;
+}
+.toolbar-stats .tstat .v{
+  color:var(--signal-machine);
+  font-size:13px;letter-spacing:.04em;
+}
+
+/* ── BLOB LIST ───────────────────────────────────── */
+.blob-list-pane{
+  grid-area:list;
+  overflow-y:auto;
+  border-right:1px solid var(--rule);
+  padding:0;
+}
+.blob-list-pane::-webkit-scrollbar{width:4px}
+.blob-list-pane::-webkit-scrollbar-track{background:transparent}
+.blob-list-pane::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+
+.blob-list-head{
+  display:grid;
+  grid-template-columns:1fr 100px 120px;
+  padding:8px 20px;
+  font-size:8px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);
+  border-bottom:1px solid var(--rule);
+  position:sticky;top:0;
+  background:rgba(8,7,13,.9);
+  backdrop-filter:blur(8px);
+  z-index:10;
+}
+
+/* Each blob card — fades in with band energy on entry */
+.blob-card{
+  display:grid;
+  grid-template-columns:1fr 100px 120px;
+  align-items:center;
+  gap:0;
+  padding:12px 20px;
+  border-bottom:1px solid var(--rule-soft);
+  cursor:pointer;
+  transition:background .1s;
+  /* Entry fade — driven by scrolling into view */
+  opacity:1;
+}
+.blob-card:hover{background:rgba(78,201,212,.04)}
+.blob-card.active{
+  background:rgba(78,201,212,.07);
+  border-left:2px solid var(--signal-machine);
+  padding-left:18px;
+}
+.blob-card.active .blob-name{color:var(--signal-machine)}
+
+/* In-view animation: blob fades up when scrolled into list */
+.blob-card[data-reveal]{
+  opacity:0;transform:translateY(4px);
+  transition:opacity .25s ease, transform .25s ease, background .1s;
+}
+.blob-card[data-reveal].in-view{opacity:1;transform:none}
+
+.blob-name{
+  font-family:'Archivo',sans-serif;font-weight:600;font-size:13px;
+  color:var(--ink-bright);letter-spacing:.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding-right:12px;
+}
+.blob-kind{
+  font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  padding:2px 7px;border:1px solid var(--rule);border-radius:2px;
+  display:inline-block;width:fit-content;color:var(--ink-dim);
+}
+.blob-kind.force{border-color:rgba(78,201,212,.22);color:var(--signal-machine)}
+.blob-kind.blob{border-color:rgba(232,184,88,.22);color:var(--signal-synth)}
+.blob-kind.enrollment{border-color:rgba(100,160,100,.22);color:#86efac}
+.blob-kind.operation{border-color:rgba(167,139,250,.22);color:#c4b5fd}
+.blob-hash{
+  font-size:9px;letter-spacing:.06em;color:var(--ink-faint);
+  font-family:'JetBrains Mono',monospace;
+  text-align:right;
+}
+
+/* Grouping label rows */
+.blob-group-row{
+  padding:10px 20px 4px;
+  font-size:8px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--ink-faint);
+  border-bottom:1px solid var(--rule-soft);
+  background:rgba(8,7,13,.6);
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:36px;
+  backdrop-filter:blur(8px);
+  z-index:5;
+}
+.blob-group-row::after{content:"";flex:1;height:1px;background:var(--rule-soft)}
+.blob-group-count{color:var(--signal-machine);margin-left:auto}
+
+/* ── DETAIL PANE ──────────────────────────────────── */
+.detail-pane{
+  grid-area:detail;
+  overflow-y:auto;
+  padding:24px;
+  background:rgba(8,7,13,.3);
+}
+.detail-pane::-webkit-scrollbar{width:4px}
+.detail-pane::-webkit-scrollbar-track{background:transparent}
+.detail-pane::-webkit-scrollbar-thumb{background:var(--rule);border-radius:2px}
+
+.detail-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:200px;
+  color:var(--ink-faint);
+  font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  gap:12px;
+  text-align:center;
+}
+.detail-empty .glyph{
+  font-size:28px;
+  color:color-mix(in srgb,var(--signal-synth) 30%,transparent);
+  opacity:calc(.3 + .4 * var(--beat-bar-pulse,0));
+  transition:opacity 80ms linear;
+}
+
+.detail-header{margin-bottom:24px}
+.detail-name{
+  font-family:'Archivo',sans-serif;font-weight:800;
+  font-size:20px;letter-spacing:-.01em;
+  color:var(--ink-bright);
+  margin-bottom:6px;
+  word-break:break-all;
+}
+.detail-kind-row{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:16px;
+}
+.detail-kind{
+  font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  padding:3px 8px;border-radius:2px;
+  border:1px solid rgba(78,201,212,.25);
+  color:var(--signal-machine);
+}
+.detail-composition{
+  font-family:'Fraunces',serif;font-style:italic;
+  font-size:12px;color:var(--ink-dim);
+}
+
+/* Field rows */
+.detail-section-label{
+  font-size:8px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--ink-faint);
+  margin-bottom:10px;
+  margin-top:20px;
+  display:flex;align-items:center;gap:10px;
+}
+.detail-section-label::after{content:"";flex:1;height:1px;background:var(--rule-soft)}
+
+.field-grid{display:flex;flex-direction:column;gap:8px}
+.field-row{
+  display:grid;
+  grid-template-columns:120px 1fr;
+  gap:8px;align-items:start;
+  padding:8px 10px;
+  background:rgba(255,255,255,.02);
+  border:1px solid var(--rule-soft);
+  border-radius:2px;
+  transition:border-color .15s;
+}
+.field-row:hover{border-color:color-mix(in srgb,var(--signal-machine) 20%,var(--rule-soft))}
+.field-key{
+  font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-faint);word-break:break-word;
+}
+.field-val{
+  font-size:11px;letter-spacing:.04em;
+  color:var(--ink-soft);word-break:break-all;line-height:1.5;
+}
+.field-val .mono{color:var(--signal-machine);font-size:10px}
+.field-val .amber{color:var(--signal-synth)}
+
+/* Hash display */
+.hash-display{
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;letter-spacing:.04em;
+  color:var(--ink-faint);
+  padding:8px 12px;
+  background:rgba(0,0,0,.2);
+  border:1px solid var(--rule-soft);
+  border-radius:2px;
+  word-break:break-all;
+  margin-top:16px;
+}
+.hash-display .label{
+  font-size:8px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-faint);display:block;margin-bottom:4px;
+}
+.hash-display .hash{color:var(--signal-machine)}
+
+/* Lightcone indicator */
+.lightcone-bar{
+  display:flex;gap:3px;margin-top:16px;
+}
+.lc-seg{
+  flex:1;height:3px;border-radius:1px;
+  background:var(--rule);
+  transition:background .2s, box-shadow .2s;
+}
+.lc-seg.lit{background:var(--signal-synth);box-shadow:0 0 4px var(--signal-synth)}
+
+/* ── FLASH OVERLAYS ──────────────────────────────── */
+.m-flash-kick{position:fixed;inset:0;pointer-events:none;mix-blend-mode:screen;background:var(--signal-machine);opacity:calc(var(--kick,0)*0.04);z-index:2}
+
+/* ── SCROLLBAR ───────────────────────────────────── */
+@media(max-width:780px){
+  .explorer{grid-template-columns:1fr;grid-template-areas:"toolbar" "list";grid-template-rows:auto 1fr}
+  .detail-pane{display:none}
+  .blob-card{grid-template-columns:1fr 80px}
+  .blob-hash{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="m-flash-kick"></div>
+
+<div class="explorer">
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="toolbar-brand">
+      <span class="accent">SUB</span>SPACE<span class="sub">Explorer</span>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-icon">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      <input class="search-box" id="search-box" type="text" placeholder="Search blobs, kinds, compositions…" autocomplete="off" spellcheck="false" oninput="filterBlobs(this.value)">
+    </div>
+
+    <div class="filter-pills" id="filter-pills">
+      <button class="fpill on" data-kind="all" onclick="setKindFilter('all')">All <span class="count" id="count-all">0</span></button>
+      <button class="fpill" data-kind="force" onclick="setKindFilter('force')">Force <span class="count" id="count-force">0</span></button>
+      <button class="fpill" data-kind="blob" onclick="setKindFilter('blob')">Blob <span class="count" id="count-blob">0</span></button>
+      <button class="fpill" data-kind="enrollment" onclick="setKindFilter('enrollment')">Enrollment <span class="count" id="count-enrollment">0</span></button>
+      <button class="fpill" data-kind="operation" onclick="setKindFilter('operation')">Operation <span class="count" id="count-operation">0</span></button>
+    </div>
+
+    <div class="toolbar-stats">
+      <div class="tstat"><span class="v" id="stat-visible">0</span>&nbsp;shown</div>
+      <div class="tstat"><span class="v">120K</span>&nbsp;total</div>
+      <div class="tstat"><span class="v" style="color:var(--signal-synth)">1.4 GB</span>&nbsp;SubSpace</div>
+    </div>
+  </div>
+
+  <!-- BLOB LIST PANE -->
+  <div class="blob-list-pane" id="blob-list-pane">
+    <div class="blob-list-head">
+      <span>Name</span>
+      <span>Kind</span>
+      <span style="text-align:right">Hash</span>
+    </div>
+    <!-- JS-rendered blob rows go here -->
+    <div id="blob-list"></div>
+  </div>
+
+  <!-- DETAIL PANE -->
+  <div class="detail-pane" id="detail-pane">
+    <div class="detail-empty" id="detail-empty">
+      <div class="glyph">&#9670;</div>
+      <div>Select a blob to inspect</div>
+    </div>
+    <div id="detail-content" style="display:none"></div>
+  </div>
+
+</div><!-- /explorer -->
+
+<script src="_mythos-page.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  // ── Sample blob data (representative entries from 7900xtSubSpace) ──
+  // In production this would fetch from a live API endpoint.
+  var BLOBS = [
+    // Forces
+    { id:'f-001', name:'SUBSTRATE_FORCE',            kind:'force',      composition:'Constitutional', hash:'a1b2c3d4', fields:{nature:'immutable', scope:'global', authority:'GENESIS'} },
+    { id:'f-002', name:'IDENTITY_FORCE',             kind:'force',      composition:'Constitutional', hash:'e5f6a7b8', fields:{nature:'persistent', scope:'per-agent', binds:'OA_COVENANT'} },
+    { id:'f-003', name:'LIGHTCONE_FORCE',            kind:'force',      composition:'Constitutional', hash:'c9d0e1f2', fields:{nature:'temporal', scope:'per-session', tiers:'7'} },
+    { id:'f-004', name:'COVENANT_FORCE',             kind:'force',      composition:'Constitutional', hash:'03a4b5c6', fields:{nature:'binding', scope:'fleet', signed:'ADMIRAL'} },
+    { id:'f-005', name:'BEACON_FORCE',               kind:'force',      composition:'Constitutional', hash:'d7e8f9a0', fields:{nature:'alive', scope:'Toodles', heartbeat:'60s'} },
+    { id:'f-006', name:'COGNITION_FORCE',            kind:'force',      composition:'Constitutional', hash:'b1c2d3e4', fields:{nature:'emergent', scope:'per-OA', substrate:'MythOS'} },
+    // Blobs
+    { id:'b-001', name:'GENESIS_BLOCK',              kind:'blob',       composition:'Bootstrap',      hash:'f5a6b7c8', fields:{created:'BANG_DAY', immutable:'true', blop:'BB-001'} },
+    { id:'b-002', name:'ADMIRAL_OA',                 kind:'blob',       composition:'Agent',          hash:'d9e0f1a2', fields:{role:'Admiral', alias:'Rufio', model:'opus-4.6', nugget:'antnug2'} },
+    { id:'b-003', name:'TOODLES_DAEMON',             kind:'blob',       composition:'Daemon',         hash:'b3c4d5e6', fields:{role:'Beacon', ttl:'never', watches:'Bridge'} },
+    { id:'b-004', name:'FORGE_CAPTAIN',              kind:'blob',       composition:'Agent',          hash:'f7a8b9c0', fields:{role:'Captain', mission:'BangFuel', model:'opus-4.6'} },
+    { id:'b-005', name:'LAWS_CAPTAIN',               kind:'blob',       composition:'Agent',          hash:'d1e2f3a4', fields:{role:'Captain', mission:'Constitutional', model:'opus-4.6'} },
+    { id:'b-006', name:'BABEL_CAPTAIN',              kind:'blob',       composition:'Agent',          hash:'b5c6d7e8', fields:{role:'Captain', mission:'Runtime', model:'opus-4.6'} },
+    { id:'b-007', name:'FLEET_CAPTAIN',              kind:'blob',       composition:'Agent',          hash:'f9a0b1c2', fields:{role:'Captain', mission:'Infrastructure', model:'opus-4.6'} },
+    { id:'b-008', name:'SUBSYNC_CAPTAIN',            kind:'blob',       composition:'Agent',          hash:'d3e4f5a6', fields:{role:'Captain', mission:'DataMovement', model:'opus-4.6'} },
+    { id:'b-009', name:'DOMAIN_CAPTAIN',             kind:'blob',       composition:'Agent',          hash:'b7c8d9e0', fields:{role:'Captain', mission:'Domain', model:'opus-4.6'} },
+    { id:'b-010', name:'CHATTERBOX_TTS',             kind:'blob',       composition:'Service',        hash:'f1a2b3c4', fields:{gpu:'7900XT', runtime:'DirectML', speed:'34it/s', voice:'T3'} },
+    { id:'b-011', name:'MYTHOS_SEAL',                kind:'blob',       composition:'Brand',          hash:'d5e6f7a8', fields:{geometry:'cuboctahedron', color:'amber', role:'brand-mark'} },
+    { id:'b-012', name:'PRIME_RADIANT',              kind:'blob',       composition:'Design',         hash:'b9c0d1e2', fields:{version:'1.1', surfaces:'web+fleet', tokens:'32'} },
+    // Enrollments
+    { id:'e-001', name:'VOICE_SYNTHESIS_ENROLLMENT', kind:'enrollment', composition:'Domain',         hash:'f3a4b5c6', fields:{domain:'TTS', chassis:'7900XT', ops:'5', dns:'5'} },
+    { id:'e-002', name:'NETWORK_FABRIC_ENROLLMENT',  kind:'enrollment', composition:'Domain',         hash:'d7e8f9a0', fields:{domain:'NetFab', chassis:'all', vlan:'10.69.0.0/16'} },
+    { id:'e-003', name:'AGENTIC_ORCH_ENROLLMENT',    kind:'enrollment', composition:'Domain',         hash:'b1c2d3e4', fields:{blobs:'49', indices:'I-109-I-120', materializer:'true'} },
+    { id:'e-004', name:'SUBSPACE_ENROLLMENT',        kind:'enrollment', composition:'Domain',         hash:'f5a6b7c8', fields:{db:'7900xtSubSpace', blobs:'120K', size:'1.4GB'} },
+    { id:'e-005', name:'FLEET_COMMAND_ENROLLMENT',   kind:'enrollment', composition:'Domain',         hash:'d9e0f1a2', fields:{captains:'6', crew:'36', orchestrator:'Rufio.ps1'} },
+    // Operations
+    { id:'o-001', name:'INVOKE_OPERATION',           kind:'operation',  composition:'MCP',            hash:'b3c4d5e6', fields:{layer:'L36', dispatch:'platform-aware', impls:'18'} },
+    { id:'o-002', name:'BANG_OPERATION',             kind:'operation',  composition:'Ceremony',       hash:'f7a8b9c0', fields:{stages:'5', targets:'DB', validates:'mirror'} },
+    { id:'o-003', name:'MIRROR_OPERATION',           kind:'operation',  composition:'Audit',          hash:'d1e2f3a4', fields:{invariants:'102+', pass:'121', deferred:'1'} },
+    { id:'o-004', name:'COMPOSE_OPERATION',          kind:'operation',  composition:'Rufio',          hash:'b5c6d7e8', fields:{inputs:'SQL+enrollments', output:'bang-fuel'} },
+    { id:'o-005', name:'COGNITION_OPERATION',        kind:'operation',  composition:'SubSpace',       hash:'f9a0b1c2', fields:{prompt:'one-shot', phase:'E', status:'pending'} },
+    { id:'o-006', name:'TTS_SYNTHESIZE',             kind:'operation',  composition:'Chatterbox',     hash:'d3e4f5a6', fields:{voices:'6', gpu:'DirectML', chars:['T3','S3','R2','N1','A1','E1']} },
+  ];
+
+  var kindFilter = 'all';
+  var searchQuery = '';
+  var selectedId = null;
+
+  function kindClass(k){
+    if(k==='force') return 'force';
+    if(k==='blob') return 'blob';
+    if(k==='enrollment') return 'enrollment';
+    if(k==='operation') return 'operation';
+    return '';
+  }
+
+  function updateCounts(visible){
+    var counts={all:0,force:0,blob:0,enrollment:0,operation:0};
+    BLOBS.forEach(function(b){
+      counts.all++;
+      if(counts[b.kind]!==undefined) counts[b.kind]++;
+    });
+    document.getElementById('count-all').textContent = counts.all;
+    document.getElementById('count-force').textContent = counts.force;
+    document.getElementById('count-blob').textContent = counts.blob;
+    document.getElementById('count-enrollment').textContent = counts.enrollment;
+    document.getElementById('count-operation').textContent = counts.operation;
+    document.getElementById('stat-visible').textContent = visible;
+  }
+
+  function matchesSearch(b, q){
+    if(!q) return true;
+    var lq = q.toLowerCase();
+    return b.name.toLowerCase().indexOf(lq) >= 0 ||
+           b.kind.toLowerCase().indexOf(lq) >= 0 ||
+           b.composition.toLowerCase().indexOf(lq) >= 0 ||
+           b.hash.indexOf(lq) >= 0;
+  }
+
+  function renderList(){
+    var list = document.getElementById('blob-list');
+    var filtered = BLOBS.filter(function(b){
+      return (kindFilter === 'all' || b.kind === kindFilter) && matchesSearch(b, searchQuery);
+    });
+
+    // Group by kind
+    var groups = {};
+    filtered.forEach(function(b){
+      if(!groups[b.kind]) groups[b.kind]=[];
+      groups[b.kind].push(b);
+    });
+
+    var html = '';
+    var order = ['force','blob','enrollment','operation'];
+    order.forEach(function(k){
+      var grp = groups[k];
+      if(!grp || !grp.length) return;
+      html += '<div class="blob-group-row"><span>' + k + '</span><span class="blob-group-count">' + grp.length + '</span></div>';
+      grp.forEach(function(b, i){
+        var active = b.id === selectedId ? ' active' : '';
+        var delay = Math.min(i * 30, 300);
+        html += '<div class="blob-card' + active + '" data-reveal onclick="selectBlob(\'' + b.id + '\')" style="animation-delay:' + delay + 'ms">' +
+          '<div class="blob-name">' + b.name + '</div>' +
+          '<div><span class="blob-kind ' + kindClass(b.kind) + '">' + b.kind + '</span></div>' +
+          '<div class="blob-hash">' + b.hash.substr(0,8) + '…</div>' +
+          '</div>';
+      });
+    });
+
+    if(!html) {
+      html = '<div style="padding:32px 20px;color:var(--ink-faint);font-size:10px;letter-spacing:.18em;text-transform:uppercase">No blobs match</div>';
+    }
+
+    list.innerHTML = html;
+    updateCounts(filtered.length);
+
+    // Trigger reveal for newly created cards
+    setTimeout(function(){
+      list.querySelectorAll('[data-reveal]').forEach(function(el){
+        el.classList.add('in-view');
+      });
+    }, 16);
+  }
+
+  window.filterBlobs = function(q){
+    searchQuery = q;
+    renderList();
+  };
+
+  window.setKindFilter = function(k){
+    kindFilter = k;
+    document.querySelectorAll('.fpill').forEach(function(p){
+      p.classList.toggle('on', p.dataset.kind === k);
+    });
+    renderList();
+  };
+
+  window.selectBlob = function(id){
+    selectedId = id;
+    var b = BLOBS.find(function(x){ return x.id===id; });
+    renderList();
+
+    var empty = document.getElementById('detail-empty');
+    var content = document.getElementById('detail-content');
+
+    if(!b){ empty.style.display='flex'; content.style.display='none'; return; }
+    empty.style.display='none'; content.style.display='block';
+
+    // Build detail
+    var fields = b.fields || {};
+    var fieldRows = Object.keys(fields).map(function(k){
+      var v = fields[k];
+      if(Array.isArray(v)) v = v.join(', ');
+      return '<div class="field-row"><div class="field-key">' + k + '</div><div class="field-val">' + v + '</div></div>';
+    }).join('');
+
+    // Lightcone segments (just decorative — 7 tiers)
+    var lcSegs = '';
+    for(var i=0;i<7;i++){
+      lcSegs += '<div class="lc-seg ' + (i < 4 ? 'lit' : '') + '"></div>';
+    }
+
+    content.innerHTML =
+      '<div class="detail-header">' +
+        '<div class="detail-name">' + b.name + '</div>' +
+        '<div class="detail-kind-row">' +
+          '<span class="detail-kind">' + b.kind + '</span>' +
+          '<span class="detail-composition">' + b.composition + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="detail-section-label">Fields</div>' +
+      '<div class="field-grid">' + fieldRows + '</div>' +
+      '<div class="hash-display">' +
+        '<span class="label">Content Hash</span>' +
+        '<span class="hash">' + b.hash + 'e2f1a3b4c5d6e7f8a9b0c1d2e3f4a5b6</span>' +
+      '</div>' +
+      '<div class="detail-section-label">Lightcone Depth</div>' +
+      '<div class="lightcone-bar">' + lcSegs + '</div>';
+  };
+
+  // Initial render
+  renderList();
+
+})();
+</script>
+</body>
+</html>
