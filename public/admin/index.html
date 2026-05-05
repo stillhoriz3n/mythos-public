@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#020204">
+<title>Admin — mysubstrate.org</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --signal-synth: #e8b858;
+  --signal-synth-bright: #f5c970;
+  --signal-synth-dim: rgba(232,184,88,0.12);
+  --ink-bright: #e8e3d4;
+  --ink-soft: #b5b0a3;
+  --ink-dim: #8a8574;
+  --ink-faint: #4a4740;
+  --stage-void: #020204;
+  --rule-soft: #1b2028;
+  --kevin-gold: #e8b858;
+  --matt-teal: #4ec9d4;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #020204 !important; }
+body {
+  height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--stage-void);
+  color: var(--ink-bright);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.container {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.header {
+  padding: 28px 0 0;
+  text-align: left;
+  flex-shrink: 0;
+  opacity: 0;
+  animation: rise 0.8s ease-out 0.1s forwards;
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: 12px;
+}
+
+.header-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--signal-synth);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: 4px;
+}
+
+.status-line {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-dim);
+  margin-top: 6px;
+}
+
+.status-line .online-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #4ade80;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.conversation {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-faint) transparent;
+}
+
+.conversation::-webkit-scrollbar { width: 3px; }
+.conversation::-webkit-scrollbar-track { background: transparent; }
+.conversation::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 2px; }
+
+.msg { opacity: 0; animation: rise 0.25s ease-out forwards; }
+
+.msg-system {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+  padding: 2px 0;
+  border-left: 2px solid var(--rule-soft);
+  padding-left: 10px;
+}
+
+.msg-human { text-align: right; }
+
+.msg-human .speaker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--ink-faint);
+  margin-bottom: 3px;
+  padding-right: 2px;
+}
+
+.msg-human .bubble {
+  display: inline-block;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px 10px 2px 10px;
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--ink-bright);
+  max-width: 80%;
+  text-align: left;
+  word-break: break-word;
+}
+
+.msg-character { text-align: left; }
+
+.msg-character .speaker {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 10px;
+  margin-bottom: 3px;
+  padding-left: 2px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.msg-character .bubble {
+  display: inline-block;
+  background: rgba(255,255,255,0.015);
+  border: 1px solid var(--rule-soft);
+  border-radius: 2px 10px 10px 10px;
+  padding: 10px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 85%;
+  word-break: break-word;
+}
+
+.msg-character.kevin .speaker { color: var(--kevin-gold); }
+.msg-character.kevin .bubble { border-color: rgba(232,184,88,0.12); }
+.msg-character.matt .speaker { color: var(--matt-teal); }
+.msg-character.matt .bubble { border-color: rgba(78,201,212,0.12); }
+
+.typing-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.typing-row.visible { opacity: 1; }
+
+.typing-row .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+.typing-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.typing-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--matt-teal);
+  opacity: 0.4;
+  animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot-pulse {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
+}
+
+.input-area {
+  flex-shrink: 0;
+  padding: 12px 0 20px;
+  border-top: 1px solid var(--rule-soft);
+  opacity: 0;
+  animation: rise 0.8s ease-out 0.6s forwards;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-row:focus-within {
+  border-color: rgba(78,201,212,0.3);
+  box-shadow: 0 0 16px rgba(78,201,212,0.04);
+}
+
+.input-field {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--ink-bright);
+}
+
+.input-field::placeholder { color: var(--ink-faint); }
+
+.send-btn {
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--rule-soft);
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.send-btn:hover { color: var(--matt-teal); }
+.send-btn svg { width: 16px; height: 16px; }
+
+.nav-bar {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.nav-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.nav-link:hover { color: var(--signal-synth); }
+.nav-link.active { color: var(--matt-teal); }
+
+.name-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--stage-void);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  z-index: 100;
+  opacity: 0;
+  animation: rise 0.6s ease-out forwards;
+}
+
+.name-overlay.hidden { display: none; }
+
+.name-overlay h2 {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--signal-synth);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.name-overlay p {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-dim);
+  max-width: 320px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.name-overlay .net-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--ink-faint);
+  letter-spacing: 0.15em;
+  border: 1px solid var(--rule-soft);
+  padding: 4px 12px;
+  border-radius: 3px;
+}
+
+.name-input {
+  padding: 12px 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--rule-soft);
+  border-radius: 6px;
+  color: var(--ink-bright);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  outline: none;
+  width: 220px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.name-input:focus { border-color: rgba(78,201,212,0.4); }
+
+.name-enter {
+  padding: 10px 24px;
+  background: transparent;
+  border: 1px solid rgba(78,201,212,0.3);
+  border-radius: 4px;
+  color: var(--matt-teal);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.name-enter:hover {
+  background: rgba(78,201,212,0.06);
+  border-color: var(--matt-teal);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .container { padding: 0 14px; }
+  .header { padding-top: 16px; }
+  .msg-human .bubble, .msg-character .bubble { max-width: 92%; }
+}
+
+::selection {
+  background: var(--matt-teal);
+  color: var(--stage-void);
+}
+</style>
+</head>
+<body>
+
+<div class="name-overlay" id="name-overlay">
+  <h2>Admin</h2>
+  <p>Fleet network only. Kevin + Jarvis.</p>
+  <span class="net-badge">SUPERADMIN REQUIRED</span>
+  <input class="name-input" id="name-input" type="text" placeholder="Your name" autocomplete="off" spellcheck="false">
+  <button class="name-enter" id="name-enter">Connect</button>
+</div>
+
+<div class="container">
+
+  <div class="header">
+    <h1 class="header-title">Admin</h1>
+    <div class="header-sub">fleet network only. kevin + jarvis.</div>
+    <div class="status-line" id="status-line"><span class="online-dot"></span>connected</div>
+  </div>
+
+  <div class="conversation" id="conversation">
+    <div class="typing-row" id="typing-row">
+      <span class="label" id="typing-label">thinking</span>
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <input class="input-field" id="input" type="text" placeholder="speak..." autocomplete="off" spellcheck="false">
+      <button class="send-btn" id="send-btn" aria-label="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <div class="nav-bar">
+      <a class="nav-link" href="/jarvis/">jarvis</a>
+      <a class="nav-link" href="/isaac/">isaac</a>
+      <a class="nav-link" href="/mythchat/">mythchat</a>
+      <a class="nav-link active" href="/admin/">admin</a>
+      <a class="nav-link" href="/">home</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  function generateHolodot() {
+    var stored = localStorage.getItem('admin_holodot');
+    if (stored && stored.length === 64) return stored;
+    var bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    var hex = Array.from(bytes).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+    localStorage.setItem('admin_holodot', hex);
+    return hex;
+  }
+
+  var holodot = generateHolodot();
+  var myName = localStorage.getItem('admin_name') || '';
+  var ws = null;
+  var wsReady = false;
+
+  var BEACON_HOST = 'jarvis.mysubstrate.org';
+  var WS_URL;
+  if (location.hostname === BEACON_HOST || location.port === '7780') {
+    WS_URL = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws/admin';
+  } else {
+    WS_URL = 'wss://' + BEACON_HOST + '/ws/admin';
+  }
+
+  var overlay = document.getElementById('name-overlay');
+  var nameInput = document.getElementById('name-input');
+  var nameEnter = document.getElementById('name-enter');
+  var conversation = document.getElementById('conversation');
+  var typingRow = document.getElementById('typing-row');
+  var typingLabel = document.getElementById('typing-label');
+  var statusLine = document.getElementById('status-line');
+  var input = document.getElementById('input');
+  var sendBtn = document.getElementById('send-btn');
+
+  if (myName) {
+    overlay.classList.add('hidden');
+    nameInput.value = myName;
+    connectWS();
+    input.focus();
+  } else {
+    nameInput.focus();
+  }
+
+  function enterAdmin(name) {
+    myName = name || 'Fleet';
+    localStorage.setItem('admin_name', myName);
+    overlay.classList.add('hidden');
+    connectWS();
+    input.focus();
+  }
+
+  nameEnter.addEventListener('click', function() { enterAdmin(nameInput.value.trim()); });
+  nameInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') enterAdmin(nameInput.value.trim()); });
+
+  function connectWS() {
+    try {
+      ws = new WebSocket(WS_URL);
+    } catch (e) {
+      setStatus('disconnected');
+      setTimeout(connectWS, 5000);
+      return;
+    }
+
+    ws.onopen = function() {
+      ws.send(JSON.stringify({ type: 'handshake', holodot: holodot, name: myName }));
+      setStatus('connected');
+    };
+
+    ws.onmessage = function(e) {
+      var msg = JSON.parse(e.data);
+      handleMessage(msg);
+    };
+
+    ws.onclose = function() {
+      wsReady = false;
+      setStatus('disconnected');
+      setTimeout(connectWS, 3000);
+    };
+
+    ws.onerror = function() { ws.close(); };
+  }
+
+  function setStatus(state) {
+    if (state === 'connected') {
+      statusLine.innerHTML = '<span class="online-dot"></span>connected';
+    } else {
+      statusLine.innerHTML = '<span class="online-dot" style="background:#e86858"></span>reconnecting...';
+    }
+  }
+
+  function handleMessage(msg) {
+    switch (msg.type) {
+      case 'connected':
+        wsReady = true;
+        myName = msg.name || myName;
+        if (msg.history) {
+          msg.history.forEach(function(entry) {
+            if (entry.type === 'system') addSystemMsg(entry.content);
+            else if (entry.type === 'human') addHumanMsg(entry.speaker || entry.name, entry.content);
+            else if (entry.type === 'character') addCharMsg(entry.speaker || entry.character, entry.content, entry.color);
+          });
+        }
+        break;
+      case 'human':
+        addHumanMsg(msg.name, msg.content);
+        break;
+      case 'character':
+        hideThinking();
+        addCharMsg(msg.character, msg.content, msg.color);
+        break;
+      case 'join':
+        addSystemMsg(msg.name + ' connected');
+        break;
+      case 'leave':
+        addSystemMsg(msg.name + ' disconnected');
+        break;
+      case 'thinking':
+        showThinking(msg.character || null);
+        break;
+      case 'pong':
+        break;
+    }
+  }
+
+  function showThinking(charName) {
+    typingLabel.textContent = charName ? charName.toLowerCase() + ' is thinking' : 'thinking';
+    typingRow.classList.add('visible');
+    scrollDown();
+  }
+
+  function hideThinking() { typingRow.classList.remove('visible'); }
+
+  function addSystemMsg(text) {
+    var div = document.createElement('div');
+    div.className = 'msg msg-system';
+    div.textContent = text;
+    conversation.insertBefore(div, typingRow);
+    scrollDown();
+  }
+
+  function addHumanMsg(name, text) {
+    var div = document.createElement('div');
+    div.className = 'msg msg-human';
+    var speaker = document.createElement('div');
+    speaker.className = 'speaker';
+    speaker.textContent = name;
+    div.appendChild(speaker);
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    div.appendChild(bubble);
+    conversation.insertBefore(div, typingRow);
+    scrollDown();
+  }
+
+  function addCharMsg(charName, text, color) {
+    var div = document.createElement('div');
+    var charKey = charName.toLowerCase().replace(/\s+/g, '');
+    var isKevin = charKey === 'kevin';
+    var isMatt = charKey === 'matt' || charKey === 'jarvis';
+    div.className = 'msg msg-character' + (isKevin ? ' kevin' : '') + (isMatt ? ' matt' : '');
+    var speaker = document.createElement('div');
+    speaker.className = 'speaker';
+    speaker.textContent = charName;
+    if (color) speaker.style.color = color;
+    div.appendChild(speaker);
+    var bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = text.replace(/\*([^*]+)\*/g, function(_, inner) {
+      var c = isKevin ? 'var(--kevin-gold)' : isMatt ? 'var(--matt-teal)' : 'var(--ink-dim)';
+      return '<em style="font-style:italic;color:' + c + '">' + inner + '</em>';
+    });
+    div.appendChild(bubble);
+    conversation.insertBefore(div, typingRow);
+    scrollDown();
+  }
+
+  function scrollDown() { conversation.scrollTop = conversation.scrollHeight; }
+
+  function send() {
+    var text = input.value.trim();
+    if (!text || !wsReady) return;
+    input.value = '';
+    ws.send(JSON.stringify({ type: 'message', content: text }));
+    addHumanMsg(myName, text);
+  }
+
+  sendBtn.addEventListener('click', send);
+  input.addEventListener('keydown', function(e) { if (e.key === 'Enter') send(); });
+})();
+</script>
+</body>
+</html>
