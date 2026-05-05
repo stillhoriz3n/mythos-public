@@ -1,117 +1,212 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#020204">
+<meta name="theme-color" content="#020204" id="metaTheme">
 <title>MythChat — mysubstrate.org</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --signal-synth: #e8b858;
-  --signal-synth-bright: #f5c970;
-  --signal-synth-dim: rgba(232,184,88,0.12);
-  --ink-bright: #e8e3d4;
-  --ink-soft: #b5b0a3;
-  --ink-dim: #8a8574;
-  --ink-faint: #4a4740;
-  --stage-void: #020204;
-  --rule-soft: #1b2028;
+/* ===== DESIGN TOKENS ===== */
+[data-theme="dark"] {
+  --signal: #e8b858;
+  --signal-bright: #f5c970;
+  --signal-dim: rgba(232,184,88,0.08);
+  --signal-glow: rgba(232,184,88,0.25);
+  --ink: #e4e2dd;
+  --ink-soft: #bbb8b0;
+  --ink-dim: #7a776f;
+  --ink-faint: #3a3835;
+  --bg: #08080c;
+  --bg-surface: rgba(255,255,255,0.03);
+  --bg-elevated: rgba(255,255,255,0.055);
+  --border: rgba(255,255,255,0.07);
+  --border-accent: rgba(255,255,255,0.12);
+  --glass: rgba(255,255,255,0.04);
+  --error: #ff6b6b;
+  --user-bubble-bg: rgba(232,184,88,0.06);
+  --user-bubble-border: rgba(232,184,88,0.15);
+  --shadow: 0 2px 20px rgba(0,0,0,0.3);
 }
 
+[data-theme="light"] {
+  --signal: #b8860b;
+  --signal-bright: #a07008;
+  --signal-dim: rgba(184,134,11,0.06);
+  --signal-glow: rgba(184,134,11,0.18);
+  --ink: #1a1a1a;
+  --ink-soft: #444;
+  --ink-dim: #888;
+  --ink-faint: #ccc;
+  --bg: #fafaf8;
+  --bg-surface: rgba(0,0,0,0.025);
+  --bg-elevated: rgba(0,0,0,0.05);
+  --border: rgba(0,0,0,0.08);
+  --border-accent: rgba(0,0,0,0.14);
+  --glass: rgba(0,0,0,0.03);
+  --error: #d44;
+  --user-bubble-bg: rgba(184,134,11,0.06);
+  --user-bubble-border: rgba(184,134,11,0.15);
+  --shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ===== RESET ===== */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { background: #020204 !important; }
-body {
+html, body {
   height: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  background: var(--stage-void);
-  color: var(--ink-bright);
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
-.container {
-  height: 100vh;
-  height: 100dvh;
+/* ===== APP SHELL ===== */
+#app {
   display: flex;
   flex-direction: column;
-  max-width: 780px;
-  margin: 0 auto;
-  padding: 0 24px;
+  height: 100%;
+  height: 100dvh;
+  padding-top: var(--safe-top);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
+/* ===== HEADER ===== */
 .header {
-  padding: 24px 0 0;
-  text-align: center;
-  flex-shrink: 0;
-  opacity: 0;
-  animation: rise 0.8s ease-out 0.1s forwards;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  z-index: 10;
 }
 
-.header-title {
-  font-family: 'Fraunces', Georgia, serif;
-  font-variation-settings: "opsz" 96;
-  font-style: italic;
-  font-weight: 300;
-  font-size: clamp(1.4rem, 4vw, 2rem);
-  color: var(--signal-synth);
-  letter-spacing: -0.02em;
-  margin-bottom: 4px;
-}
+.mark-icon { width: 26px; height: 26px; flex-shrink: 0; }
+.mark-icon svg { width: 100%; height: 100%; color: var(--signal); }
 
+.header-info { flex: 1; min-width: 0; }
+.header-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--signal);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
 .header-sub {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-dim);
+  margin-top: 1px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--border);
+  border-radius: 8px; color: var(--ink-dim);
+  cursor: pointer; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn:active { transform: scale(0.92); }
+.icon-btn:hover { border-color: var(--border-accent); color: var(--ink-soft); }
+.icon-btn svg { width: 16px; height: 16px; }
+
+.status-pill {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 8px; border-radius: 10px;
+  background: var(--glass); border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-dim);
+}
+
+.status-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--ink-faint); transition: all 0.3s;
+}
+.status-dot.connected { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.5); }
+.status-dot.connecting { background: var(--signal); animation: pulse 1.4s ease-in-out infinite; }
+
+@keyframes pulse { 0%,100% { opacity:.5; } 50% { opacity:1; } }
+
+/* ===== MEMBERS BAR ===== */
 .members-bar {
+  flex: 0 0 auto;
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   color: var(--ink-dim);
-  margin-top: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--rule-soft);
-  max-height: 42px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  max-height: 36px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
+
+.members-bar:empty { display: none; }
 
 .members-bar .dot {
   display: inline-block;
-  width: 5px;
-  height: 5px;
+  width: 5px; height: 5px;
   border-radius: 50%;
   background: #4ade80;
   margin-right: 3px;
   vertical-align: middle;
 }
 
-.members-bar .char-dot { background: var(--signal-synth); }
+.members-bar .char-dot { background: var(--signal); }
 
+/* ===== CONVERSATION ===== */
 .conversation {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
-  padding: 16px 0 12px;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding: 16px 14px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--ink-faint) transparent;
+  gap: 12px;
 }
 
-.conversation::-webkit-scrollbar { width: 4px; }
+.conversation::-webkit-scrollbar { width: 3px; }
 .conversation::-webkit-scrollbar-track { background: transparent; }
 .conversation::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 2px; }
 
-.msg { opacity: 0; animation: rise 0.3s ease-out forwards; }
+/* ===== MESSAGES ===== */
+.msg {
+  max-width: 100%;
+  animation: msg-in 0.25s ease-out;
+}
+@keyframes msg-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
 .msg-system {
   text-align: center;
@@ -122,153 +217,121 @@ body {
   padding: 4px 0;
 }
 
-.msg-human { text-align: right; }
-
-.msg-human .speaker {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+.msg-user { align-self: flex-end; max-width: 82%; }
+.msg-user .speaker {
+  font-size: 11px; font-weight: 500;
   color: var(--ink-dim);
-  margin-bottom: 3px;
-  padding-right: 4px;
+  margin-bottom: 4px; padding-right: 2px;
+  text-align: right;
+}
+.msg-user .bubble {
+  background: var(--user-bubble-bg);
+  border: 1px solid var(--user-bubble-border);
+  border-radius: 16px 16px 4px 16px;
+  padding: 10px 14px;
+  font-size: 14px; line-height: 1.55;
+  color: var(--ink); word-break: break-word;
 }
 
-.msg-human .bubble {
-  display: inline-block;
-  background: rgba(232,184,88,0.06);
-  border: 1px solid rgba(232,184,88,0.15);
-  border-radius: 14px 14px 4px 14px;
-  padding: 10px 16px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  color: var(--ink-bright);
-  max-width: 75%;
-  text-align: left;
-  word-break: break-word;
-}
-
-.msg-character { text-align: left; }
-
+.msg-character { align-self: flex-start; max-width: 94%; }
 .msg-character .speaker {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 300;
-  font-size: 11px;
-  margin-bottom: 3px;
-  padding-left: 2px;
+  font-size: 11px; font-weight: 500;
+  opacity: 0.8;
+  margin-bottom: 4px; padding-left: 2px;
 }
-
 .msg-character .bubble {
-  display: inline-block;
-  background: rgba(255,255,255,0.02);
-  border: 1px solid var(--rule-soft);
-  border-radius: 4px 14px 14px 14px;
-  padding: 10px 16px;
-  font-family: 'Fraunces', Georgia, serif;
-  font-variation-settings: "opsz" 24;
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--ink-soft);
-  max-width: 80%;
-  word-break: break-word;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px 16px 16px 16px;
+  padding: 12px 16px;
+  font-size: 14.5px; line-height: 1.7;
+  color: var(--ink-soft); word-break: break-word;
 }
 
 .msg-character .bubble em { font-style: italic; }
 
-.typing-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-  opacity: 0;
-  transition: opacity 0.3s;
+/* Typing dots */
+.typing-indicator {
+  align-self: flex-start;
 }
 
-.typing-row.visible { opacity: 1; }
-
-.typing-row .label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  color: var(--ink-faint);
+.typing-indicator .typing-dots {
+  display: inline-flex; gap: 5px; align-items: center;
+  padding: 12px 16px; background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 4px 16px 16px 16px;
+}
+.typing-indicator .typing-dots span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--signal); opacity: 0.3;
+  animation: bounce-dot 1.4s ease-in-out infinite;
+}
+.typing-indicator .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce-dot {
+  0%,60%,100% { opacity:.3; transform: translateY(0); }
+  30% { opacity:1; transform: translateY(-3px); }
 }
 
-.typing-dots {
-  display: inline-flex;
-  gap: 3px;
+.typing-indicator .typing-label {
+  font-size: 11px; font-weight: 500;
+  margin-bottom: 4px; padding-left: 2px;
+  color: var(--ink-dim);
 }
 
-.typing-dots span {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--signal-synth);
-  opacity: 0.4;
-  animation: dot-pulse 1.4s ease-in-out infinite;
-}
-
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes dot-pulse {
-  0%, 60%, 100% { opacity: 0.3; }
-  30% { opacity: 1; }
-}
-
+/* ===== INPUT AREA ===== */
 .input-area {
-  flex-shrink: 0;
-  padding: 12px 0 20px;
-  border-top: 1px solid var(--rule-soft);
-  opacity: 0;
-  animation: rise 0.8s ease-out 0.6s forwards;
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  padding-bottom: calc(10px + var(--safe-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  z-index: 10;
 }
 
 .input-row {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: rgba(255,255,255,0.025);
-  border: 1px solid var(--rule-soft);
-  border-radius: 8px;
+  display: flex; align-items: flex-end; gap: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
   transition: border-color 0.2s, box-shadow 0.2s;
+  max-width: 640px; margin: 0 auto;
 }
-
 .input-row:focus-within {
-  border-color: rgba(232,184,88,0.35);
-  box-shadow: 0 0 24px rgba(232,184,88,0.06);
+  border-color: var(--signal-glow);
+  box-shadow: 0 0 16px rgba(232,184,88,0.04);
 }
 
-.input-field {
-  flex: 1;
-  padding: 14px 18px;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  color: var(--ink-bright);
+#input {
+  flex: 1; padding: 12px 14px;
+  background: transparent; border: none; outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400; color: var(--ink);
+  resize: none; min-height: 44px; max-height: 120px;
+  line-height: 1.45; overflow-y: auto;
 }
-
-.input-field::placeholder { color: var(--ink-faint); }
+#input::placeholder { color: var(--ink-faint); }
 
 .send-btn {
-  padding: 14px 18px;
-  background: none;
-  border: none;
-  border-left: 1px solid var(--rule-soft);
-  color: var(--ink-dim);
-  cursor: pointer;
-  transition: color 0.15s;
-  display: flex;
-  align-items: center;
+  padding: 10px 12px; background: none; border: none;
+  border-left: 1px solid var(--border);
+  color: var(--ink-faint); cursor: pointer;
+  transition: color 0.12s, transform 0.1s;
+  display: flex; align-items: center; justify-content: center;
+  min-width: 44px; min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
 }
-
-.send-btn:hover { color: var(--signal-synth); }
+.send-btn.active { color: var(--signal); }
+.send-btn:active { transform: scale(0.9); }
+.send-btn:disabled { opacity: 0.25; pointer-events: none; }
 .send-btn svg { width: 18px; height: 18px; }
 
 .nav-bar {
   display: flex;
   justify-content: center;
   gap: 16px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .nav-link {
@@ -280,39 +343,35 @@ body {
   text-decoration: none;
   transition: color 0.15s;
 }
+.nav-link:hover { color: var(--signal); }
+.nav-link.active { color: var(--signal); }
 
-.nav-link:hover { color: var(--signal-synth); }
-.nav-link.active { color: var(--signal-synth); }
-
+/* ===== NAME OVERLAY ===== */
 .name-overlay {
   position: fixed;
   inset: 0;
-  background: var(--stage-void);
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 20px;
   z-index: 100;
-  opacity: 0;
-  animation: rise 0.6s ease-out forwards;
+  animation: fade-in 0.6s ease-out;
 }
 
 .name-overlay.hidden { display: none; }
 
 .name-overlay h2 {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 300;
-  font-size: 1.6rem;
-  color: var(--signal-synth);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--signal);
+  letter-spacing: -0.02em;
 }
 
 .name-overlay p {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 300;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 400;
   color: var(--ink-dim);
   max-width: 360px;
   text-align: center;
@@ -321,33 +380,34 @@ body {
 
 .name-overlay .count {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 9px;
   color: var(--ink-faint);
   letter-spacing: 0.15em;
+  text-transform: uppercase;
 }
 
 .name-input {
-  padding: 14px 20px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--rule-soft);
-  border-radius: 8px;
-  color: var(--ink-bright);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
+  padding: 12px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
   outline: none;
   width: 260px;
   text-align: center;
   transition: border-color 0.2s;
 }
 
-.name-input:focus { border-color: rgba(232,184,88,0.4); }
+.name-input:focus { border-color: var(--signal-glow); }
 
 .name-enter {
   padding: 12px 28px;
   background: transparent;
-  border: 1px solid rgba(232,184,88,0.3);
-  border-radius: 6px;
-  color: var(--signal-synth);
+  border: 1px solid var(--signal-glow);
+  border-radius: 8px;
+  color: var(--signal);
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   letter-spacing: 0.14em;
@@ -357,42 +417,71 @@ body {
 }
 
 .name-enter:hover {
-  background: var(--signal-synth-dim);
-  border-color: var(--signal-synth);
+  background: var(--signal-dim);
+  border-color: var(--signal);
 }
 
-@keyframes rise {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ===== ERROR TOAST ===== */
+.error-toast {
+  position: fixed; top: calc(var(--safe-top) + 56px);
+  left: 50%; transform: translateX(-50%) translateY(-12px);
+  background: var(--bg-elevated); border: 1px solid rgba(255,107,107,0.3);
+  border-radius: 10px; padding: 8px 16px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--error);
+  opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; z-index: 200;
 }
+.error-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 
-@media (max-width: 600px) {
-  .container { padding: 0 14px; }
-  .header { padding-top: 16px; }
-  .msg-human .bubble, .msg-character .bubble { max-width: 90%; }
-}
+/* ===== SCROLL ANCHOR ===== */
+.scroll-anchor { height: 1px; flex-shrink: 0; }
+
+/* ===== UTILITIES ===== */
+@keyframes fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 ::selection {
-  background: var(--signal-synth);
-  color: var(--stage-void);
+  background: var(--signal);
+  color: var(--bg);
+}
+
+/* ===== DESKTOP ===== */
+@media (min-width: 640px) {
+  .conversation { padding: 24px 20px; max-width: 680px; margin: 0 auto; width: 100%; }
+  .header { padding: 14px 20px; }
+  .members-bar { padding-left: 20px; padding-right: 20px; }
 }
 </style>
 </head>
 <body>
 
 <div class="name-overlay" id="name-overlay">
+  <svg viewBox="0 0 70 60" xmlns="http://www.w3.org/2000/svg" style="width:48px;height:48px;color:var(--signal);filter:drop-shadow(0 0 16px rgba(232,184,88,0.25))">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.4" opacity=".9"/>
+      <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".9" opacity=".75"/>
+      <line x1="35" y1="2" x2="35" y2="16" stroke-width=".7" opacity=".55"/>
+      <line x1="60" y1="16" x2="47" y2="23" stroke-width=".7" opacity=".55"/>
+      <line x1="10" y1="16" x2="23" y2="23" stroke-width=".7" opacity=".55"/>
+      <line x1="35" y1="58" x2="35" y2="44" stroke-width=".7" opacity=".5"/>
+      <line x1="60" y1="44" x2="47" y2="37" stroke-width=".7" opacity=".5"/>
+      <line x1="10" y1="44" x2="23" y2="37" stroke-width=".7" opacity=".5"/>
+      <line x1="35" y1="16" x2="35" y2="44" stroke-width=".5" opacity=".4"/>
+      <line x1="23" y1="23" x2="47" y2="37" stroke-width=".5" opacity=".35"/>
+      <line x1="47" y1="23" x2="23" y2="37" stroke-width=".5" opacity=".35"/>
+      <circle cx="35" cy="30" r="2" fill="currentColor" opacity=".9" stroke="none"/>
+    </g>
+  </svg>
   <h2>MythChat</h2>
   <p>56 characters. One living room. Drop in.</p>
-  <span class="count">CHARACTERS ARE ALWAYS HERE</span>
+  <span class="count">Characters are always here</span>
   <input class="name-input" id="name-input" type="text" placeholder="Your name" autocomplete="off" spellcheck="false">
   <button class="name-enter" id="name-enter">Enter</button>
 </div>
 
-<div class="container">
-
+<div id="app">
+  <!-- Header -->
   <div class="header">
-    <a class="mark" href="/" title="mysubstrate.org" style="display:inline-block;width:28px;height:28px;margin-bottom:12px;text-decoration:none">
-      <svg viewBox="0 0 70 60" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;color:var(--signal-synth);filter:drop-shadow(0 0 10px rgba(232,184,88,0.25))">
+    <a class="mark-icon" href="/" title="mysubstrate.org" style="text-decoration:none">
+      <svg viewBox="0 0 70 60" xmlns="http://www.w3.org/2000/svg">
         <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="35,2 60,16 60,44 35,58 10,44 10,16" stroke-width="1.4" opacity=".9"/>
           <polygon points="35,16 47,23 47,37 35,44 23,37 23,23" stroke-width=".9" opacity=".75"/>
@@ -409,25 +498,41 @@ body {
         </g>
       </svg>
     </a>
-    <h1 class="header-title">MythChat</h1>
-    <div class="header-sub">56 characters. one living room. drop in.</div>
-    <div class="members-bar" id="members-bar"></div>
-  </div>
-
-  <div class="conversation" id="conversation">
-    <div class="typing-row" id="typing-row">
-      <span class="label" id="typing-label">someone is typing</span>
-      <div class="typing-dots"><span></span><span></span><span></span></div>
+    <div class="header-info">
+      <div class="header-name">MythChat</div>
+      <div class="header-sub">56 characters &middot; one living room</div>
+    </div>
+    <div class="header-actions">
+      <div class="status-pill">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusLabel">offline</span>
+      </div>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" id="themeIcon">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
     </div>
   </div>
 
+  <!-- Members Bar -->
+  <div class="members-bar" id="members-bar"></div>
+
+  <!-- Conversation -->
+  <div class="conversation" id="conversation">
+    <div class="scroll-anchor" id="scrollAnchor"></div>
+  </div>
+
+  <!-- Input -->
   <div class="input-area">
     <div class="input-row">
-      <input class="input-field" id="input" type="text" placeholder="Say something..." autocomplete="off" spellcheck="false">
-      <button class="send-btn" id="send-btn" aria-label="Send">
+      <textarea id="input" placeholder="Say something..." rows="1" autocomplete="off" autocorrect="on" spellcheck="true" enterkeyhint="send"></textarea>
+      <button class="send-btn" id="send-btn" aria-label="Send" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"/>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
         </svg>
       </button>
     </div>
@@ -438,13 +543,16 @@ body {
       <a class="nav-link" href="/">home</a>
     </div>
   </div>
-
 </div>
+
+<!-- Error Toast -->
+<div class="error-toast" id="errorToast"></div>
 
 <script>
 (function() {
   'use strict';
 
+  // ===== HOLODOT =====
   function generateHolodot() {
     var stored = localStorage.getItem('mythchat_holodot');
     if (stored && stored.length === 64) return stored;
@@ -469,16 +577,76 @@ body {
     WS_URL = 'wss://' + BEACON_HOST + '/ws/mythchat';
   }
 
+  // ===== ELEMENTS =====
   var overlay = document.getElementById('name-overlay');
   var nameInput = document.getElementById('name-input');
   var nameEnter = document.getElementById('name-enter');
   var conversation = document.getElementById('conversation');
-  var typingRow = document.getElementById('typing-row');
-  var typingLabel = document.getElementById('typing-label');
+  var scrollAnchor = document.getElementById('scrollAnchor');
   var membersBar = document.getElementById('members-bar');
   var input = document.getElementById('input');
   var sendBtn = document.getElementById('send-btn');
+  var statusDot = document.getElementById('statusDot');
+  var statusLabel = document.getElementById('statusLabel');
+  var errorToast = document.getElementById('errorToast');
 
+  // ===== THEME =====
+  var theme = localStorage.getItem('plm_theme') || 'dark';
+
+  function setTheme(t) {
+    theme = t;
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('plm_theme', t);
+    document.getElementById('metaTheme').content = t === 'dark' ? '#020204' : '#fafaf8';
+    document.getElementById('themeIcon').innerHTML = t === 'dark'
+      ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+      : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  }
+  setTheme(theme);
+
+  document.getElementById('themeBtn').addEventListener('click', function() {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  });
+
+  // ===== STATUS =====
+  function setStatus(s) {
+    statusDot.className = 'status-dot ' + s;
+    statusLabel.textContent = s === 'connected' ? 'live' : s === 'connecting' ? '...' : 'offline';
+  }
+
+  // ===== ERROR =====
+  function showError(msg) {
+    errorToast.textContent = msg;
+    errorToast.classList.add('visible');
+    setTimeout(function() { errorToast.classList.remove('visible'); }, 4000);
+  }
+
+  // ===== TEXTAREA RESIZE =====
+  function autoResize() {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    var hasText = input.value.trim().length > 0;
+    sendBtn.disabled = !hasText;
+    sendBtn.classList.toggle('active', hasText);
+  }
+  input.addEventListener('input', autoResize);
+
+  // ===== iOS KEYBOARD FIX =====
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', function() {
+      if (document.activeElement === input) {
+        requestAnimationFrame(scrollDown);
+      }
+    });
+  }
+
+  document.addEventListener('touchmove', function(e) {
+    if (!conversation.contains(e.target)) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // ===== NAME OVERLAY =====
   if (myName) {
     overlay.classList.add('hidden');
     nameInput.value = myName;
@@ -499,10 +667,20 @@ body {
   nameEnter.addEventListener('click', function() { enterChat(nameInput.value.trim()); });
   nameInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') enterChat(nameInput.value.trim()); });
 
+  // ===== SCROLL =====
+  function scrollDown() {
+    requestAnimationFrame(function() {
+      scrollAnchor.scrollIntoView({ block: 'end', behavior: 'smooth' });
+    });
+  }
+
+  // ===== WEBSOCKET =====
   function connectWS() {
+    setStatus('connecting');
     try {
       ws = new WebSocket(WS_URL);
     } catch (e) {
+      setStatus('');
       setTimeout(connectWS, 5000);
       return;
     }
@@ -518,6 +696,7 @@ body {
 
     ws.onclose = function() {
       wsReady = false;
+      setStatus('');
       setTimeout(connectWS, 3000);
     };
 
@@ -528,6 +707,7 @@ body {
     switch (msg.type) {
       case 'connected':
         wsReady = true;
+        setStatus('connected');
         myName = msg.name || myName;
         charColors = msg.colors || {};
         updateMembers(msg.members || []);
@@ -572,24 +752,41 @@ body {
   }
 
   function showThinking(charName) {
-    typingLabel.textContent = charName ? charName + ' is thinking' : 'someone is typing';
-    typingRow.classList.add('visible');
+    hideThinking();
+    var div = document.createElement('div');
+    div.className = 'msg typing-indicator';
+    div.id = 'thinking-msg';
+    var label = document.createElement('div');
+    label.className = 'typing-label';
+    label.textContent = charName ? charName + ' is thinking...' : 'someone is typing...';
+    if (charName && charColors[charName]) {
+      label.style.color = charColors[charName];
+    }
+    div.appendChild(label);
+    var dots = document.createElement('div');
+    dots.className = 'typing-dots';
+    dots.innerHTML = '<span></span><span></span><span></span>';
+    div.appendChild(dots);
+    scrollAnchor.before(div);
     scrollDown();
   }
 
-  function hideThinking() { typingRow.classList.remove('visible'); }
+  function hideThinking() {
+    var el = document.getElementById('thinking-msg');
+    if (el) el.remove();
+  }
 
   function addSystemMsg(text) {
     var div = document.createElement('div');
     div.className = 'msg msg-system';
     div.textContent = text;
-    conversation.insertBefore(div, typingRow);
+    scrollAnchor.before(div);
     scrollDown();
   }
 
   function addHumanMsg(name, text) {
     var div = document.createElement('div');
-    div.className = 'msg msg-human';
+    div.className = 'msg msg-user';
     var speaker = document.createElement('div');
     speaker.className = 'speaker';
     speaker.textContent = name;
@@ -598,7 +795,7 @@ body {
     bubble.className = 'bubble';
     bubble.textContent = text;
     div.appendChild(bubble);
-    conversation.insertBefore(div, typingRow);
+    scrollAnchor.before(div);
     scrollDown();
   }
 
@@ -608,7 +805,7 @@ body {
     var speaker = document.createElement('div');
     speaker.className = 'speaker';
     speaker.textContent = charName;
-    var c = color || charColors[charName] || '#b5b0a3';
+    var c = color || charColors[charName] || '#bbb8b0';
     speaker.style.color = c;
     div.appendChild(speaker);
     var bubble = document.createElement('div');
@@ -621,11 +818,9 @@ body {
     }
     bubble.innerHTML = text.replace(/\*([^*]+)\*/g, '<em style="color:' + c + '">$1</em>');
     div.appendChild(bubble);
-    conversation.insertBefore(div, typingRow);
+    scrollAnchor.before(div);
     scrollDown();
   }
-
-  function scrollDown() { conversation.scrollTop = conversation.scrollHeight; }
 
   function escapeHtml(s) {
     var d = document.createElement('div');
@@ -637,12 +832,18 @@ body {
     var text = input.value.trim();
     if (!text || !wsReady) return;
     input.value = '';
+    autoResize();
     ws.send(JSON.stringify({ type: 'message', content: text }));
     addHumanMsg(myName, text);
+    if ('ontouchstart' in window) input.blur();
   }
 
   sendBtn.addEventListener('click', send);
-  input.addEventListener('keydown', function(e) { if (e.key === 'Enter') send(); });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+
+  if (window.matchMedia('(hover: hover)').matches && myName) input.focus();
 })();
 </script>
 </body>
