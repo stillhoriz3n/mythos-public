@@ -406,13 +406,12 @@ body {
   if (stored && stored.length === 64) { holodot = stored; }
   else { localStorage.setItem('jarvis_holodot', holodot); }
 
-  var BEACON_HOST = 'jarvis.mysubstrate.org';
-  var wsProto = 'wss:';
-  var BEACON_WS = wsProto + '//' + BEACON_HOST + '/ws';
+  var BEACON_HOST = 'jarvis.mysubstrate.org:7780';
+  var BEACON_WS = 'wss://' + BEACON_HOST + '/ws';
   var BEACON_HTTP = 'https://' + BEACON_HOST;
 
   // If served from the beacon itself, use same-origin
-  if (location.hostname === BEACON_HOST || location.port === '7780') {
+  if (location.port === '7780') {
     BEACON_WS = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws';
     BEACON_HTTP = location.protocol + '//' + location.host;
   }

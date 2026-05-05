@@ -445,9 +445,9 @@ body {
   var ws = null;
   var wsReady = false;
 
-  var BEACON_HOST = 'jarvis.mysubstrate.org';
+  var BEACON_HOST = 'jarvis.mysubstrate.org:7780';
   var WS_URL;
-  if (location.hostname === BEACON_HOST || location.port === '7780') {
+  if (location.port === '7780') {
     WS_URL = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws/admin';
   } else {
     WS_URL = 'wss://' + BEACON_HOST + '/ws/admin';

@@ -424,10 +424,10 @@ body {
   if (stored && stored.length === 64) { holodot = stored; }
   else { localStorage.setItem('isaac_holodot', holodot); }
 
-  var BEACON_HOST = 'jarvis.mysubstrate.org';
+  var BEACON_HOST = 'jarvis.mysubstrate.org:7780';
   var WS_URL = 'wss://' + BEACON_HOST + '/ws/isaac';
 
-  if (location.hostname === BEACON_HOST || location.port === '7780') {
+  if (location.port === '7780') {
     WS_URL = (location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '/ws/isaac';
   }
 
