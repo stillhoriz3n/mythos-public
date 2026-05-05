@@ -461,6 +461,44 @@ html, body {
 /* ===== SCROLL ANCHOR ===== */
 .scroll-anchor { height: 1px; flex-shrink: 0; }
 
+/* ===== CODE LAUNCHER ===== */
+.code-launcher { position: relative; }
+.code-launcher-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid rgba(78,201,212,0.25);
+  border-radius: 8px; color: var(--signal);
+  cursor: pointer; transition: all 0.15s;
+  font-size: 14px;
+}
+.code-launcher-btn:hover { border-color: var(--signal); background: var(--signal-dim); }
+.code-launcher-btn svg { width: 16px; height: 16px; }
+
+.code-dropdown {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--bg); border: 1px solid var(--border-accent);
+  border-radius: 10px; min-width: 180px;
+  box-shadow: var(--shadow); z-index: 50;
+  opacity: 0; transform: translateY(-4px) scale(0.97);
+  pointer-events: none; transition: all 0.15s ease;
+  overflow: hidden;
+}
+.code-dropdown.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.code-dropdown-header {
+  padding: 8px 12px; font-family: 'JetBrains Mono', monospace;
+  font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--ink-faint); border-bottom: 1px solid var(--border);
+}
+.code-dropdown a {
+  display: block; padding: 10px 14px;
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
+  color: var(--ink-soft); text-decoration: none;
+  transition: all 0.1s; border-bottom: 1px solid var(--border);
+}
+.code-dropdown a:last-child { border-bottom: none; }
+.code-dropdown a:hover { background: var(--signal-dim); color: var(--signal); }
+.code-dropdown a .code-arrow { float: right; opacity: 0.4; font-size: 11px; }
+
 @keyframes fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 ::selection { background: var(--signal); color: var(--bg); }
@@ -528,6 +566,21 @@ html, body {
         <div class="status-dot" id="statusDot"></div>
         <span id="statusLabel">offline</span>
       </div>
+      <div class="code-launcher">
+        <button class="code-launcher-btn" id="codeLauncherBtn" title="Launch coding session">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </button>
+        <div class="code-dropdown" id="codeDropdown">
+          <div class="code-dropdown-header">Launch Code Session</div>
+          <a href="/code/?user=Grant">Grant <span class="code-arrow">&rarr;</span></a>
+          <a href="/code/?user=Joey">Joey <span class="code-arrow">&rarr;</span></a>
+          <a href="/code/?user=Jason">Jason <span class="code-arrow">&rarr;</span></a>
+          <a href="/code/?user=Corey">Corey <span class="code-arrow">&rarr;</span></a>
+          <a href="/code/?user=Sierra">Sierra <span class="code-arrow">&rarr;</span></a>
+        </div>
+      </div>
       <button class="icon-btn" id="themeBtn" title="Toggle theme">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" id="themeIcon">
           <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
@@ -558,6 +611,7 @@ html, body {
       <a class="nav-link" href="/isaac/">isaac</a>
       <a class="nav-link" href="/mythchat/">mythchat</a>
       <a class="nav-link active" href="/admin/">admin</a>
+      <a class="nav-link" href="/code/">code</a>
       <a class="nav-link" href="/">home</a>
     </div>
   </div>
@@ -878,6 +932,17 @@ html, body {
   input.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   });
+
+  // Code launcher dropdown
+  var codeLauncherBtn = document.getElementById('codeLauncherBtn');
+  var codeDropdown = document.getElementById('codeDropdown');
+  if (codeLauncherBtn && codeDropdown) {
+    codeLauncherBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      codeDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function() { codeDropdown.classList.remove('open'); });
+  }
 
   if (window.matchMedia('(hover: hover)').matches && myName) input.focus();
 })();
