@@ -193,6 +193,45 @@ html, body {
 .oa-name { font-weight: 600; color: var(--ink); }
 .oa-role { font-size: 10px; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* ===== AXIS SECTIONS (Model / Chassis) ===== */
+.axis-section {
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.axis-label {
+  font-size: 10px; font-weight: 600; color: var(--ink-dim);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 8px;
+}
+.axis-pills {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.axis-pill {
+  padding: 6px 12px; border-radius: 14px;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--ink-dim); cursor: pointer; transition: all 0.12s;
+  display: flex; align-items: center; gap: 5px;
+  white-space: nowrap;
+}
+.axis-pill:hover { border-color: var(--border-accent); color: var(--ink-soft); }
+.axis-pill.active { background: var(--signal-dim); border-color: var(--signal-glow); color: var(--signal); }
+.axis-pill.disabled { opacity: 0.3; pointer-events: none; }
+.axis-pill .layer-badge {
+  font-size: 8px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; opacity: 0.6;
+}
+.axis-pill .status-indicator {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--ink-faint); flex-shrink: 0;
+}
+.axis-pill .status-indicator.online { background: #4ade80; box-shadow: 0 0 4px rgba(74,222,128,0.5); }
+.axis-pill .status-indicator.offline { background: #ff6b6b; box-shadow: 0 0 4px rgba(255,107,107,0.3); }
+.chassis-group-label {
+  font-size: 9px; color: var(--ink-faint); text-transform: uppercase;
+  letter-spacing: 0.1em; margin: 8px 0 4px; width: 100%;
+}
+
 /* ===== CONVERSATION ===== */
 .conversation {
   flex: 1 1 auto;
@@ -495,7 +534,7 @@ html, body {
   <div class="conversation" id="conversation">
     <div class="welcome" id="welcome">
       <div class="welcome-oa" id="welcomeOA">Rufio</div>
-      <div class="welcome-model">opus 4.6 — full tools</div>
+      <div class="welcome-model" id="welcomeModel">opus 4.6 / 7900XT WSL — full tools</div>
       <p class="welcome-desc">Bash, Read, Write, Edit, Grep, Glob. Full substrate access. Constitutional derivation. This is a first-class coding session.</p>
       <div class="welcome-chips" id="welcomeChips">
         <span class="welcome-chip" data-q="What's the current state of the fleet?">fleet status</span>
@@ -541,6 +580,14 @@ html, body {
       </button>
     </div>
     <div class="oa-list" id="oaList"></div>
+    <div class="axis-section">
+      <div class="axis-label">Model / Provider</div>
+      <div class="axis-pills" id="modelPills"></div>
+    </div>
+    <div class="axis-section">
+      <div class="axis-label">Chassis</div>
+      <div class="axis-pills" id="chassisPills"></div>
+    </div>
   </div>
 </div>
 
@@ -551,15 +598,38 @@ html, body {
   'use strict';
 
   var OAS = [
-    { id: 'rufio', name: 'Rufio', role: 'Admiral\'s OA — full authority', model: 'opus 4.6', color: '#4ec9d4', tools: 'Bash,Read,Write,Edit,Grep,Glob' },
-    { id: 'matt', name: 'Matt', role: 'Fleet engineer — Will Hunting', model: 'opus 4.6', color: '#4ec9d4', tools: 'Bash,Read,Write,Edit,Grep,Glob' },
-    { id: 'ari', name: 'Ari', role: 'Executor — what needs to happen next', model: 'opus 4.6', color: '#e8a855', tools: 'Bash,Read,Write,Edit,Grep,Glob' },
-    { id: 'vision', name: 'Vision', role: 'Builder — systems thinker', model: 'opus 4.6', color: '#60a5fa', tools: 'Bash,Read,Write,Edit,Grep,Glob' },
-    { id: 'isaac', name: 'Isaac', role: 'Researcher — deep constitutional reasoning', model: 'qwen3-14b (local)', color: '#88aadd', tools: 'none (PLM)' },
+    { id: 'rufio', name: 'Rufio', role: 'Admiral\'s OA — full authority', color: '#4ec9d4' },
+    { id: 'matt', name: 'Matt', role: 'Fleet engineer — Will Hunting', color: '#4ec9d4' },
+    { id: 'ari', name: 'Ari', role: 'Executor — what needs to happen next', color: '#e8a855' },
+    { id: 'vision', name: 'Vision', role: 'Builder — systems thinker', color: '#60a5fa' },
+    { id: 'isaac', name: 'Isaac', role: 'Researcher — constitutional reasoning', color: '#88aadd' },
+  ];
+
+  var MODELS = [
+    { id: 'opus',   label: 'Opus 4.6',   provider: 'claude' },
+    { id: 'sonnet', label: 'Sonnet 4.6', provider: 'claude' },
+    { id: 'haiku',  label: 'Haiku',      provider: 'claude' },
+    { id: 'codex',  label: 'Codex',      provider: 'codex' },
+    { id: 'plm',    label: 'PLM',        provider: 'plm' },
+  ];
+
+  var CHASSIS = [
+    { id: '7900xt',       label: '7900XT',       layer: 'win',   group: 'local' },
+    { id: '7900xt-wsl',   label: '7900XT WSL',   layer: 'wsl',   group: 'local' },
+    { id: '2080ti',       label: '2080Ti',       layer: 'win',   group: 'remote' },
+    { id: '2080ti-wsl',   label: '2080Ti WSL',   layer: 'wsl',   group: 'remote' },
+    { id: '3060ti',       label: '3060Ti',       layer: 'win',   group: 'remote' },
+    { id: '1050gt',       label: '1050GT',       layer: 'win',   group: 'remote' },
+    { id: 'mythserv1',    label: 'MythServ1',    layer: 'win',   group: 'remote' },
+    { id: 'mythserv1-wsl',label: 'MythServ1 WSL',layer: 'wsl',   group: 'remote' },
+    { id: 'macos',        label: 'macOS',        layer: 'mac',   group: 'remote' },
   ];
 
   var state = {
     oa: OAS[0],
+    model: MODELS[0],
+    chassis: CHASSIS[1],
+    chassisStatus: {},
     theme: localStorage.getItem('plm_theme') || 'dark',
     ws: null, wsReady: false,
     started: false, streaming: false,
@@ -609,16 +679,43 @@ html, body {
   setTheme(state.theme);
   $('themeBtn').addEventListener('click', function() { setTheme(state.theme === 'dark' ? 'light' : 'dark'); });
 
-  // OA selection
+  function updateHeader() {
+    $('headerName').textContent = state.oa.name;
+    $('headerModel').textContent = state.model.label + ' / ' + state.chassis.label;
+    $('welcomeOA').textContent = state.oa.name;
+    var wmLabel = $('welcomeModel');
+    if (wmLabel) wmLabel.textContent = state.model.label + ' / ' + state.chassis.label + ' — full tools';
+  }
+
   function setOA(oa) {
     state.oa = oa;
-    $('headerName').textContent = oa.name;
-    $('headerModel').textContent = oa.model;
-    $('welcomeOA').textContent = oa.name;
     localStorage.setItem('code_oa', oa.id);
+    if (oa.id === 'isaac') {
+      setModel(MODELS.find(function(m) { return m.id === 'plm'; }));
+      setChassis(CHASSIS.find(function(c) { return c.id === '7900xt-wsl'; }));
+    }
     oaList.querySelectorAll('.oa-item').forEach(function(el) {
       el.classList.toggle('active', el.dataset.id === oa.id);
     });
+    updateHeader();
+  }
+
+  function setModel(m) {
+    state.model = m;
+    localStorage.setItem('code_model', m.id);
+    if (m.id === 'plm' && state.chassis.id !== '7900xt' && state.chassis.id !== '7900xt-wsl') {
+      setChassis(CHASSIS.find(function(c) { return c.id === '7900xt-wsl'; }));
+    }
+    buildModelPills();
+    buildChassisPills();
+    updateHeader();
+  }
+
+  function setChassis(c) {
+    state.chassis = c;
+    localStorage.setItem('code_chassis', c.id);
+    buildChassisPills();
+    updateHeader();
   }
 
   function buildOAList() {
@@ -629,18 +726,73 @@ html, body {
       btn.dataset.id = oa.id;
       btn.innerHTML = '<div class="oa-avatar" style="background:' + oa.color + '">' + oa.name[0] + '</div>' +
         '<div class="oa-meta"><div class="oa-name">' + oa.name + '</div>' +
-        '<div class="oa-role">' + oa.model + ' — ' + oa.role + '</div></div>';
-      btn.addEventListener('click', function() { setOA(oa); oaDrawer.classList.remove('open'); });
+        '<div class="oa-role">' + oa.role + '</div></div>';
+      btn.addEventListener('click', function() { setOA(oa); });
       oaList.appendChild(btn);
     });
   }
+
+  function buildModelPills() {
+    var container = $('modelPills');
+    container.innerHTML = '';
+    MODELS.forEach(function(m) {
+      var pill = document.createElement('button');
+      pill.className = 'axis-pill' + (m.id === state.model.id ? ' active' : '');
+      pill.textContent = m.label;
+      pill.addEventListener('click', function() { setModel(m); });
+      container.appendChild(pill);
+    });
+  }
+
+  function buildChassisPills() {
+    var container = $('chassisPills');
+    container.innerHTML = '';
+    var groups = { local: [], remote: [] };
+    CHASSIS.forEach(function(c) { groups[c.group].push(c); });
+
+    ['local', 'remote'].forEach(function(g) {
+      var label = document.createElement('div');
+      label.className = 'chassis-group-label';
+      label.textContent = g === 'local' ? 'Local' : 'Remote Fleet';
+      container.appendChild(label);
+
+      groups[g].forEach(function(c) {
+        var pill = document.createElement('button');
+        var isActive = c.id === state.chassis.id;
+        var isDisabled = state.model.id === 'plm' && c.id !== '7900xt' && c.id !== '7900xt-wsl';
+        pill.className = 'axis-pill' + (isActive ? ' active' : '') + (isDisabled ? ' disabled' : '');
+        var statusClass = state.chassisStatus[c.id] ? (state.chassisStatus[c.id].online ? 'online' : 'offline') : '';
+        pill.innerHTML = '<span class="status-indicator ' + statusClass + '"></span>' +
+          c.label + '<span class="layer-badge">' + c.layer.toUpperCase() + '</span>';
+        pill.addEventListener('click', function() { if (!isDisabled) setChassis(c); });
+        container.appendChild(pill);
+      });
+    });
+  }
+
   buildOAList();
+  buildModelPills();
+  buildChassisPills();
 
   var savedOA = localStorage.getItem('code_oa');
   if (savedOA) {
     var found = OAS.find(function(o) { return o.id === savedOA; });
-    if (found) setOA(found);
+    if (found) { state.oa = found; }
   }
+  var savedModel = localStorage.getItem('code_model');
+  if (savedModel) {
+    var foundM = MODELS.find(function(m) { return m.id === savedModel; });
+    if (foundM) state.model = foundM;
+  }
+  var savedChassis = localStorage.getItem('code_chassis');
+  if (savedChassis) {
+    var foundC = CHASSIS.find(function(c) { return c.id === savedChassis; });
+    if (foundC) state.chassis = foundC;
+  }
+  buildOAList();
+  buildModelPills();
+  buildChassisPills();
+  updateHeader();
 
   $('oaBtn').addEventListener('click', function() { oaDrawer.classList.add('open'); });
   $('oaOverlay').addEventListener('click', function() { oaDrawer.classList.remove('open'); });
@@ -698,7 +850,6 @@ html, body {
 
   function renderMd(text) {
     var html = marked.parse(text);
-    // Add copy buttons to code blocks
     html = html.replace(/<pre><code/g, '<pre><button class="code-copy" onclick="this.parentNode.querySelector(\'code\').innerText&&navigator.clipboard.writeText(this.parentNode.querySelector(\'code\').innerText).then(function(){})">copy</button><code');
     return html;
   }
@@ -790,8 +941,9 @@ html, body {
     if (el) el.remove();
   }
 
-  // WebSocket
-  var TIMEOUT = 180000;
+  // WebSocket — same-origin (beacon-served)
+  var MODEL_TIMEOUTS = { opus: 210000, sonnet: 150000, haiku: 75000, codex: 330000, plm: 90000 };
+  function getTimeout() { return MODEL_TIMEOUTS[state.model.id] || 210000; }
 
   function connectWS() {
     setStatus('connecting');
@@ -817,7 +969,7 @@ html, body {
           setStatus('connected');
           break;
         case 'thinking':
-          if (state.pendingTimer) { clearTimeout(state.pendingTimer); state.pendingTimer = setTimeout(onTimeout, TIMEOUT); }
+          if (state.pendingTimer) { clearTimeout(state.pendingTimer); state.pendingTimer = setTimeout(onTimeout, getTimeout()); }
           break;
         case 'stream_start': hideThinking(); startStream(); break;
         case 'stream_chunk': appendChunk(msg.content || ''); break;
@@ -869,9 +1021,11 @@ html, body {
         type: 'message',
         content: q,
         oa: state.oa.id,
+        model: state.model.id,
+        chassis: state.chassis.id,
         history: state.messages.slice(-30),
       }));
-      state.pendingTimer = setTimeout(onTimeout, TIMEOUT);
+      state.pendingTimer = setTimeout(onTimeout, getTimeout());
     } else {
       addAiMsg('*' + state.oa.name + ' is offline.* WebSocket not connected — check the beacon.');
     }
@@ -899,6 +1053,21 @@ html, body {
       });
     }
   });
+
+  function fetchChassisStatus() {
+    var url;
+    if (location.port === '7780') {
+      url = (location.protocol === 'https:' ? 'https:' : 'http:') + '//' + location.host + '/code/chassis-status';
+    } else {
+      url = 'https://jarvis.mysubstrate.org:7780/code/chassis-status';
+    }
+    fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+      state.chassisStatus = data;
+      buildChassisPills();
+    }).catch(function() {});
+  }
+  fetchChassisStatus();
+  setInterval(fetchChassisStatus, 60000);
 
   if (window.matchMedia('(hover: hover)').matches) input.focus();
   connectWS();
