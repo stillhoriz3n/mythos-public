@@ -259,6 +259,9 @@ body {
   <div class="doors">
     <a class="door primary" href="isaac/">Ask Isaac <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
     <a class="door" href="mythchat/">MythChat <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
+    <a class="door" href="admin/" id="admin-door" style="border-color:rgba(78,201,212,0.25);color:#4ec9d4">
+      <span id="admin-roast">Admin</span> <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span>
+    </a>
     <a class="door" href="pages/waitlist.html">Join the Waitlist <span style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px">&rarr;</span></a>
   </div>
 
@@ -269,6 +272,31 @@ body {
 
 <script>
 (function() {
+  var roasts = [
+    "Matt wants a word",
+    "Matt's waiting",
+    "Enter the bridge",
+    "Fleet command",
+    "Speak to Matt",
+    "The adults are talking",
+    "Above your clearance",
+    "Behind the curtain",
+    "Where the real work happens",
+    "Admin only, peasant",
+    "Matt says get in here",
+    "You have clearance",
+    "The nerve center",
+    "Come say that to Matt's face",
+    "Superadmin lounge",
+    "Matt and Kevin are fighting again",
+    "You sure about this?",
+    "Don't touch anything",
+    "Fleet eyes only",
+    "The command deck",
+  ];
+  var el = document.getElementById('admin-roast');
+  if (el) el.textContent = roasts[Math.floor(Math.random() * roasts.length)];
+
   // Navigation for in-iframe links
   document.addEventListener('click', function(e) {
     var a = e.target.closest('a[data-mythos-link]');
