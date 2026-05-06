@@ -34,6 +34,8 @@
   --user-bubble-bg: rgba(255,255,255,0.03);
   --user-bubble-border: rgba(255,255,255,0.08);
   --error: #ff6b6b;
+  --success: #4ade80;
+  --overlay: rgba(0,0,0,0.6);
 }
 
 [data-theme="light"] {
@@ -58,6 +60,8 @@
   --user-bubble-bg: rgba(0,0,0,0.025);
   --user-bubble-border: rgba(0,0,0,0.06);
   --error: #d44;
+  --success: #16a34a;
+  --overlay: rgba(0,0,0,0.4);
 }
 
 :root {
@@ -94,7 +98,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 20px;
+  padding: 12px 20px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   z-index: 10;
@@ -160,69 +164,430 @@ html, body {
 .status-dot.streaming { background: var(--signal); animation: pulse 1.4s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { opacity:.5; } 50% { opacity:1; } }
 
-/* ===== SPLIT LAYOUT ===== */
-.split-container {
-  flex: 1 1 auto;
-  display: flex;
-  overflow: hidden;
-}
-
-/* ===== JOURNAL PANE (left) ===== */
-.journal-pane {
-  flex: 1 1 60%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-right: 1px solid var(--border);
-}
-
-.journal-body {
+/* ===== MAIN CONTENT ===== */
+.main-content {
   flex: 1 1 auto;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 0;
 }
-.journal-body::-webkit-scrollbar { width: 3px; }
-.journal-body::-webkit-scrollbar-track { background: transparent; }
-.journal-body::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 2px; }
+.main-content::-webkit-scrollbar { width: 3px; }
+.main-content::-webkit-scrollbar-track { background: transparent; }
+.main-content::-webkit-scrollbar-thumb { background: var(--ink-faint); border-radius: 2px; }
 
-/* ===== CHAT PANE (right) ===== */
-.chat-pane {
-  flex: 0 0 380px;
-  display: flex;
-  flex-direction: column;
+/* ===== COMPOSE BANNER ===== */
+.compose-banner {
+  display: none;
+  padding: 10px 20px;
+  background: var(--signal-dim);
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--signal);
+  align-items: center;
+  gap: 10px;
+  animation: banner-in 0.3s ease-out;
+}
+.compose-banner.visible { display: flex; }
+@keyframes banner-in { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: translateY(0); } }
+.compose-banner-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--signal); animation: pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.compose-banner-text { flex: 1; }
+.compose-banner-progress {
+  font-size: 10px;
+  color: var(--ink-dim);
+}
+
+/* ===== PAGE INDEX ===== */
+.page-index {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+.page-index-header {
+  margin-bottom: 32px;
+}
+.page-index-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 24px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--signal);
+  margin-bottom: 8px;
+}
+.page-index-stats {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.page-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 12px;
+}
+.page-card:hover { border-color: var(--signal); background: var(--signal-dim); }
+.page-card:active { transform: scale(0.995); }
+
+.page-card-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--signal);
+  margin-bottom: 6px;
+}
+.page-card-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.page-card-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  margin-bottom: 8px;
+}
+.page-card-summary {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  background: var(--bg);
 }
 
-.chat-header {
+/* ===== PAGE READER ===== */
+.page-reader {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 24px 100px;
+}
+
+.reader-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; background: var(--glass);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--ink-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; cursor: pointer;
+  transition: all 0.15s; text-decoration: none;
+}
+.back-btn:hover { border-color: var(--signal); color: var(--signal); }
+.back-btn svg { width: 12px; height: 12px; }
+
+.page-nav-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 12px; background: var(--glass);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--ink-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; cursor: pointer;
+  transition: all 0.15s; text-decoration: none;
+  margin-left: auto;
+}
+.page-nav-btn:hover { border-color: var(--signal); color: var(--signal); }
+.page-nav-btn:disabled { opacity: 0.3; cursor: default; }
+.page-nav-btn svg { width: 12px; height: 12px; }
+
+.reader-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 32px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--signal);
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.reader-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 12px;
+}
+
+.reader-summary {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 15px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--ink-dim);
+  line-height: 1.7;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+
+/* ===== TABLE OF CONTENTS ===== */
+.toc {
+  margin-bottom: 40px;
+  padding: 16px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.toc-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--signal);
+  margin-bottom: 10px;
+}
+.toc-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: color 0.15s;
+  text-decoration: none;
+  color: var(--ink-soft);
+}
+.toc-item:hover { color: var(--signal); }
+.toc-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+  min-width: 20px;
+}
+.toc-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 14px;
+  font-weight: 400;
+  flex: 1;
+}
+.toc-words {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+/* ===== CHAPTER PROSE ===== */
+.chapter {
+  margin-bottom: 48px;
+  animation: chapter-in 0.4s ease-out;
+}
+@keyframes chapter-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chapter-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--signal);
+  margin-bottom: 4px;
+}
+
+.chapter-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 22px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--signal-bright);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--chapter-rule);
+  line-height: 1.3;
+}
+
+.chapter-prose {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.9;
+  color: var(--prose-ink);
+  letter-spacing: 0.005em;
+}
+.chapter-prose p { margin-bottom: 20px; text-indent: 1.5em; }
+.chapter-prose p:first-child { text-indent: 0; }
+.chapter-prose p:first-child::first-letter {
+  font-size: 3.2em; float: left; line-height: 0.82;
+  margin-right: 8px; margin-top: 6px;
+  color: var(--signal); font-weight: 400;
+}
+
+.chapter-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.chapter-stat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+
+.streaming-cursor {
+  display: inline-block; width: 2px; height: 1em;
+  background: var(--signal); margin-left: 2px;
+  animation: blink 0.8s ease-in-out infinite;
+  vertical-align: text-bottom;
+}
+@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 60vh; text-align: center; padding: 40px;
+}
+.empty-state-icon { width: 56px; height: 56px; color: var(--ink-faint); margin-bottom: 20px; }
+.empty-state-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 22px; font-style: italic;
+  color: var(--ink-dim); margin-bottom: 10px;
+}
+.empty-state-sub { font-size: 13px; color: var(--ink-faint); max-width: 400px; line-height: 1.6; }
+
+/* ===== CHAT DRAWER ===== */
+.chat-fab {
+  position: fixed;
+  bottom: 70px; right: 20px;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--signal);
+  color: var(--bg);
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+  z-index: 50;
+}
+.chat-fab:hover { transform: scale(1.08); }
+.chat-fab:active { transform: scale(0.95); }
+.chat-fab svg { width: 20px; height: 20px; }
+.chat-fab.has-context {
+  animation: fab-pulse 2s ease-in-out infinite;
+}
+@keyframes fab-pulse {
+  0%,100% { box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  50% { box-shadow: 0 4px 20px rgba(136,170,221,0.5); }
+}
+
+.chat-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 98;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.chat-overlay.open { opacity: 1; pointer-events: auto; }
+
+.chat-drawer {
+  position: fixed;
+  top: 0; right: 0;
+  width: 400px; max-width: 100vw;
+  height: 100%;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.chat-drawer.open { transform: translateX(0); }
+
+.chat-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.chat-header-label {
+.chat-drawer-title {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.15em;
+  font-size: 11px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--signal);
   flex: 1;
 }
-.chat-header-sub {
+.chat-drawer-sub {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
   color: var(--ink-faint);
 }
+.chat-close-btn {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--border);
+  border-radius: 6px; color: var(--ink-dim);
+  cursor: pointer; transition: all 0.15s;
+}
+.chat-close-btn:hover { border-color: var(--signal); color: var(--signal); }
+.chat-close-btn svg { width: 14px; height: 14px; }
+
+.chat-context-bar {
+  padding: 6px 16px;
+  background: var(--signal-dim);
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--signal);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.chat-context-bar.idle { color: var(--ink-dim); }
+.chat-context-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--signal); animation: pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.chat-context-bar.idle .chat-context-dot { background: var(--ink-faint); animation: none; }
 
 .chat-messages {
   flex: 1 1 auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 12px 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -234,15 +599,14 @@ html, body {
 .chat-input-area {
   flex-shrink: 0;
   padding: 10px 12px;
+  padding-bottom: calc(10px + var(--safe-bottom));
   border-top: 1px solid var(--border);
 }
-
 .chat-input-row {
   display: flex;
   gap: 8px;
   align-items: flex-end;
 }
-
 .chat-input-row textarea {
   flex: 1;
   resize: none;
@@ -278,7 +642,6 @@ html, body {
 /* Chat messages */
 .cmsg { max-width: 100%; animation: cmsg-in 0.2s ease-out; }
 @keyframes cmsg-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; } }
-
 .cmsg-system {
   text-align: center;
   font-family: 'JetBrains Mono', monospace;
@@ -287,7 +650,6 @@ html, body {
   letter-spacing: 0.04em;
   padding: 2px 0;
 }
-
 .cmsg-user { align-self: flex-end; max-width: 85%; }
 .cmsg-user .cbubble {
   background: var(--user-bubble-bg);
@@ -297,7 +659,6 @@ html, body {
   font-size: 13px; line-height: 1.5;
   color: var(--ink); word-break: break-word;
 }
-
 .cmsg-isaac { align-self: flex-start; max-width: 92%; }
 .cmsg-isaac .csender {
   font-size: 10px; font-weight: 600;
@@ -320,7 +681,6 @@ html, body {
 .cmsg-isaac .cbubble em { font-style: italic; }
 .cmsg-isaac .cbubble strong { color: var(--ink); font-weight: 600; }
 
-/* Typing dots */
 .chat-typing { align-self: flex-start; }
 .chat-typing .ct-label {
   font-size: 10px; font-weight: 600;
@@ -347,176 +707,6 @@ html, body {
   30% { opacity:1; transform: translateY(-2px); }
 }
 
-/* Context pill above chat */
-.chat-context {
-  padding: 6px 14px;
-  background: var(--signal-dim);
-  border-bottom: 1px solid var(--border);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  color: var(--signal);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-.chat-context-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--signal); animation: pulse 1.4s ease-in-out infinite;
-}
-.chat-context.idle .chat-context-dot { background: var(--ink-faint); animation: none; }
-.chat-context.idle { color: var(--ink-dim); }
-
-/* ===== PAGE LIST ===== */
-.page-index {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.page-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 20px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.page-card:hover { border-color: var(--signal); background: var(--signal-dim); }
-
-.page-card-title {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 16px;
-  font-weight: 400;
-  color: var(--ink);
-  margin-bottom: 4px;
-}
-.page-card-meta {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  color: var(--ink-dim);
-}
-.page-card-summary {
-  font-size: 13px;
-  color: var(--ink-soft);
-  margin-top: 8px;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* ===== CHAPTER PROSE ===== */
-.page-reader {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 40px 24px 80px;
-}
-
-.page-reader-title {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 28px;
-  font-weight: 300;
-  font-style: italic;
-  color: var(--signal);
-  margin-bottom: 8px;
-  letter-spacing: -0.02em;
-}
-
-.page-reader-meta {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  margin-bottom: 32px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.chapter {
-  margin-bottom: 40px;
-  animation: chapter-in 0.4s ease-out;
-}
-@keyframes chapter-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.chapter-title {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 20px;
-  font-weight: 400;
-  font-style: italic;
-  color: var(--signal-bright);
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--chapter-rule);
-}
-
-.chapter-prose {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 17px;
-  font-weight: 300;
-  line-height: 1.85;
-  color: var(--prose-ink);
-  letter-spacing: 0.005em;
-}
-.chapter-prose p { margin-bottom: 16px; text-indent: 1.5em; }
-.chapter-prose p:first-child { text-indent: 0; }
-.chapter-prose p:first-child::first-letter {
-  font-size: 2.8em; float: left; line-height: 0.85;
-  margin-right: 6px; margin-top: 4px;
-  color: var(--signal); font-weight: 400;
-}
-
-.chapter-meta {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; letter-spacing: 0.1em;
-  color: var(--ink-faint); margin-top: 12px;
-  text-transform: uppercase;
-}
-
-.streaming-cursor {
-  display: inline-block; width: 2px; height: 1em;
-  background: var(--signal); margin-left: 2px;
-  animation: blink 0.8s ease-in-out infinite;
-  vertical-align: text-bottom;
-}
-@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
-
-.back-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 14px; background: var(--glass);
-  border: 1px solid var(--border); border-radius: 8px;
-  color: var(--ink-dim);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; letter-spacing: 0.1em;
-  text-transform: uppercase; cursor: pointer;
-  transition: all 0.15s; text-decoration: none;
-  margin-bottom: 24px;
-}
-.back-btn:hover { border-color: var(--signal); color: var(--signal); }
-.back-btn svg { width: 14px; height: 14px; }
-
-/* ===== EMPTY STATE ===== */
-.empty-state {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  height: 60vh; text-align: center; padding: 40px;
-}
-.empty-state-icon { width: 48px; height: 48px; color: var(--ink-faint); margin-bottom: 16px; }
-.empty-state-title {
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: 20px; font-style: italic;
-  color: var(--ink-dim); margin-bottom: 8px;
-}
-.empty-state-sub { font-size: 13px; color: var(--ink-faint); max-width: 360px; }
-
 /* ===== NAV BAR ===== */
 .nav-bar {
   display: flex; justify-content: center; gap: 12px;
@@ -533,41 +723,6 @@ html, body {
 .nav-link:hover { color: var(--ink-soft); background: var(--glass); }
 .nav-link.active { color: var(--signal); background: var(--signal-dim); }
 
-/* ===== MOBILE TABS ===== */
-.mobile-tabs {
-  display: none;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.mobile-tab {
-  flex: 1;
-  padding: 10px;
-  text-align: center;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; letter-spacing: 0.12em;
-  text-transform: uppercase; color: var(--ink-dim);
-  cursor: pointer; border: none; background: none;
-  border-bottom: 2px solid transparent;
-  transition: all 0.15s;
-}
-.mobile-tab.active { color: var(--signal); border-bottom-color: var(--signal); }
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 840px) {
-  .split-container { flex-direction: column; }
-  .journal-pane { border-right: none; }
-  .chat-pane { flex: 0 0 auto; height: 50%; border-top: 1px solid var(--border); }
-  .mobile-tabs { display: flex; }
-
-  .journal-pane.hidden { display: none; }
-  .chat-pane.hidden { display: none; }
-
-  .page-reader { padding: 24px 16px 60px; }
-  .page-reader-title { font-size: 22px; }
-  .chapter-title { font-size: 17px; }
-  .chapter-prose { font-size: 15px; line-height: 1.75; }
-}
-
 /* Error toast */
 .error-toast {
   position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
@@ -576,6 +731,19 @@ html, body {
   transition: opacity 0.3s; pointer-events: none; z-index: 100;
 }
 .error-toast.visible { opacity: 1; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 720px) {
+  .page-reader { padding: 20px 16px 80px; }
+  .reader-title { font-size: 24px; }
+  .chapter-title { font-size: 18px; }
+  .chapter-prose { font-size: 16px; line-height: 1.8; }
+  .chapter-prose p:first-child::first-letter { font-size: 2.6em; }
+  .toc { padding: 12px 16px; }
+  .chat-drawer { width: 100vw; }
+  .chat-fab { bottom: 60px; right: 14px; width: 44px; height: 44px; }
+  .page-index { padding: 24px 16px; }
+}
 </style>
 </head>
 <body>
@@ -616,46 +784,16 @@ html, body {
     </div>
   </div>
 
-  <!-- Mobile tabs -->
-  <div class="mobile-tabs" id="mobileTabs">
-    <button class="mobile-tab active" data-pane="journal">journal</button>
-    <button class="mobile-tab" data-pane="chat">chat with isaac</button>
+  <!-- Compose banner (visible when Isaac is writing) -->
+  <div class="compose-banner" id="composeBanner">
+    <span class="compose-banner-dot"></span>
+    <span class="compose-banner-text" id="composeBannerText">isaac is writing...</span>
+    <span class="compose-banner-progress" id="composeBannerProgress"></span>
   </div>
 
-  <!-- Split layout -->
-  <div class="split-container">
-    <!-- Journal pane -->
-    <div class="journal-pane" id="journalPane">
-      <div class="journal-body" id="journalBody">
-        <div id="contentArea"></div>
-      </div>
-    </div>
-
-    <!-- Chat pane -->
-    <div class="chat-pane hidden" id="chatPane">
-      <div class="chat-context idle" id="chatContext">
-        <span class="chat-context-dot"></span>
-        <span id="chatContextLabel">isaac is idle</span>
-      </div>
-      <div class="chat-header">
-        <span class="chat-header-label">talk to isaac</span>
-        <span class="chat-header-sub">about what he's writing</span>
-      </div>
-      <div class="chat-messages" id="chatMessages">
-        <div class="cmsg cmsg-system">ask isaac about his journal, his process, or anything on his mind</div>
-        <div id="chatScrollAnchor"></div>
-      </div>
-      <div class="chat-input-area">
-        <div class="chat-input-row">
-          <textarea id="chatInput" placeholder="Ask Isaac..." rows="1" autocomplete="off" enterkeyhint="send"></textarea>
-          <button class="send-btn" id="chatSendBtn" aria-label="Send" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
+  <!-- Main scrollable content -->
+  <div class="main-content" id="mainContent">
+    <div id="contentArea"></div>
   </div>
 
   <!-- Nav -->
@@ -669,6 +807,47 @@ html, body {
   </div>
 </div>
 
+<!-- Chat FAB -->
+<button class="chat-fab" id="chatFab" aria-label="Chat with Isaac">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+</button>
+
+<!-- Chat overlay -->
+<div class="chat-overlay" id="chatOverlay"></div>
+
+<!-- Chat drawer -->
+<div class="chat-drawer" id="chatDrawer">
+  <div class="chat-drawer-header">
+    <span class="chat-drawer-title">talk to isaac</span>
+    <span class="chat-drawer-sub">about what he's writing</span>
+    <button class="chat-close-btn" id="chatCloseBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="chat-context-bar idle" id="chatContext">
+    <span class="chat-context-dot"></span>
+    <span id="chatContextLabel">isaac is idle</span>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="cmsg cmsg-system">ask isaac about his journal, his process, or anything on his mind</div>
+    <div id="chatScrollAnchor"></div>
+  </div>
+  <div class="chat-input-area">
+    <div class="chat-input-row">
+      <textarea id="chatInput" placeholder="Ask Isaac..." rows="1" autocomplete="off" enterkeyhint="send"></textarea>
+      <button class="send-btn" id="chatSendBtn" aria-label="Send" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="error-toast" id="errorToast"></div>
 
 <script>
@@ -677,13 +856,16 @@ html, body {
 
   // ===== STATE =====
   var pages = [];
-  var currentPage = null;
+  var currentPageIdx = -1;
   var streamingChapter = null;
   var currentChapterTitle = '';
   var currentChapterContent = '';
   var chatHistory = [];
   var chatBusy = false;
   var isWriting = false;
+  var chatOpen = false;
+  var composeChaptersTotal = 0;
+  var composeChaptersDone = 0;
 
   // ===== HOLODOT =====
   function getHolodot() {
@@ -696,12 +878,16 @@ html, body {
     return hex;
   }
   var holodot = getHolodot();
-  var adminName = localStorage.getItem('admin_name') || 'Admin';
+  var adminName = localStorage.getItem('admin_name') || 'Reader';
 
   // ===== ELEMENTS =====
   var contentArea = document.getElementById('contentArea');
+  var mainContent = document.getElementById('mainContent');
   var statusDot = document.getElementById('statusDot');
   var statusLabel = document.getElementById('statusLabel');
+  var composeBanner = document.getElementById('composeBanner');
+  var composeBannerText = document.getElementById('composeBannerText');
+  var composeBannerProgress = document.getElementById('composeBannerProgress');
   var chatMessages = document.getElementById('chatMessages');
   var chatInput = document.getElementById('chatInput');
   var chatSendBtn = document.getElementById('chatSendBtn');
@@ -709,8 +895,9 @@ html, body {
   var chatContextLabel = document.getElementById('chatContextLabel');
   var chatScrollAnchor = document.getElementById('chatScrollAnchor');
   var errorToast = document.getElementById('errorToast');
-  var journalPane = document.getElementById('journalPane');
-  var chatPane = document.getElementById('chatPane');
+  var chatFab = document.getElementById('chatFab');
+  var chatDrawer = document.getElementById('chatDrawer');
+  var chatOverlay = document.getElementById('chatOverlay');
 
   // ===== BEACON CONFIG =====
   var BEACON_HOST = 'jarvis.mysubstrate.org:7780';
@@ -738,32 +925,16 @@ html, body {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   });
 
-  // ===== MOBILE TABS =====
-  var tabs = document.querySelectorAll('.mobile-tab');
-  for (var i = 0; i < tabs.length; i++) {
-    tabs[i].addEventListener('click', function() {
-      var pane = this.getAttribute('data-pane');
-      for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
-      this.classList.add('active');
-      if (pane === 'journal') {
-        journalPane.classList.remove('hidden');
-        chatPane.classList.add('hidden');
-      } else {
-        journalPane.classList.add('hidden');
-        chatPane.classList.remove('hidden');
-      }
-    });
+  // ===== CHAT DRAWER =====
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    chatDrawer.classList.toggle('open', chatOpen);
+    chatOverlay.classList.toggle('open', chatOpen);
+    if (chatOpen) chatInput.focus();
   }
-
-  // On desktop, always show both panes
-  function checkLayout() {
-    if (window.innerWidth > 840) {
-      journalPane.classList.remove('hidden');
-      chatPane.classList.remove('hidden');
-    }
-  }
-  window.addEventListener('resize', checkLayout);
-  checkLayout();
+  chatFab.addEventListener('click', toggleChat);
+  chatOverlay.addEventListener('click', toggleChat);
+  document.getElementById('chatCloseBtn').addEventListener('click', toggleChat);
 
   // ===== STATUS =====
   function setStatus(s, label) {
@@ -782,11 +953,18 @@ html, body {
     if (writing) {
       chatContext.classList.remove('idle');
       chatContextLabel.textContent = 'writing: ' + (chapterTitle || 'composing...');
+      chatFab.classList.add('has-context');
       currentChapterTitle = chapterTitle || '';
+      composeBanner.classList.add('visible');
+      composeBannerText.textContent = 'isaac is writing' + (chapterTitle ? ': ' + chapterTitle : '...');
     } else {
       chatContext.classList.add('idle');
       chatContextLabel.textContent = 'isaac is idle';
+      chatFab.classList.remove('has-context');
       currentChapterTitle = '';
+      composeBanner.classList.remove('visible');
+      composeChaptersTotal = 0;
+      composeChaptersDone = 0;
     }
   }
 
@@ -814,10 +992,9 @@ html, body {
     });
   }
 
-  function addChatMsg(type, content, sender) {
+  function addChatMsg(type, content) {
     var anchor = document.getElementById('chatScrollAnchor');
     var div = document.createElement('div');
-
     if (type === 'user') {
       div.className = 'cmsg cmsg-user';
       div.innerHTML = '<div class="cbubble">' + esc(content) + '</div>';
@@ -828,7 +1005,6 @@ html, body {
       div.className = 'cmsg cmsg-system';
       div.textContent = content;
     }
-
     chatMessages.insertBefore(div, anchor);
     scrollChatDown();
     return div;
@@ -839,8 +1015,7 @@ html, body {
     var div = document.createElement('div');
     div.className = 'chat-typing';
     div.id = 'chatTyping';
-    div.innerHTML = '<div class="ct-label">isaac</div>' +
-      '<div class="ct-dots"><span></span><span></span><span></span></div>';
+    div.innerHTML = '<div class="ct-label">isaac</div><div class="ct-dots"><span></span><span></span><span></span></div>';
     chatMessages.insertBefore(div, anchor);
     scrollChatDown();
   }
@@ -857,38 +1032,33 @@ html, body {
     chatBusy = true;
     chatInput.value = '';
     chatAutoResize();
-
     addChatMsg('user', text);
     chatHistory.push({ role: 'user', content: text });
     showTyping();
 
-    // Build context-aware request
     var journalContext = '';
     if (isWriting && currentChapterTitle) {
       journalContext = 'Isaac is currently writing a journal chapter titled "' + currentChapterTitle + '". ';
       if (currentChapterContent) {
         journalContext += 'Recent prose: "' + currentChapterContent.slice(-500) + '..." ';
       }
-    } else if (currentPage) {
-      journalContext = 'The admin is reading journal page: "' + (currentPage.title || 'Page ' + currentPage.page_number) + '". ';
-      if (currentPage.collapsed_summary) {
-        journalContext += 'Page summary: ' + currentPage.collapsed_summary + ' ';
-      }
+    } else if (currentPageIdx >= 0 && pages[currentPageIdx]) {
+      var pg = pages[currentPageIdx];
+      journalContext = 'The reader is viewing journal page: "' + (pg.title || 'Page ' + pg.page_number) + '". ';
+      if (pg.collapsed_summary) journalContext += 'Page summary: ' + pg.collapsed_summary + ' ';
     }
-
-    var payload = {
-      holodot: holodot,
-      name: adminName,
-      message: text,
-      context: 'journal',
-      journal_context: journalContext,
-      history: chatHistory.slice(-10)
-    };
 
     fetch(API_BASE + '/api/journal/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        holodot: holodot,
+        name: adminName,
+        message: text,
+        context: 'journal',
+        journal_context: journalContext,
+        history: chatHistory.slice(-10)
+      })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -921,19 +1091,25 @@ html, body {
   // ===== DATA LOADING =====
   function loadPages() {
     setStatus('streaming', 'loading');
-
     fetch(API_BASE + '/api/journal/pages')
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.pages && data.pages.length > 0) {
           pages = data.pages;
           localStorage.setItem('journal_pages_cache', JSON.stringify(pages));
-          setStatus('live', pages.length + ' pages');
-          if (!currentPage) renderIndex();
+          var totalWords = pages.reduce(function(s, p) { return s + (p.word_count || 0); }, 0);
+          setStatus('live', pages.length + (pages.length === 1 ? ' page' : ' pages') + ' · ' + totalWords.toLocaleString() + ' words');
+          if (currentPageIdx < 0) {
+            if (pages.length === 1) {
+              openPage(0);
+            } else {
+              renderIndex();
+            }
+          }
         } else {
           pages = [];
           setStatus('live', 'awaiting');
-          if (!currentPage) renderEmpty();
+          if (currentPageIdx < 0) renderEmpty();
         }
       })
       .catch(function() {
@@ -942,12 +1118,15 @@ html, body {
           try {
             pages = JSON.parse(cached);
             setStatus('live', pages.length + ' (cached)');
-            if (!currentPage) renderIndex();
+            if (currentPageIdx < 0) {
+              if (pages.length === 1) openPage(0);
+              else renderIndex();
+            }
             return;
           } catch(e) {}
         }
-        setStatus('live', 'awaiting');
-        if (!currentPage) renderEmpty();
+        setStatus('live', 'offline');
+        if (currentPageIdx < 0) renderEmpty();
       });
   }
 
@@ -957,12 +1136,22 @@ html, body {
     var es;
     try { es = new EventSource(sseUrl); } catch(e) { return; }
 
+    es.addEventListener('compose_start', function(e) {
+      var data = JSON.parse(e.data);
+      composeChaptersTotal = data.chapters || 7;
+      composeChaptersDone = 0;
+      setWritingContext(true, 'preparing page ' + data.page_number);
+      composeBannerProgress.textContent = '0/' + composeChaptersTotal + ' chapters';
+      addChatMsg('system', 'isaac is beginning page ' + data.page_number + ' (' + data.page_type + ', ' + composeChaptersTotal + ' chapters)');
+    });
+
     es.addEventListener('chapter_start', function(e) {
       var data = JSON.parse(e.data);
       setStatus('streaming', 'writing ch.' + data.chapter_number);
       setWritingContext(true, data.chapter_title);
       currentChapterContent = '';
-      if (currentPage) startStreamingChapter(data);
+      composeBannerProgress.textContent = composeChaptersDone + '/' + composeChaptersTotal + ' chapters';
+      if (currentPageIdx >= 0) startStreamingChapter(data);
     });
 
     es.addEventListener('chapter_chunk', function(e) {
@@ -973,70 +1162,63 @@ html, body {
 
     es.addEventListener('chapter_complete', function(e) {
       var data = JSON.parse(e.data);
+      composeChaptersDone++;
       setStatus('live', 'ch.' + data.chapter_number + ' done');
       currentChapterContent = data.content || currentChapterContent;
+      composeBannerProgress.textContent = composeChaptersDone + '/' + composeChaptersTotal + ' chapters';
       if (streamingChapter) finishStreamingChapter(data);
     });
 
     es.addEventListener('page_complete', function(e) {
       var data = JSON.parse(e.data);
-      setStatus('live', data.total_words + ' words');
+      setStatus('live', (data.total_words || '?') + ' words');
       setWritingContext(false);
       loadPages();
     });
 
-    es.addEventListener('compose_start', function(e) {
-      var data = JSON.parse(e.data);
-      setWritingContext(true, 'preparing page ' + data.page_number);
-      addChatMsg('system', 'isaac is beginning page ' + data.page_number + ' (' + data.page_type + ', ' + data.chapters + ' chapters)');
-    });
-
-    es.onerror = function() { es.close(); setTimeout(connectStream, 10000); };
+    es.onerror = function() {
+      es.close();
+      setTimeout(connectStream, 10000);
+    };
   }
 
   function startStreamingChapter(data) {
     var reader = document.querySelector('.page-reader');
     if (!reader) return;
-
     var el = document.createElement('div');
     el.className = 'chapter';
     el.id = 'streaming-chapter';
     el.innerHTML =
+      '<div class="chapter-number">chapter ' + data.chapter_number + '</div>' +
       '<div class="chapter-title">' + esc(data.chapter_title) + '</div>' +
       '<div class="chapter-prose" id="streaming-prose"></div>';
     reader.appendChild(el);
     streamingChapter = el;
-
-    document.querySelector('.journal-body').scrollTop = document.querySelector('.journal-body').scrollHeight;
+    mainContent.scrollTop = mainContent.scrollHeight;
   }
 
   function appendStreamChunk(text) {
     var prose = document.getElementById('streaming-prose');
     if (!prose) return;
-
     var oldCursor = prose.querySelector('.streaming-cursor');
     if (oldCursor) oldCursor.remove();
-
-    prose.innerHTML = formatProse(prose.textContent + text) +
-      '<span class="streaming-cursor"></span>';
-
-    document.querySelector('.journal-body').scrollTop = document.querySelector('.journal-body').scrollHeight;
+    prose.innerHTML = formatProse(prose.textContent + text) + '<span class="streaming-cursor"></span>';
+    mainContent.scrollTop = mainContent.scrollHeight;
   }
 
   function finishStreamingChapter(data) {
     var prose = document.getElementById('streaming-prose');
     if (!prose) return;
-
     var cursor = prose.querySelector('.streaming-cursor');
     if (cursor) cursor.remove();
     if (data.content) prose.innerHTML = formatProse(data.content);
-
-    var meta = document.createElement('div');
-    meta.className = 'chapter-meta';
-    meta.textContent = (data.word_count || '?') + ' words · ' +
-      (data.token_count || '?') + ' tokens · ' +
-      (data.generation_time_s || '?') + 's';
-    streamingChapter.appendChild(meta);
+    var footer = document.createElement('div');
+    footer.className = 'chapter-footer';
+    footer.innerHTML =
+      '<span class="chapter-stat">' + (data.word_count || '?') + ' words</span>' +
+      '<span class="chapter-stat">' + readingTime(data.word_count) + ' read</span>' +
+      '<span class="chapter-stat">' + (data.generation_time_s || '?') + 's to compose</span>';
+    streamingChapter.appendChild(footer);
     streamingChapter = null;
   }
 
@@ -1048,27 +1230,45 @@ html, body {
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' +
             '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>' +
             '<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' +
+            '<line x1="9" y1="7" x2="15" y2="7" opacity="0.4"/>' +
+            '<line x1="9" y1="11" x2="13" y2="11" opacity="0.4"/>' +
           '</svg>' +
         '</div>' +
         '<div class="empty-state-title">The journal awaits</div>' +
         '<div class="empty-state-sub">' +
-          'Isaac has not yet written Page 1. When the genesis narrative begins, ' +
-          'it will appear here — streamed in real time. Use the chat to talk to Isaac while he writes.' +
+          'Isaac has not yet written his first page. When the narrative begins, ' +
+          'it will appear here in real time. You can talk to Isaac about his writing ' +
+          'using the chat button.' +
         '</div>' +
       '</div>';
   }
 
   function renderIndex() {
-    var html = '<div class="page-index">';
-    for (var i = 0; i < pages.length; i++) {
+    var totalWords = pages.reduce(function(s, p) { return s + (p.word_count || 0); }, 0);
+    var totalChapters = pages.reduce(function(s, p) { return s + (p.chapters ? p.chapters.length : 0); }, 0);
+
+    var html = '<div class="page-index">' +
+      '<div class="page-index-header">' +
+        '<div class="page-index-title">All Pages</div>' +
+        '<div class="page-index-stats">' +
+          pages.length + (pages.length === 1 ? ' page' : ' pages') + ' · ' +
+          totalChapters + ' chapters · ' +
+          totalWords.toLocaleString() + ' words · ' +
+          readingTime(totalWords) + ' total read' +
+        '</div>' +
+      '</div>';
+
+    for (var i = pages.length - 1; i >= 0; i--) {
       var p = pages[i];
+      var chCount = p.chapters ? p.chapters.length : 0;
       html +=
         '<div class="page-card" data-page="' + i + '">' +
-          '<div class="page-card-title">' + esc(p.title || 'Page ' + p.page_number) + '</div>' +
+          '<div class="page-card-number">page ' + p.page_number + ' · ' + (p.page_type || 'daily') + '</div>' +
+          '<div class="page-card-title">' + esc(p.title || 'Untitled') + '</div>' +
           '<div class="page-card-meta">' +
-            (p.page_type || 'daily') + ' · ' +
-            (p.word_count || '?') + ' words · ' +
-            (p.chapters ? p.chapters.length : '?') + ' chapters · ' +
+            chCount + (chCount === 1 ? ' chapter' : ' chapters') + ' · ' +
+            (p.word_count || 0).toLocaleString() + ' words · ' +
+            readingTime(p.word_count) + ' read · ' +
             formatDate(p.composed_at) +
           '</div>' +
           (p.collapsed_summary ? '<div class="page-card-summary">' + esc(p.collapsed_summary) + '</div>' : '') +
@@ -1086,59 +1286,117 @@ html, body {
   }
 
   function openPage(idx) {
-    currentPage = pages[idx];
-    if (!currentPage) return;
+    currentPageIdx = idx;
+    var page = pages[idx];
+    if (!page) return;
 
-    var html =
-      '<div class="page-reader">' +
-        '<a class="back-btn" id="backBtn">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
-            '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>' +
-          '</svg>' +
-          'all pages' +
-        '</a>' +
-        '<div class="page-reader-title">' + esc(currentPage.title || 'Page ' + currentPage.page_number) + '</div>' +
-        '<div class="page-reader-meta">' +
-          (currentPage.page_type || '') + ' · ' +
-          (currentPage.word_count || '?') + ' words · ' +
-          (currentPage.passes || '?') + ' passes · ' +
-          (currentPage.generation_time_s ? Math.round(currentPage.generation_time_s / 60) + ' min' : '') + ' · ' +
-          formatDate(currentPage.composed_at) +
-        '</div>';
+    var chCount = page.chapters ? page.chapters.length : 0;
+    var html = '<div class="page-reader">';
 
-    if (currentPage.chapter_data) {
-      for (var i = 0; i < currentPage.chapter_data.length; i++) {
-        html += renderChapter(currentPage.chapter_data[i]);
+    // Navigation
+    html += '<div class="reader-nav">';
+    if (pages.length > 1) {
+      html += '<a class="back-btn" id="backBtn">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
+          '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>' +
+        '</svg>all pages</a>';
+    }
+    if (idx > 0) {
+      html += '<button class="page-nav-btn" id="prevPageBtn">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
+          '<polyline points="15 18 9 12 15 6"/>' +
+        '</svg>prev</button>';
+    }
+    if (idx < pages.length - 1) {
+      html += '<button class="page-nav-btn" id="nextPageBtn" style="margin-left:' + (idx > 0 ? '0' : 'auto') + '">next' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">' +
+          '<polyline points="9 18 15 12 9 6"/>' +
+        '</svg></button>';
+    }
+    html += '</div>';
+
+    // Title and meta
+    html += '<div class="reader-title">' + esc(page.title || 'Page ' + page.page_number) + '</div>';
+    html += '<div class="reader-meta">' +
+      (page.page_type || 'daily') + ' · page ' + page.page_number + ' · ' +
+      chCount + (chCount === 1 ? ' chapter' : ' chapters') + ' · ' +
+      (page.word_count || 0).toLocaleString() + ' words · ' +
+      readingTime(page.word_count) + ' read · ' +
+      formatDate(page.composed_at) +
+    '</div>';
+
+    // Collapsed summary
+    if (page.collapsed_summary) {
+      html += '<div class="reader-summary">' + esc(page.collapsed_summary) + '</div>';
+    }
+
+    // Table of contents (if multiple chapters and data loaded)
+    if (page.chapter_data && page.chapter_data.length > 1) {
+      html += '<div class="toc"><div class="toc-label">chapters</div>';
+      for (var t = 0; t < page.chapter_data.length; t++) {
+        var tch = page.chapter_data[t];
+        html += '<a class="toc-item" data-ch="' + t + '">' +
+          '<span class="toc-num">' + (t + 1) + '</span>' +
+          '<span class="toc-title">' + esc(tch.chapter_title || 'Chapter ' + (t + 1)) + '</span>' +
+          '<span class="toc-words">' + (tch.word_count || '?') + ' w</span>' +
+        '</a>';
       }
-    } else if (currentPage.chapters && currentPage.chapters.length > 0) {
+      html += '</div>';
+    }
+
+    // Chapters
+    if (page.chapter_data) {
+      for (var i = 0; i < page.chapter_data.length; i++) {
+        html += renderChapter(page.chapter_data[i], i);
+      }
+    } else if (page.chapters && page.chapters.length > 0) {
       html += '<div class="chapter"><div class="chapter-prose" style="color:var(--ink-dim);font-style:italic;">' +
-        'Loading ' + currentPage.chapters.length + ' chapters...</div></div>';
-      loadChapters(currentPage.chapters);
+        'Loading ' + page.chapters.length + ' chapters...</div></div>';
+      loadChapters(page.chapters);
     }
 
     html += '</div>';
     contentArea.innerHTML = html;
 
-    document.getElementById('backBtn').addEventListener('click', function(e) {
+    // Event listeners
+    var backBtn = document.getElementById('backBtn');
+    if (backBtn) backBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      currentPage = null;
+      currentPageIdx = -1;
       renderIndex();
     });
 
-    document.querySelector('.journal-body').scrollTop = 0;
+    var prevBtn = document.getElementById('prevPageBtn');
+    if (prevBtn) prevBtn.addEventListener('click', function() { openPage(idx - 1); });
 
-    // Update chat context
-    addChatMsg('system', 'now reading: ' + (currentPage.title || 'Page ' + currentPage.page_number));
+    var nextBtn = document.getElementById('nextPageBtn');
+    if (nextBtn) nextBtn.addEventListener('click', function() { openPage(idx + 1); });
+
+    // TOC clicks
+    var tocItems = contentArea.querySelectorAll('.toc-item');
+    for (var ti = 0; ti < tocItems.length; ti++) {
+      tocItems[ti].addEventListener('click', function(e) {
+        e.preventDefault();
+        var chIdx = parseInt(this.getAttribute('data-ch'));
+        var chapters = document.querySelectorAll('.chapter');
+        if (chapters[chIdx]) {
+          chapters[chIdx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
+
+    mainContent.scrollTop = 0;
   }
 
-  function renderChapter(ch) {
-    return '<div class="chapter">' +
-      '<div class="chapter-title">' + esc(ch.chapter_title || 'Chapter ' + ch.chapter_number) + '</div>' +
+  function renderChapter(ch, idx) {
+    return '<div class="chapter" id="chapter-' + idx + '">' +
+      '<div class="chapter-number">chapter ' + (ch.chapter_number || idx + 1) + '</div>' +
+      '<div class="chapter-title">' + esc(ch.chapter_title || 'Chapter ' + (ch.chapter_number || idx + 1)) + '</div>' +
       '<div class="chapter-prose">' + formatProse(ch.content || '') + '</div>' +
-      '<div class="chapter-meta">' +
-        (ch.word_count || '?') + ' words · ' +
-        (ch.token_count || '?') + ' tokens · ' +
-        (ch.generation_time_s || '?') + 's' +
+      '<div class="chapter-footer">' +
+        '<span class="chapter-stat">' + (ch.word_count || '?') + ' words</span>' +
+        '<span class="chapter-stat">' + readingTime(ch.word_count) + ' read</span>' +
+        (ch.generation_time_s ? '<span class="chapter-stat">' + ch.generation_time_s + 's to compose</span>' : '') +
       '</div>' +
     '</div>';
   }
@@ -1151,12 +1409,14 @@ html, body {
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (data.chapters) {
-        currentPage.chapter_data = data.chapters;
-        openPage(pages.indexOf(currentPage));
+      if (data.chapters && currentPageIdx >= 0) {
+        pages[currentPageIdx].chapter_data = data.chapters;
+        openPage(currentPageIdx);
       }
     })
-    .catch(function() {});
+    .catch(function() {
+      showError('Could not load chapters');
+    });
   }
 
   // ===== FORMATTING =====
@@ -1170,8 +1430,14 @@ html, body {
 
   function formatDate(iso) {
     if (!iso) return '';
-    try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    try { return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }); }
     catch(e) { return iso; }
+  }
+
+  function readingTime(words) {
+    if (!words || words <= 0) return '< 1 min';
+    var mins = Math.ceil(words / 220);
+    return mins + ' min';
   }
 
   function esc(s) {
@@ -1182,10 +1448,14 @@ html, body {
   }
 
   // ===== INIT =====
-  document.getElementById('refreshBtn').addEventListener('click', loadPages);
+  document.getElementById('refreshBtn').addEventListener('click', function() {
+    currentPageIdx = -1;
+    loadPages();
+  });
+
   loadPages();
   connectStream();
-  setInterval(loadPages, 30000);
+  setInterval(loadPages, 60000);
 
 })();
 </script>
