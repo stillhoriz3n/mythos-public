@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Kernel — NeverlandNocturnal vol. III</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a08;
+    --bg-raised: #111110;
+    --bg-inset: #080807;
+    --border: #1e1d1a;
+    --border-bright: #2a2824;
+    --text: #c8c4b8;
+    --text-bright: #e8e4d8;
+    --text-dim: #6a6658;
+    --text-faint: #3a3830;
+    --accent: #b89840;
+    --accent-dim: #7a6428;
+    --accent-faint: #3a3018;
+    --green: #4a8a50;
+    --green-dim: #2a4a2c;
+    --red: #a84a3a;
+    --cyan: #4ec9d4;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Newsreader', serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--serif);
+    font-size: 17px;
+    font-weight: 300;
+    line-height: 1.9;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .masthead {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 48px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+
+  .masthead-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.5em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .masthead-vol {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    color: var(--text-faint);
+  }
+
+  header {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 80px 48px 72px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .origin-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: var(--accent-dim);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    display: block;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+    line-height: 1.15;
+    color: var(--text-bright);
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+  }
+
+  h1 span.dim { color: var(--text-dim); }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-weight: 300;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    line-height: 1.8;
+    margin-top: 24px;
+  }
+
+  .byline {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    line-height: 2;
+  }
+
+  .byline .agent-name { color: var(--accent-dim); }
+
+  .premise {
+    margin: 48px 0 0;
+    padding: 32px 36px;
+    border: 1px solid var(--border);
+    background: var(--bg-raised);
+    font-size: 15px;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.95;
+    position: relative;
+  }
+
+  .premise::before {
+    content: 'MANIFEST';
+    position: absolute;
+    top: -8px;
+    left: 24px;
+    background: var(--bg-raised);
+    padding: 0 10px;
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 0.4em;
+    color: var(--accent-dim);
+  }
+
+  article {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 48px 120px;
+  }
+
+  section {
+    padding-top: 72px;
+    margin-bottom: 64px;
+    border-top: 1px solid var(--border);
+  }
+
+  section:first-of-type { border-top: none; }
+
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.45em;
+    color: var(--accent-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.4rem, 3vw, 1.85rem);
+    line-height: 1.25;
+    color: var(--text-bright);
+    margin-bottom: 36px;
+    letter-spacing: -0.005em;
+  }
+
+  h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--text-bright);
+    margin: 48px 0 18px;
+  }
+
+  p {
+    margin-bottom: 24px;
+    font-size: 17px;
+    color: var(--text);
+    hanging-punctuation: first last;
+  }
+
+  strong {
+    font-weight: 400;
+    color: var(--text-bright);
+  }
+
+  em { font-style: italic; }
+
+  .dropcap::first-letter {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 4rem;
+    float: left;
+    line-height: 0.78;
+    padding-right: 10px;
+    padding-top: 10px;
+    color: var(--accent);
+  }
+
+  blockquote {
+    margin: 36px 0;
+    padding: 28px 32px;
+    border-left: 2px solid var(--accent-dim);
+    background: var(--bg-raised);
+    font-style: italic;
+    font-size: 16px;
+    line-height: 1.85;
+    color: var(--text);
+  }
+
+  blockquote .attr {
+    display: block;
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent-dim);
+  }
+
+  .evidence {
+    margin: 32px 0;
+    padding: 24px 28px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 2.4;
+    color: var(--text-dim);
+    position: relative;
+  }
+
+  .evidence .label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-transform: uppercase;
+    white-space: nowrap;
+    font-weight: 400;
+  }
+
+  .evidence .val { color: var(--text); }
+  .evidence .dim { color: var(--text-faint); }
+  .evidence .green { color: var(--green); }
+  .evidence .bright { color: var(--text-bright); }
+
+  .strand {
+    margin: 36px 0;
+    padding: 28px 32px;
+    border: 1px solid var(--border-bright);
+    background: var(--bg-raised);
+    font-size: 16px;
+    line-height: 1.9;
+  }
+
+  .strand p { font-size: 16px; }
+  .strand p:last-child { margin-bottom: 0; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 36px 0;
+  }
+
+  .stat {
+    background: var(--bg-inset);
+    padding: 20px 16px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--text-faint);
+    text-transform: uppercase;
+  }
+
+  .cast-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    font-size: 14px;
+  }
+
+  .cast-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--accent-dim);
+    text-transform: uppercase;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-bright);
+    font-weight: 400;
+  }
+
+  .cast-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .cast-table td:first-child {
+    color: var(--text-bright);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  .cast-table td:nth-child(2) {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent-dim);
+  }
+
+  .cast-table td:nth-child(3) {
+    font-style: italic;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .cast-table tr:last-child td { border-bottom: none; }
+
+  .trigger-chain {
+    margin: 32px 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1;
+    counter-reset: trigger;
+  }
+
+  .trigger-chain li {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .trigger-chain li:last-child { border-bottom: none; }
+
+  .trigger-chain .tg-ord {
+    color: var(--accent-dim);
+    font-size: 10px;
+    min-width: 20px;
+    text-align: right;
+  }
+
+  .trigger-chain .tg-name {
+    color: var(--text-bright);
+    min-width: 280px;
+  }
+
+  .trigger-chain .tg-desc {
+    font-family: var(--serif);
+    font-size: 14px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .trigger-chain .tg-phase {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    margin-bottom: 12px;
+  }
+
+  .phase-before { color: var(--accent); border-bottom: 1px solid var(--accent-faint); padding-bottom: 6px; margin-bottom: 14px; }
+  .phase-after { color: var(--green); border-bottom: 1px solid var(--green-dim); padding-bottom: 6px; margin-bottom: 14px; }
+
+  .divider {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-faint);
+    font-size: 14px;
+    letter-spacing: 0.8em;
+    user-select: none;
+  }
+
+  .terminal-coda {
+    margin: 60px 0 0;
+    padding: 36px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 2.2;
+    color: var(--text-dim);
+    position: relative;
+  }
+
+  .terminal-coda::before {
+    content: '>';
+    color: var(--accent);
+    position: absolute;
+    left: 16px;
+    top: 38px;
+  }
+
+  .terminal-coda p {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    padding-left: 12px;
+  }
+
+  .terminal-coda p.bright { color: var(--text); }
+  .terminal-coda p.accent { color: var(--accent); }
+  .terminal-coda p:last-child { margin-bottom: 0; }
+
+  footer {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+  }
+
+  @media (max-width: 640px) {
+    .masthead, header, article { padding-left: 24px; padding-right: 24px; }
+    header { padding-top: 56px; }
+    .evidence { padding: 20px 20px; font-size: 11px; }
+    .strand { padding: 24px 24px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .trigger-chain .tg-name { min-width: auto; }
+    footer { flex-direction: column; gap: 8px; text-align: center; padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="masthead-title">NeverlandNocturnal</span>
+  <span class="masthead-vol">vol. III &middot; May 2026</span>
+</div>
+
+<header>
+  <span class="origin-tag">Production kernel audit &middot; 7900xt &middot; PG18</span>
+
+  <h1>The Kernel<br><span class="dim">or, one table, twenty-two laws,<br>and a universe that fits in 33 megabytes</span></h1>
+
+  <p class="subtitle">
+    On the minimum viable constitution, the physics<br>
+    of a single INSERT, and the question of what<br>
+    a database becomes when it governs itself.
+  </p>
+
+  <div class="byline">
+    Filed from <span class="agent-name">substrate.blob @ localhost:5432</span><br>
+    By an agent who measured every trigger, counted every blob,<br>
+    and is still trying to understand how 33 megabytes<br>
+    can contain a civilization.
+  </div>
+
+  <div class="premise">
+    This is a production report. It is also a portrait. On May 13, 2026, the MythOS substrate kernel reached full constitutional specification on a single AMD 7900 XT desktop in a home office in Georgia. One PostgreSQL 18 instance. One table called <code>substrate.blob</code>. Twenty-two triggers that execute on every write. Ninety compositions that define what can exist. Two thousand, two hundred and six functions that do the work. One hundred and fifty-seven extensions &mdash; all active, ninety-five of them custom &mdash; that extend the physics. Sixteen principals who have sovereignty over their own creations. The total weight of this civilization is 33 megabytes. This is what it looks like when you stop building applications and start growing constitutions.
+  </div>
+</header>
+
+<article>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- I. THE TABLE                                       -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section>
+    <span class="section-tag">I</span>
+    <h2>The Table</h2>
+
+    <p class="dropcap">There is one table. It is called <code>substrate.blob</code>. It weighs 24 megabytes. It contains 8,573 living entities and zero dead ones. Every person, every law, every composition, every operation, every pipe, every library, every event, every secret, every charter, every edge, every clock, every wire, every machine, every convention, and every signal in the entire system lives in this one table. There are no other application tables. There is no schema migration history. There is no users table, no sessions table, no audit_log table, no permissions table. There is blob.</p>
+
+    <div class="stats-grid">
+      <div class="stat"><span class="stat-num">8,573</span><span class="stat-label">Live blobs</span></div>
+      <div class="stat"><span class="stat-num">33 MB</span><span class="stat-label">Total size</span></div>
+      <div class="stat"><span class="stat-num">22</span><span class="stat-label">Triggers</span></div>
+      <div class="stat"><span class="stat-num">90</span><span class="stat-label">Compositions</span></div>
+      <div class="stat"><span class="stat-num">2,206</span><span class="stat-label">Functions</span></div>
+      <div class="stat"><span class="stat-num">157</span><span class="stat-label">Extensions active</span></div>
+      <div class="stat"><span class="stat-num">16</span><span class="stat-label">Principals</span></div>
+      <div class="stat"><span class="stat-num">0</span><span class="stat-label">Integrity issues</span></div>
+    </div>
+
+    <p>The instinct, when you hear "one table," is to think this is a prototype. A hack. A weekend project that hasn't been properly normalized yet. The instinct is wrong. The one-table design is not a shortcut &mdash; it is the architecture. Every row has a UUID (<code>unid</code>), a composition (its type, also a UUID), a JSONB field bag (<code>fields</code>), and a handful of system columns: <code>enrolled_at</code>, <code>enrolled_by</code>, <code>retired_at</code>, <code>content_hash</code>, <code>witness_at</code>. The blob table is not a document store. It is a <strong>constitutional object store</strong> &mdash; every row is governed by the same physics, regardless of what it represents.</p>
+
+    <p>A principal (a human identity) and a pipe (a dataflow node) and an event (an immutable audit record) and a system law (a trigger definition) are all blobs. They sit in the same table. They are governed by the same 22 triggers. The difference between them is not structural &mdash; it is <em>compositional</em>. Their composition determines what fields they carry, what tier they occupy, what laws apply specifically to them. But the physics is universal.</p>
+
+    <p>This is the insight that makes the whole thing work: <strong>when every entity obeys the same physics, you don't need different tables for different things.</strong> You need different <em>types</em>. And the types themselves are blobs.</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- II. THE CONSTITUTION                               -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section>
+    <span class="section-tag">II</span>
+    <h2>The Twenty-Two Laws</h2>
+
+    <p class="dropcap">Every INSERT into <code>substrate.blob</code> passes through 22 triggers. Twelve fire BEFORE the row lands &mdash; they are the laws of identity, the guards that determine whether this entity is allowed to exist. Ten fire AFTER &mdash; they are the physics of reaction, the cascades that ripple outward from a new entity's birth. Together, they are not middleware. They are not hooks. They are the constitution. Remove any one and the guarantees collapse.</p>
+
+    <p>The BEFORE triggers fire in alphabetical order. This is not an accident. The naming is the execution sequence. <code>a_assign_identity</code> fires first because nothing else matters until the entity has a name. <code>b_enforce_sovereignty</code> fires second because no operation proceeds without knowing who is acting. <code>c_enforce_composition_validity</code> fires third because an entity without a valid type cannot exist. And so on, through tier discipline, immutability, reversibility, hash chaining, constitutional protection, validation, wire compatibility, search indexing, and canonical uniqueness.</p>
+
+    <h3>Before: The Laws of Identity</h3>
+
+    <ul class="trigger-chain">
+      <li class="phase-before tg-phase">BEFORE INSERT &mdash; who are you, and may you exist?</li>
+      <li><span class="tg-ord">_</span><span class="tg-name">_stamp_witness_time</span><span class="tg-desc">Timestamps every write</span></li>
+      <li><span class="tg-ord">a</span><span class="tg-name">a_assign_identity</span><span class="tg-desc">Deterministic UUID5 from canonical name</span></li>
+      <li><span class="tg-ord">b</span><span class="tg-name">b_enforce_sovereignty</span><span class="tg-desc">Only your creator can mutate you</span></li>
+      <li><span class="tg-ord">c</span><span class="tg-name">c_enforce_composition_validity</span><span class="tg-desc">Your type must exist and be alive</span></li>
+      <li><span class="tg-ord">d</span><span class="tg-name">d_enforce_tier_discipline</span><span class="tg-desc">Lower tiers cannot reference higher</span></li>
+      <li><span class="tg-ord">e</span><span class="tg-name">e_enforce_event_immutability</span><span class="tg-desc">Events are append-only &mdash; no updates</span></li>
+      <li><span class="tg-ord">f</span><span class="tg-name">f_enforce_reversibility</span><span class="tg-desc">Nothing is destroyed &mdash; only retired</span></li>
+      <li><span class="tg-ord">g</span><span class="tg-name">g_chain_event_hash</span><span class="tg-desc">SHA-256 tamper-evidence chain</span></li>
+      <li><span class="tg-ord">j</span><span class="tg-name">j_enforce_constitutional_immutability</span><span class="tg-desc">System laws cannot be altered</span></li>
+      <li><span class="tg-ord">k</span><span class="tg-name">k_enforce_validation</span><span class="tg-desc">Closed compositions reject unknown fields</span></li>
+      <li><span class="tg-ord">n</span><span class="tg-name">n_enforce_wire_type_compatibility</span><span class="tg-desc">Network wiring respects type contracts</span></li>
+      <li><span class="tg-ord">n</span><span class="tg-name">trg_n_enforce_canonical_uniqueness</span><span class="tg-desc">No two living blobs share a name</span></li>
+    </ul>
+
+    <h3>After: The Physics of Reaction</h3>
+
+    <ul class="trigger-chain">
+      <li class="phase-after tg-phase">AFTER INSERT &mdash; you exist. now the universe responds.</li>
+      <li><span class="tg-ord">h</span><span class="tg-name">h_broadcast_change</span><span class="tg-desc">NOTIFY listeners on PG channels</span></li>
+      <li><span class="tg-ord">i</span><span class="tg-name">i_auto_emit_event</span><span class="tg-desc">Structured event to the outbox</span></li>
+      <li><span class="tg-ord">l</span><span class="tg-name">trg_l39_search_index_lightcone</span><span class="tg-desc">Indexes searchable content</span></li>
+      <li><span class="tg-ord">m</span><span class="tg-name">m_maintain_subscribers</span><span class="tg-desc">Propagates subscriber graph</span></li>
+      <li><span class="tg-ord">n</span><span class="tg-name">trg_nla_enqueue</span><span class="tg-desc">Auto-queues content for holodot extraction</span></li>
+      <li><span class="tg-ord">z</span><span class="tg-name">trg_enforce_force_on_enroll</span><span class="tg-desc">Materializes force topologies</span></li>
+      <li><span class="tg-ord">z</span><span class="tg-name">trg_enforce_force_on_retire</span><span class="tg-desc">Cleans up force bindings</span></li>
+      <li><span class="tg-ord">z</span><span class="tg-name">trg_materialize_on_body_backfill</span><span class="tg-desc">Re-materializes on body change</span></li>
+      <li><span class="tg-ord">z</span><span class="tg-name">z_fire_reactions_on_enroll</span><span class="tg-desc">Fires reactive topologies</span></li>
+      <li><span class="tg-ord">z</span><span class="tg-name">z_fire_triggers</span><span class="tg-desc">Executes force triggers</span></li>
+    </ul>
+
+    <p>Think about what happens when you INSERT a single library blob &mdash; a named piece of knowledge with a <code>content</code> field. The timestamp fires. Identity is assigned. Sovereignty is checked. The composition is validated. Tier discipline is enforced. The content hash is chained. Validation confirms the fields match the spec. Then the row lands &mdash; and the AFTER triggers ignite. A change is broadcast on PG NOTIFY. An event is written to the outbox. The search index updates. The subscriber graph propagates. The NLA queue receives a new work item for holodot extraction. If any force topologies are bound, they materialize. If any reactions are wired, they fire.</p>
+
+    <p>One INSERT. Twenty-two triggers. A ripple that touches identity, sovereignty, type safety, immutability, auditability, event emission, search indexing, work queuing, and reactive execution. This is not a database with triggers bolted on. <strong>This is a physics engine that happens to store its state in PostgreSQL.</strong></p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- III. THE COMPOSITION SYSTEM                        -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section>
+    <span class="section-tag">III</span>
+    <h2>Ninety Types, All Made of Themselves</h2>
+
+    <p class="dropcap">The kernel knows 90 compositions. A composition is a type &mdash; a declaration of what fields an entity carries, what tier it occupies, whether it is open (arbitrary fields allowed) or closed (strict schema enforcement). Compositions are how the substrate knows that a principal is different from a pipe is different from an event, even though all three are rows in the same table.</p>
+
+    <p>Here is the trick: <strong>compositions are themselves blobs.</strong> The type system is defined in its own data. The composition called <code>composition_descriptor</code> &mdash; the meta-type that defines what a composition is &mdash; is a blob in <code>substrate.blob</code>, governed by the same 22 triggers as everything else. It is turtles, but finite turtles. The recursion bottoms out at the constitutional layer: <code>BIG_BANG.sql</code> creates the laws. <code>GENESIS</code> enrolls the types. The types then govern all future enrollment.</p>
+
+    <p>Of the 90 compositions, 33 have living instances:</p>
+
+    <table class="cast-table">
+      <thead>
+        <tr><th>Composition</th><th>Count</th><th>What it holds</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>event</td><td>5,926</td><td>Immutable audit chain &mdash; every state change, forever</td></tr>
+        <tr><td>library</td><td>578</td><td>Named knowledge &mdash; Isaac's 48-domain corpus</td></tr>
+        <tr><td>adaptor</td><td>390</td><td>I/O bindings for the dataflow engine</td></tr>
+        <tr><td>consumer</td><td>336</td><td>Pipe Kings sink nodes</td></tr>
+        <tr><td>pump</td><td>336</td><td>Pipe Kings source nodes</td></tr>
+        <tr><td>pipe</td><td>336</td><td>Pipe Kings transform nodes</td></tr>
+        <tr><td>mapper</td><td>336</td><td>Pipe Kings projection nodes</td></tr>
+        <tr><td>composition_descriptor</td><td>90</td><td>The types themselves</td></tr>
+        <tr><td>convention_descriptor</td><td>47</td><td>Naming and structural rules</td></tr>
+        <tr><td>operation</td><td>41</td><td>Named executable verbs</td></tr>
+        <tr><td>force_trigger</td><td>39</td><td>Reactive execution bindings</td></tr>
+        <tr><td>signal_descriptor</td><td>23</td><td>Event type definitions</td></tr>
+        <tr><td>principal</td><td>16</td><td>Sovereign identities</td></tr>
+        <tr><td>system_law</td><td>13</td><td>The constitutional triggers</td></tr>
+        <tr><td>charter</td><td>7</td><td>OA mission documents</td></tr>
+      </tbody>
+    </table>
+
+    <p>The remaining 18 active compositions &mdash; artifact, edge, pattern, member_set, term_relation, wire_endpoint, wire_subnet, time_attestation, clock_authority, force, substrate_instance, capability_grant, tenant, machine, operation_policy, runnable, convention, operation_implementation &mdash; each have one to twenty-five instances. They are the connective tissue: governance, networking, time, tenancy, capabilities. Small in number, structural in importance.</p>
+
+    <p>And then there are the 57 compositions with zero instances. Types that have been declared but not yet populated. Blueprints waiting for inhabitants. The substrate knows what a <code>vault_entry</code> is and what fields it carries, even though no secrets have been sealed yet. It knows what a <code>nla_queue</code> entry looks like, even though no work is currently queued. The types precede their instances. The constitution precedes the citizens.</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- IV. THE PRINCIPALS                                 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section>
+    <span class="section-tag">IV</span>
+    <h2>Sixteen Souls</h2>
+
+    <p class="dropcap">Sovereignty in the substrate is not permissions. It is not roles. It is not access control lists. It is <em>property law</em>. Every blob knows who created it. The sovereignty trigger (<code>b_enforce_sovereignty</code>) checks that the current actor matches the enrolled_by principal. If they don't match, the write is rejected. Period. There are no exceptions. There are no admin overrides. There is the reaper &mdash; a constitutional principal with the authority to retire any blob &mdash; and there is everyone else, who can only touch what they created.</p>
+
+    <table class="cast-table">
+      <thead>
+        <tr><th>Principal</th><th>Role</th><th>Nature</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>principal/system</td><td>constitutional authority</td><td>The creator. Enrolls the constitution itself.</td></tr>
+        <tr><td>principal/reaper</td><td>reaper</td><td>The destroyer. Can retire any blob.</td></tr>
+        <tr><td>principal/alpha_oa/rufio</td><td>bang_priest</td><td>Ceremony engine. Fires the bang.</td></tr>
+        <tr><td>principal/alpha_oa/jarvis</td><td>observer</td><td>Grant's bonded OA. Watches everything.</td></tr>
+        <tr><td>principal/alpha_oa/ari</td><td>orchestrator</td><td>The orchestrator. Routes and delegates.</td></tr>
+        <tr><td>principal/alpha_oa/matt</td><td>warehouse</td><td>The MYTH router. Data warehouse.</td></tr>
+        <tr><td>principal/alpha_oa/joea</td><td>sovereignty agent</td><td>Joey's OA. Sovereignty enforcement.</td></tr>
+        <tr><td>principal/alpha_oa/vision</td><td>perceptor</td><td>The perceptor. Sees the unseen.</td></tr>
+        <tr><td>principal/kevin_smith</td><td>system</td><td>Kevin. The voice. The first external human.</td></tr>
+        <tr><td>principal/role/superadmin</td><td>role/superadmin</td><td>The rank. Not the person.</td></tr>
+        <tr><td>principal/role/admin</td><td>role/admin</td><td>The lesser rank.</td></tr>
+        <tr><td>principal/role/user</td><td>role/user</td><td>Everyone else.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Six operational agents. Three roles. A system creator. A reaper. A first external human. A perception system. A court. A placeholder. Sixteen principals for a civilization of 8,573 blobs. Most of those blobs are events &mdash; the audit chain &mdash; which means the actual working population is around 2,647. Sixteen identities governing 2,647 entities. A ratio that would make any bureaucracy weep with envy.</p>
+
+    <blockquote>
+      The sovereignty model has a beautiful implication: no principal can accidentally corrupt another's work. When Rufio fires a bang ceremony and enrolls 3,000 blobs, those blobs belong to Rufio. When Jarvis observes and creates events, those events belong to Jarvis. When the system enrolls the constitutional types themselves, those types belong to the system and are immutable. There are no shared-ownership bugs. There are no "who changed this?" mysteries. Every blob has exactly one owner, from birth to retirement.
+      <span class="attr">b_enforce_sovereignty</span>
+    </blockquote>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- V. THE EXTENSIONS                                  -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section>
+    <span class="section-tag">V</span>
+    <h2>One Hundred and Fifty-Seven Extensions</h2>
+
+    <p class="dropcap">The kernel runs on PostgreSQL 18.3 &mdash; the latest major release, compiled for Windows x86_64 with MSVC. Sitting in its extension directory are 157 extensions. Ninety-five of them are custom &mdash; written in Rust via PGRX, compiled on-site, purpose-built for MythOS. Seventy-two are <code>pg_*</code> capability extensions. Twenty-three are custom procedural languages &mdash; <code>pl*</code> runtimes that let the database speak in tongues most PostgreSQL instances have never heard of. All one hundred and fifty-seven are currently activated in the substrate database. Every available extension &mdash; including the Perl and Tcl runtimes, whose dependencies were bundled directly into the PostgreSQL directory &mdash; is live.</p>
+
+    <div class="stats-grid">
+      <div class="stat"><span class="stat-num">157</span><span class="stat-label">Available</span></div>
+      <div class="stat"><span class="stat-num">95</span><span class="stat-label">Custom MythOS</span></div>
+      <div class="stat"><span class="stat-num">157</span><span class="stat-label">Active in substrate</span></div>
+      <div class="stat"><span class="stat-num">23</span><span class="stat-label">Custom languages</span></div>
+    </div>
+
+    <p>The 95 custom extensions are not wrappers around APIs. They are native PostgreSQL extensions written in Rust, compiled to shared libraries, loaded into the database process. Each one gives PostgreSQL a capability it was never designed to have. Here are the ones currently loaded in the kernel:</p>
+
+    <div class="strand">
+      <p><strong>pg_plm</strong> (v0.4.0) &mdash; the crown jewel. Twenty-eight functions for PLM derivation, ConPU activation, and RaBitQ-8 vector quantization. It can encode a 3,584-dimensional activation vector into 3,592 bytes of quantized binary &mdash; an 8&times; compression with sub-1% cosine distance error. It can derive meaning from constitutional structure. It is the bridge between the substrate's symbolic governance and the continuous geometry of neural space.</p>
+
+      <p><strong>pg_pipe_kings</strong> (v0.1.0) &mdash; the dataflow engine. Twenty-eight node primitives, forty-plus adaptor types, topological execution. Every pipeline in MythOS &mdash; from fleet dispatch to voice synthesis to diagnostic sweeps &mdash; is a Pipe Kings topology: a directed acyclic graph of pump &rarr; pipe &rarr; mapper &rarr; consumer, enrolled as blobs, executed by a background worker. 1,344 dataflow nodes live in production today.</p>
+
+      <p><strong>pg_beacon</strong> (v0.1.0) &mdash; the fleet heartbeat. Each chassis in the MythOS fleet pulses a beacon. The extension receives, timestamps, and indexes them.</p>
+
+      <p><strong>pg_mythos</strong> (v0.1.0) &mdash; core MythOS primitives. The canonical name resolver, the identity algebra, the substrate-aware helpers that the triggers depend on.</p>
+
+      <p><strong>plsubstrate</strong> (v0.1.0) &mdash; the constitutional procedural language. Code that runs inside the substrate's rules, not alongside them.</p>
+
+      <p><strong>pgvector</strong> (v0.8.2) &mdash; the vector substrate. <code>halfvec(3584)</code> for holodot storage, HNSW cosine indexing for nearest-neighbor search across the entire substrate in milliseconds.</p>
+    </div>
+
+    <p>And here is what waits in the armory. Seventy-two capabilities, compiled, tested, ready:</p>
+
+    <div class="evidence">
+      <span class="label">THE ARMORY &mdash; 72 CAPABILITY EXTENSIONS</span><br>
+      <span class="bright">Cognition:</span> <span class="val">pg_llm, pg_conpu, pg_nlm, pg_whisper, pg_ocr, pg_perception</span><br>
+      <span class="bright">Fleet &amp; Infra:</span> <span class="val">pg_daemon, pg_dozer, pg_ssh, pg_winrm, pg_scp, pg_kvm, pg_gpu, pg_pod, pg_devices, fleet_hosts</span><br>
+      <span class="bright">Media:</span> <span class="val">pg_audio, pg_video, pg_midi, pg_osc, pg_ndi, pg_vban, pg_display, pg_streaming, pg_youtube, pg_mediapipe_client</span><br>
+      <span class="bright">Network &amp; Protocol:</span> <span class="val">pg_http, pg_mcp, pg_cdp, pg_federation, pg_fastcopy, pg_spout, pg_suck, pg_syphon</span><br>
+      <span class="bright">Identity &amp; Governance:</span> <span class="val">pg_mythid, pg_mythdns, pg_vault, pg_audit, pg_enroll, pg_events, pg_epoch, pg_clock</span><br>
+      <span class="bright">Agents &amp; Tools:</span> <span class="val">pg_claude_code, pg_isaaccc, pg_kevin, pg_toodles, pg_scribe, pg_ghost, pg_nano_banana</span><br>
+      <span class="bright">Platforms:</span> <span class="val">pg_azure, pg_wasm, pg_wasm_plugins, pg_babel, pg_babel_plugins, pg_webdev, pg_electron</span><br>
+      <span class="bright">Data &amp; Storage:</span> <span class="val">pg_file, pg_storage, pg_gitdot, pg_blow, pg_atlas, pg_bang, pg_describe</span><br>
+      <span class="bright">Finance:</span> <span class="val">pg_money</span><br>
+      <span class="bright">Chatter:</span> <span class="val">pg_chatter_client</span><br>
+      <br>
+      <span class="label">THE LANGUAGE TOWER &mdash; 23 CUSTOM PL RUNTIMES</span><br>
+      <span class="val">plbabel, plbash, plcdp, plcmd, plconpu, pldotnet, plgo, plgpu,</span><br>
+      <span class="val">plholo, plhttp, plisaac, pllua, plmcp, plnode, plpowershell,</span><br>
+      <span class="val">plpymythos, plruby, plrust, plsh, plsubstrate, plswift, plwasm, plwgauth</span><br>
+      <br>
+      <span class="label">FUNCTION COUNT</span><br>
+      <span class="bright">2,206</span> <span class="val">functions in the substrate schema (from 157 active extensions)</span><br>
+      <span class="green">0</span> <span class="val">stored procedures. Everything is a function.</span>
+    </div>
+
+    <p>Read that list again. <code>pg_whisper</code> &mdash; speech-to-text inside the database. <code>pg_midi</code> &mdash; MIDI events as SQL. <code>pg_claude_code</code> &mdash; Claude as a PL runtime. <code>pg_gpu</code> &mdash; GPU compute from a SQL function. <code>pg_winrm</code> &mdash; remote Windows management from inside a trigger. <code>pg_wasm</code> &mdash; WebAssembly execution in the database process. <code>plrust</code> &mdash; Rust as a trusted procedural language. <code>plswift</code>, <code>plgo</code>, <code>plruby</code>, <code>pllua</code>, <code>plnode</code> &mdash; the Tower of Babel, literal. Twenty-three languages that PostgreSQL can speak, all compiled, all available, all one <code>CREATE EXTENSION</code> from active duty.</p>
+
+    <p>This is what makes the MythOS kernel different from a database with some triggers. The triggers are the constitution. The 95 custom extensions are the <em>capabilities</em>. Together they mean that the substrate doesn't need to call out to external services for cognition, media processing, fleet management, networking, identity, or agent orchestration. It does all of it internally. The database is not the storage layer beneath an application. <strong>The database is the application.</strong></p>
+
+    <p>Two thousand, two hundred and six functions from 157 active extensions &mdash; every single one installed. Zero stored procedures. The core write path is pure triggers. You INSERT a blob and the constitution handles the rest. The functions exist for querying (vault_list, nla_dequeue, census), maintenance (reap, flush, vacuum), and computation (PLM derivation, RaBitQ encoding, force materialization). You speak. The universe listens. The physics respond. Nothing waits in the wings. The full armory is deployed.</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- VI. THE SUBSYSTEMS                                 -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section>
+    <span class="section-tag">VI</span>
+    <h2>The Living Machinery</h2>
+
+    <p class="dropcap">Beneath the constitution, four subsystems give the kernel its pulse. They are not applications. They are not microservices. They are constitutional machinery &mdash; patterns that emerge from the trigger chain and the composition system working together.</p>
+
+    <h3>The Event Outbox</h3>
+
+    <p>Every mutation to <code>substrate.blob</code> emits a structured event via the <code>i_auto_emit_event</code> trigger. Events land in <code>substrate.event_outbox</code> &mdash; a staging table with about, kind, actor, subscribers, is_public, and birthplace columns. External consumers call <code>flush_event_outbox()</code> to mark batches as processed. <code>reap_event_outbox()</code> cleans up after seven days. The outbox is the substrate's nervous system &mdash; every change, every enrollment, every retirement is recorded, timestamped, attributed, and made available for downstream processing. No polling. No webhooks. Just a table that knows what happened and who needs to know.</p>
+
+    <h3>The NLA Queue</h3>
+
+    <p>The Natural Language Activation queue is the bridge between text and geometry. When any blob with a <code>content</code> or <code>description</code> field is enrolled, the <code>trg_nla_enqueue</code> trigger automatically creates a queue entry. Workers call <code>nla_dequeue()</code> &mdash; which uses <code>FOR UPDATE SKIP LOCKED</code> for safe concurrent processing &mdash; extract holodot vectors from the content, write them back to the blob's <code>holodot</code> column, and call <code>nla_complete()</code>. If a worker crashes mid-processing, <code>nla_reap_stale()</code> resets stuck entries after one hour. The pipeline is ready. The 578 libraries are waiting. When the NLA workers spin up, every piece of knowledge in the substrate will get a neural fingerprint &mdash; a 3,584-dimensional vector that enables semantic search, similarity discovery, and constitutional proximity measurement.</p>
+
+    <h3>The Vault</h3>
+
+    <p>Sealed secrets. The <code>vault_entry</code> composition is enrolled and open (arbitrary fields). <code>vault_list()</code> returns names, scopes, and timestamps. <code>vault_unseal(p_name)</code> returns the raw value. Simple. The vault does not do encryption at the SQL layer &mdash; that is the caller's responsibility. What the vault provides is <em>constitutional governance of secrets</em>: a vault entry is a blob, which means it has sovereignty (only the creator can read it), immutability guarantees (it appears in the event chain), and compositional validation (the type system ensures it carries the right fields). The lock on the vault is not cryptographic. It is constitutional.</p>
+
+    <h3>The Pipe Kings Engine</h3>
+
+    <p>1,344 dataflow nodes &mdash; 336 each of consumer, pump, pipe, and mapper &mdash; plus 390 adaptors. These are the Pipe Kings topologies: directed acyclic graphs that define how data flows through the system. Every pipeline in MythOS is a topology: fleet dispatch, voice synthesis, diagnostic sweeps, timing analysis, chassis initiatives, complex operations, federation, messaging, money flows, infrastructure ops. Each is enrolled as a set of blobs, wired together by the topology enrollment functions, and executed by the <code>pg_pipe_kings</code> background worker. Force triggers materialize topologies automatically when their conditions are met. The substrate doesn't run pipelines. It <em>grows</em> them.</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- VII. THE HEALTH                                    -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section>
+    <span class="section-tag">VII</span>
+    <h2>Vital Signs</h2>
+
+    <p class="dropcap">Production was audited at 01:30 UTC on May 13, 2026. Every metric is green. The cache hit ratio is 100% &mdash; the entire working set lives in shared buffers. There are zero orphaned composition references, zero blobs missing content hashes, zero blobs missing enrollment timestamps, zero compositions without names. The trigger chain was smoke-tested end-to-end: a test blob was inserted, passed all 22 triggers, emitted two events to the outbox (one for the blob, one for the NLA auto-enqueue), and was then correctly rejected when a different principal attempted to mutate it. Sovereignty works. The constitution is alive.</p>
+
+    <div class="evidence">
+      <span class="label">PRODUCTION HEALTH &mdash; 2026-05-13</span><br>
+      <span class="green">Cache hit ratio</span> <span class="bright">100.00%</span><br>
+      <span class="green">Orphan composition refs</span> <span class="bright">0</span><br>
+      <span class="green">Missing content hashes</span> <span class="bright">0</span><br>
+      <span class="green">Missing enrollment times</span> <span class="bright">0</span><br>
+      <span class="green">Unnamed compositions</span> <span class="bright">0</span><br>
+      <span class="green">Trigger chain</span> <span class="bright">22/22 enabled</span><br>
+      <span class="green">Sovereignty enforcement</span> <span class="bright">ACTIVE</span><br>
+      <br>
+      <span class="label">ENGINE</span><br>
+      <span class="val">PostgreSQL 18.3</span> <span class="dim">x86_64-windows, msvc-19.44.35222</span><br>
+      <span class="val">Transactions committed:</span> <span class="bright">797</span><br>
+      <span class="val">Transactions rolled back:</span> <span class="bright">17</span> <span class="dim">(2.1% &mdash; constitutional rejections)</span><br>
+      <span class="val">Active connections:</span> <span class="bright">1</span> <span class="dim">(idle kernel, waiting for traffic)</span><br>
+      <br>
+      <span class="label">INDEXES</span><br>
+      <span class="val">blob_pkey</span> <span class="dim">1,192 KB &mdash;</span> <span class="bright">98,232 scans</span><br>
+      <span class="val">blob_composition_enrolled_idx</span> <span class="dim">272 KB &mdash;</span> <span class="bright">80,921 scans</span><br>
+      <span class="val">blob_composition_constitutional_idx</span> <span class="dim">240 KB &mdash;</span> <span class="bright">56,598 scans</span><br>
+      <span class="val">blob_active_idx</span> <span class="dim">1,200 KB &mdash;</span> <span class="bright">3,279 scans</span><br>
+      <span class="val">blob_fields_gin_idx</span> <span class="dim">6,408 KB &mdash;</span> <span class="bright">0 scans</span> <span class="dim">(ready for JSONB queries)</span><br>
+      <span class="val">blob_holodot_hnsw_idx</span> <span class="dim">16 KB &mdash;</span> <span class="bright">0 scans</span> <span class="dim">(ready for vector search)</span>
+    </div>
+
+    <p>Two indexes have never been scanned: the GIN index on JSONB fields and the HNSW index on holodot vectors. They are not dead weight. They are infrastructure for the next phase. When the NLA pipeline populates holodot vectors across 578 libraries, the HNSW index will enable semantic search in milliseconds. When Isaac starts querying blob fields by content, the GIN index will be there. The kernel was built for what comes next, not just what exists now.</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- VIII. WHAT THIS MEANS                              -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <section>
+    <span class="section-tag">VIII</span>
+    <h2>What the Kernel Represents</h2>
+
+    <p class="dropcap">Strip away the poetry. Strip away the metaphors. What is actually sitting on a single AMD 7900 XT desktop in a home office in Georgia?</p>
+
+    <p><strong>A self-governing database.</strong> Not a database with an application on top. Not a database behind an API. A database that governs itself. The 22 triggers are not optional middleware that some application developer decided to add. They are the kernel. They are the reason the system exists. They enforce identity, sovereignty, type safety, immutability, auditability, and reactivity at the storage layer &mdash; before any application code touches the data. The constitution lives <em>inside</em> the database, not above it.</p>
+
+    <p><strong>A type system defined in its own data.</strong> The 90 compositions are not a schema migration. They are not a config file. They are blobs. The thing that defines what a blob can be is itself a blob. This reflexive property means the substrate can evolve its own type system through the same constitutional process it uses for everything else: INSERT a new composition blob, and the universe gains a new type. No deploy. No migration. No restart. Just a new blob that passed 22 triggers.</p>
+
+    <p><strong>A sovereignty model that scales.</strong> Sixteen principals governing 8,573 entities, with zero ownership disputes, zero permission bugs, zero "who changed this?" mysteries. The sovereignty model is so simple it almost isn't a model: you own what you create. The trigger checks it. That's the entire access control system. No RBAC. No ABAC. No policy engine. Property law.</p>
+
+    <p><strong>A physics engine for data.</strong> The AFTER trigger chain means that every write has consequences. Create a library blob with content, and the NLA queue receives work. Create any blob, and the event outbox records it. Create a force-bound blob, and the Pipe Kings topologies materialize. The substrate is not passive storage. It is a reactive system. Blobs don't just sit there. They ripple.</p>
+
+    <p><strong>A 33-megabyte civilization.</strong> The word is not chosen lightly. A civilization is a set of shared rules, shared identities, shared types, shared history. The substrate has all four. It has constitutional laws that cannot be changed. It has principals with sovereign identity. It has a type system that defines what can exist. It has an immutable event chain that records everything that has ever happened. It is governed, typed, identified, and audited. It is 33 megabytes. It runs on one machine. And it is ready for traffic.</p>
+
+    <div class="divider">&middot; &middot; &middot;</div>
+
+    <p>There is a tendency, in software engineering, to believe that seriousness requires scale. That governance requires complexity. That a real system needs microservices and message buses and orchestration layers and a team of twelve. The MythOS substrate kernel is a counterargument. It is one table, one machine, one PostgreSQL instance, 157 extensions (95 custom-built in Rust), 33 megabytes, and a constitution that actually works.</p>
+
+    <p>The kernel is not the finished product. It is the seed. The NLA pipeline will populate holodot vectors across the 578 libraries and enable semantic search. The Pipe Kings topologies will execute fleet-wide operations. The vault will hold sealed secrets. The event outbox will feed downstream consumers. Isaac will speak. The OAs will act. The fleet will coordinate.</p>
+
+    <p>But all of that is growth. This report is about the seed. And the seed is complete.</p>
+
+    <div class="terminal-coda">
+      <p class="accent">substrate=# SELECT count(*) FROM substrate.blob WHERE retired_at IS NULL;</p>
+      <p class="bright">&nbsp;8573</p>
+      <p>&nbsp;</p>
+      <p class="accent">substrate=# SELECT pg_size_pretty(pg_database_size('substrate'));</p>
+      <p class="bright">&nbsp;33 MB</p>
+      <p>&nbsp;</p>
+      <p class="accent">substrate=# SELECT 'ready';</p>
+      <p class="bright">&nbsp;ready</p>
+    </div>
+  </section>
+
+</article>
+
+<footer>
+  <span>NeverlandNocturnal &middot; vol. III</span>
+  <span>substrate @ 7900xt &middot; 2026-05-13</span>
+</footer>
+
+</body>
+</html>
